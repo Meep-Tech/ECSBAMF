@@ -3,6 +3,9 @@ using System.Collections.Generic;
 
 namespace Meep.Tech.Data {
 
+  /// <summary>
+  /// Constants and static access for different types of Models
+  /// </summary>
   public static class Models {
 
     /// <summary>
@@ -82,6 +85,10 @@ namespace Meep.Tech.Data {
     /// Get the first factory inherited by a given model:
     /// </summary>
     static Model<TModel>.BuilderFactory _findFirstInheritedFactory(Type modelType) {
+      if(!modelType.IsAssignableToGeneric(typeof(Model<TModel>))) {
+        throw new NotImplementedException($"Model Type: {modelType.FullName} does not inherit from Model<TModelBase>. If you are using Model<TModelBase, TArchetypeBase> then the Archetype Base would be the default FactoryBuilder, and this should variable not be used.")
+      }
+
       Model<TModel>.BuilderFactory factory = null;
       // check if we already have one set by someone:
       if(Model._factoriesByModelBase.TryGetValue(modelType, out Model.IBuilderFactory builder)) {

@@ -4,15 +4,58 @@ using System.Text;
 
 namespace Meep.Tech.Data.Examples {
 
-  internal class Item : Model<Item> {
+  public class Item : Model<Item, Item.Type> {
+    public class Type : Archetype<Item, Type> {
 
-    static Item() {
+      public new static Identity Id {
+        get;
+      }
 
-      Models<Item>.BuilderFactory.NewBuilderConstructor 
-        = type => new Model<Item>.Builder(type);
+      public Type() : base(Id) {
+
+      }
     }
 
     public void main(Item item) {
+      Item.Type itemType;
+
+      itemType = Item.Types.Get(Item.Type.Id);
+      itemType = Item.Types.ById[Item.Type.Id];
+      itemType = Item.Types.Get<Item.Type>();
+      itemType = Item.Types.Get(typeof(Item.Type));
+      itemType = Item.Type.Collection.Get(Item.Type.Id);
+      itemType = Archetypes<Item.Type>.Archetype;
+      itemType = Archetypes<Item.Type>.Instance;
+      itemType = Archetypes<Item.Type>._;
+      itemType = Archetypes.All.Get(Item.Type.Id) as Item.Type;
+      itemType = Archetypes.All.ById[Item.Type.Id] as Item.Type;
+      itemType = typeof(Item.Type).AsArchetype<Item.Type>();
+      itemType = typeof(Item.Type).AsArchetype() as Item.Type;
+      itemType = Item.Type.Id.Archetype as Item.Type;
+
+      itemType.Make(new Model<Item>.Builder(itemType) {
+        {"color", "red" }
+      });
+      Item.Make(itemType, (Builder builder) => {
+        builder.set("color", "red");
+      });
+      Item.Types.Get<Item.Type>().Make((IBuilder<Item> builder) => {
+        builder.set("color", "red");
+        return builder;
+      });
+      Item.Types.Get<Item.Type>().Make((IBuilder builder) => builder);
+      Item.Types.Get<Item.Type>().Make((Model<Item>.Builder builder) => builder);
+      Item.Types.Get<Item.Type>().Make(("color", "red"));
+      Item.Types.Get<Item.Type>().Make(new KeyValuePair<string, object>("color", "red"));
+      Item.Types.Get<Item.Type>().Make(
+        ("color", "red"),
+        ("count", 3)
+      );
+      itemType.Make(builder => {
+        builder.set("color", "red");
+        builder.set("count", 3);
+      });
+
       var color = Components<Color>.BuilderFactory.Make(("color", "red"));
       var color1 = Components<Color>.BuilderFactory.Make(new KeyValuePair<string, object>("color", "red"));
       var color2 = Components<Color>.BuilderFactory.Make(new KeyValuePair<Model.Builder.Param, object>(Color.ColorParam, "red"));
@@ -48,6 +91,11 @@ namespace Meep.Tech.Data.Examples {
       private set;
     }
 
+    Color(IBuilder builder) {
+      color = builder.get<string>("color");
+    }
+
+    // You could do this instead of the default ctor if you want:
     static Color() {
       Models<Color>.BuilderFactory.NewBuilderConstructor =
         type => {

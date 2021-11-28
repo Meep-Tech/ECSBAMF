@@ -25,6 +25,14 @@
       } string _castKey;
 
       /// <summary>
+      /// The archetype this id is for
+      /// </summary>
+      public Archetype Archetype {
+        get;
+        internal set;
+      }
+
+      /// <summary>
       /// Can be used as an internal value to index this identity.
       /// May change between runtimes/runs of a program.
       /// </summary>

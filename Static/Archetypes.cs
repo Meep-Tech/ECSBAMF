@@ -19,6 +19,14 @@ namespace Meep.Tech.Data {
       = new Dictionary<string, Archetype.Collection>();
 
     /// <summary>
+    /// Get a collection registered to an archetype root:
+    /// </summary>
+    public static Archetype.Collection GetCollectionFor(Archetype root)
+      => _collectionsByRootArchetype.TryGetValue(root.Id.Key, out Archetype.Collection collection)
+        ? collection
+        : GetCollectionFor(root.Base);
+
+    /// <summary>
     /// Get a system type as an archetype.
     /// </summary>
     public static Archetype AsArchetype(this System.Type type)

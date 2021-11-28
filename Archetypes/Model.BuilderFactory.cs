@@ -30,8 +30,8 @@ namespace Meep.Tech.Data {
     /// <summary>
     /// The builder collection for these types:
     /// </summary>
-    internal new static Archetype<TModelBase, BuilderFactory>.Collection _factories
-      = new Archetype<TModelBase, BuilderFactory>.Collection();
+    internal new static Archetype<TModelBase, BuilderFactory>.ArchetypeCollection _factories
+      = new Archetype<TModelBase, BuilderFactory>.ArchetypeCollection();
 
     /// <summary>
     /// The factory that was used to make this object

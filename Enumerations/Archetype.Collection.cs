@@ -57,6 +57,9 @@ namespace Meep.Tech.Data {
       }
 
       internal void _registerArchetype(Archetype @new) {
+        // Register to it's id
+        @new.Id.Archetype = @new;
+
         // Register to this:
         Add(@new);
 
@@ -92,6 +95,12 @@ namespace Meep.Tech.Data {
       public Archetype Get(System.Type type)
           => _byType[type.FullName];
 
+      /// <summary>
+      /// Try to get an archetype from it's Id.
+      /// </summary>
+      public Archetype Get(Identity id)
+          => _byId[id];
+
       #endregion
 
       #region Enumeration
@@ -107,10 +116,10 @@ namespace Meep.Tech.Data {
 
     /// <summary>
     /// A Collection of Archetypes.
-    /// - Can be used to make a more specific child collection.
+    /// - Can be used to make a more specific child collection than Archetype<,>.ArchetypeCollection.
     /// </summary>
     public class Collection<TModelBase, TArchetypeBase>
-      : Archetype<TModelBase, TArchetypeBase>.Collection
+      : Archetype<TModelBase, TArchetypeBase>.ArchetypeCollection
       where TModelBase : IModel<TModelBase>
       where TArchetypeBase : Archetype<TModelBase, TArchetypeBase> {
       public Collection() : base() {}
@@ -121,10 +130,17 @@ namespace Meep.Tech.Data {
     where TArchetypeBase : Archetype<TModelBase, TArchetypeBase> {
 
     /// <summary>
-    /// A Collection of Archetypes.
-    /// All archetypes need to be in a collection of some kind.
+    /// Quick link to the collection
     /// </summary>
-    public new class Collection 
+    public new static ArchetypeCollection Collection
+      => (ArchetypeCollection)
+        Archetypes.GetCollectionFor(typeof(TArchetypeBase).AsArchetype());
+
+    /// <summary>
+    /// A Collection of Archetypes.
+    /// This is just an Archetype.Collection<,> that is pre-built for the containing Archetype<,> type.
+    /// </summary>
+    public class ArchetypeCollection 
       : Archetype.Collection,
         IEnumerable<TArchetypeBase> 
     {
@@ -151,7 +167,7 @@ namespace Meep.Tech.Data {
         );
       } Dictionary<Identity, TArchetypeBase> _compiledById;
 
-      public Collection() : base() {}
+      public ArchetypeCollection() : base() {}
 
       #region Accessors
 
@@ -161,6 +177,32 @@ namespace Meep.Tech.Data {
       public new TArchetype Get<TArchetype>()
         where TArchetype : TArchetypeBase
           => Archetypes<TArchetype>.Instance;
+
+      /// <summary>
+      /// Try to get an archetype from this collection by it's type.
+      /// </summary>
+      public new TArchetypeBase Get(System.Type type)
+          => (TArchetypeBase)_byType[type.FullName];
+
+      /// <summary>
+      /// Try to get an archetype from this collection by it's type.
+      /// </summary>
+      public TArchetype Get<TArchetype>(System.Type type)
+        where TArchetype : TArchetypeBase
+          => (TArchetype)Get(type);
+
+      /// <summary>
+      /// Try to get an archetype from it's Id.
+      /// </summary>
+      public TArchetypeBase Get(Identity id)
+          => (TArchetypeBase)base.Get(id);
+
+      /// <summary>
+      /// Try to get an archetype from it's Id.
+      /// </summary>
+      public TArchetype Get<TArchetype>(Identity id)
+        where TArchetype : TArchetypeBase
+          => (TArchetype)Get(id);
 
       #endregion
 

@@ -108,8 +108,15 @@ namespace Meep.Tech.Data {
     public new Identity Id
       => base.Id as Identity;
 
-    protected Archetype(Archetype.Identity id, Collection collection) 
+    protected Archetype(Archetype.Identity id, ArchetypeCollection collection = null) 
       : base(id) {
+      if(collection is null) {
+        collection = (ArchetypeCollection)
+          (Archetypes._collectionsByRootArchetype.ContainsKey(id.Key)
+            ? Archetypes.GetCollectionFor(this)
+            : Archetypes._collectionsByRootArchetype[id.Key] = new ArchetypeCollection());
+      }
+
       collection._registerArchetype(this);
     }
 
@@ -345,6 +352,22 @@ namespace Meep.Tech.Data {
     /// </summary>
     public TModelBase Make(Func<IBuilder<TModelBase>, IBuilder<TModelBase>> configureBuilder)
       => BuildModel(configureBuilder(MakeDefaultBuilder()));
+
+    /// <summary>
+    /// Make a model that requires a struct based builder:
+    /// </summary>
+    public TModelBase Make(Func<IBuilder, IBuilder> configureBuilder)
+      => Make(builder => (configureBuilder(MakeDefaultBuilder()) as IBuilder<TModelBase>));
+
+    /// <summary>
+    /// Make a model that requires an object based builder:
+    /// </summary>
+    public TModelBase Make(Action<Model.Builder> configureBuilder)
+      => Make(builder => {
+        configureBuilder(builder);
+
+        return builder;
+      });
 
     /// <summary>
     /// Make a model that requires a struct based builder"
