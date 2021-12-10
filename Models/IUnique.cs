@@ -21,18 +21,18 @@
     /// <summary>
     /// The Unique Id of this Item
     /// </summary>
-    public string id {
+    public string Id {
       get;
-      internal set;
+      internal protected set;
     }
 
     /// <summary>
     /// Copy the model by serializing and deserializing it.
     /// </summary>
-    public IUnique copy(bool newUniqueId = true) {
-      IUnique copy = (IUnique)(this as IModel).copy();
+    public IUnique Copy(bool newUniqueId = true) {
+      IUnique copy = (IUnique)(this as IModel).Copy();
       if(newUniqueId) {
-        copy.resetUniqueId();
+        copy._resetUniqueId();
       }
 
       return copy;
@@ -45,15 +45,15 @@
     /// Changes the unique id of this model.
     /// This can break saving/linking!
     /// </summary>
-    internal static void resetUniqueId(this IUnique original) {
-      original.id = RNG.GetNextUniqueId();
+    internal static void _resetUniqueId(this IUnique original) {
+      original.Id = RNG.GetNextUniqueId();
     }
 
     /// <summary>
     /// Copy a unique model, with a new unique id
     /// Override via IUnique.copy(bool)
     /// </summary>
-    public static IUnique copy(this IUnique original, bool newUniqueId = true) 
-      => original.copy(newUniqueId);
+    public static IUnique Copy(this IUnique original, bool newUniqueId = true) 
+      => original.Copy(newUniqueId);
   }
 }

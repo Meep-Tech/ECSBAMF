@@ -36,6 +36,25 @@ namespace Meep.Tech.Data {
         param => param.Value
       )) { }
 
+      /// <summary>
+      /// Copy a builder for a new target type
+      /// </summary>
+      public static IBuilder MakeNewBuilderAndCopyParams(IBuilder original, Type targetBuilderFactoryType) {
+        if(original == null) {
+          return null;
+        }
+
+        Archetype targetFactory = targetBuilderFactoryType.AsArchetype();
+        return targetFactory.GetGenericBuilderConstructor()(
+          targetFactory,
+          original is Dictionary<string, object> dictionary 
+            ? dictionary 
+            : original is Data.IComponent.ILiteBuilder liteBuilder
+              ? liteBuilder.@params.ToDictionary(e => e.Key, e => e.Value)
+              : throw new ArgumentException()
+        );
+      } 
+
       #region Data Access
 
       public object this[Param param] {
@@ -70,19 +89,19 @@ namespace Meep.Tech.Data {
       /// <param name="key"></param>
       /// <param name="value"></param>
       public new void Add(string key, object value) 
-        => this.set(key, value);
+        => this.SetParam(key, value);
 
       #endregion 
       
       /// <summary>
       /// Just make this immutible.
       /// </summary>
-      internal Builder asImmutable() {
+      internal Builder AsImmutable() {
         _isImmutable = true;
         return this;
       }
 
-      public void forEachParam(Action<(string key, object value)> @do) 
+      public void ForEachParam(Action<(string key, object value)> @do) 
         => this.ForEach(entry => @do((entry.Key, entry.Value)));
 
       /// <summary>
@@ -113,7 +132,7 @@ namespace Meep.Tech.Data {
       /// <summary>
       /// Empty new builder
       /// </summary>
-      internal protected Builder(Archetype forArchetype)
+      public Builder(Archetype forArchetype)
         : base() {
         Type = forArchetype;
       }
@@ -121,7 +140,7 @@ namespace Meep.Tech.Data {
       /// <summary>
       /// Empty new builder, immutable, for internal use only
       /// </summary>
-      internal Builder(Archetype forArchetype, bool Immutable)
+      public Builder(Archetype forArchetype, bool Immutable)
         : base(Immutable) {
         Type = forArchetype;
       }
@@ -130,7 +149,7 @@ namespace Meep.Tech.Data {
       /// New builder from a collection of param names
       /// </summary>
       /// 
-      internal protected Builder(Archetype forArchetype, Dictionary<string, object> @params)
+      public Builder(Archetype forArchetype, Dictionary<string, object> @params)
         : base(@params) {
         Type = forArchetype;
       }
@@ -138,7 +157,7 @@ namespace Meep.Tech.Data {
       /// <summary>
       /// New builder from a collection of params
       /// </summary>
-      internal protected Builder(
+      public Builder(
         Archetype forArchetype,
         Dictionary<Param, object> @params
       ) : base(@params.ToDictionary(
@@ -152,7 +171,7 @@ namespace Meep.Tech.Data {
       /// Produce a new instance of the model type.
       /// this usually is just calling => new Model(this) to help set the type variable or something.
       /// </summary>
-      public virtual Func<Builder, TModelBase> initializeModel {
+      public virtual Func<Builder, TModelBase> InitializeModel {
         get;
         set;
       } = builder => (TModelBase)builder.Type.ModelConstructor(builder);
@@ -160,7 +179,7 @@ namespace Meep.Tech.Data {
       /// <summary>
       /// Configure and set param on the empty new model from InitializeModel.
       /// </summary>
-      public virtual Func<Builder, TModelBase, TModelBase> configureModel {
+      public virtual Func<Builder, TModelBase, TModelBase> ConfigureModel {
         get;
         set;
       } = (_, model) => model;
@@ -168,7 +187,7 @@ namespace Meep.Tech.Data {
       /// <summary>
       /// Logic to finish setting up the model.
       /// </summary>
-      public virtual Func<Builder, TModelBase, TModelBase> finalizeModel {
+      public virtual Func<Builder, TModelBase, TModelBase> FinalizeModel {
         get;
         set;
       } = (_, model) => model;
@@ -176,29 +195,31 @@ namespace Meep.Tech.Data {
       /// <summary>
       /// Build the model.
       /// </summary>
-      public TModelBase build() {
-        TModelBase model = initializeModel(this);
+      public TModelBase Build() {
+        TModelBase model = InitializeModel(this);
 
         /// Unique ID logic:
         /// TOOD: move this to IUnique somehow
         if(model is IUnique unique) {
-          if(this.tryToGet(IUnique.Params.UniqueId, out string providedId)) {
-            unique.id = providedId;
+          if(this.TryToGetParam(IUnique.Params.UniqueId, out string providedId)) {
+            unique.Id = providedId;
           }
-          else if(unique.id == null) {
-            unique.id = RNG.GetNextUniqueId();
+          else if(unique.Id == null) {
+            unique.Id = RNG.GetNextUniqueId();
           }
         }
 
-        model = configureModel(this, model);
+        model = ConfigureModel(this, model);
+        model = (TModelBase)Type.ConfigureModel(this, model);
 
-        IComponentStorage componentStorage = model as IComponentStorage;
+        IReadableComponentStorage componentStorage = model as IReadableComponentStorage;
         if(componentStorage != null) {
           model = _initializeModelComponents(model);
         }
 
         // finalize the parent model
-        model = finalizeModel(this, model);
+        model = FinalizeModel(this, model);
+        model = (TModelBase)Type.FinalizeModel(this, model);
 
         // finalize the child components:
         if(componentStorage != null) {

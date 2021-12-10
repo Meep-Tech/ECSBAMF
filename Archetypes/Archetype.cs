@@ -1,14 +1,17 @@
-﻿using System;
+﻿using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
+using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
+using System.Linq.Expressions;
 
 namespace Meep.Tech.Data {
 
   /// <summary>
   /// A singleton data store and factory.
   /// </summary>
-  public abstract partial class Archetype : IEquatable<Archetype>, IComponentStorage {
+  public abstract partial class Archetype : IReadableComponentStorage, IEquatable<Archetype> {
+
+    #region Archetype Data Members
 
     /// <summary>
     /// The Id of this Archetype.
@@ -20,7 +23,7 @@ namespace Meep.Tech.Data {
     /// <summary>
     /// The Base Archetype this Archetype derives from.
     /// </summary>
-    public abstract Archetype Base {
+    public abstract Type BaseType {
       get;
     }
 
@@ -39,6 +42,16 @@ namespace Meep.Tech.Data {
     }
 
     /// <summary>
+    /// If this is an archetype that inherits from Archetype<> directly.
+    /// </summary>
+    public bool IsBase
+      => BaseType?.Equals(null) ?? true;
+
+    #endregion
+
+    #region Archetype Configuration Settings
+
+    /// <summary>
     /// Overrideable Model Constructor
     /// </summary>
     public virtual Func<IBuilder, IModel> ModelConstructor {
@@ -47,10 +60,35 @@ namespace Meep.Tech.Data {
     } = null;
 
     /// <summary>
-    /// If this is an archetype that inherits from Archetype<> directly.
+    /// The initial default components to add to this archetype on it's creation.
     /// </summary>
-    public bool IsBase
-      => Base?.Equals(null) ?? true;
+    protected virtual Dictionary<string, Archetype.IComponent> InitialComponents {
+      get;
+    } = new Dictionary<string, IComponent>();
+
+    /// <summary>
+    /// The default components to initialize on a model made by this Archetype.
+    /// Usually you'll want to use an Archetype.ILinkedComponent but this is here too.
+    /// </summary>
+    protected virtual HashSet<System.Type> DefaultUnlinkedModelComponentTypes {
+      get;
+    } = new HashSet<Type>();
+
+    /// <summary>
+    /// If this is true, this Archetype can have it's component collection modified before load by mods and other libraries.
+    /// This does not affect the ability to inherit and override InitialComponents for an archetype.
+    /// </summary>
+    public virtual bool AllowExternalComponentConfiguration
+      => true;
+
+    /// <summary>
+    /// Finish setting this up
+    /// </summary>
+    protected internal virtual void Finish() {}
+
+    #endregion
+
+    #region Initialization
 
     /// <summary>
     /// Make a new archetype
@@ -60,15 +98,31 @@ namespace Meep.Tech.Data {
       Type = GetType();
     }
 
+    /// <summary>
+    /// helper for getting the builder constructor from the non-generic base class
+    /// </summary>
+    /// <returns></returns>
+    internal protected abstract Func<Archetype, Dictionary<string, object>, IBuilder> GetGenericBuilderConstructor();
+
+    #endregion
+
     #region Hash and Equality
 
-    public override int GetHashCode() {
-      return Id.GetHashCode();
+    /// <summary>
+    /// Used to convert an Archetype to a general string for storage
+    /// </summary>
+    public class ToKeyStringConverter : ValueConverter<Archetype, string> {
+      public ToKeyStringConverter() : base(
+        archetype => archetype.Id.Key,
+        key => Archetypes.Id[key].Archetype
+      ) {}
     }
 
-    public override bool Equals(object obj) {
-      return obj?.GetType() == GetType();
-    }
+    public override int GetHashCode() 
+      => Id.GetHashCode();
+
+    public override bool Equals(object obj) 
+      => (obj as Archetype)?.Equals(this) ?? false;
 
     public override string ToString() {
       return $"+{Id}+";
@@ -76,6 +130,278 @@ namespace Meep.Tech.Data {
 
     public bool Equals(Archetype other) 
       => Id == other?.Id;
+
+    public static bool operator ==(Archetype a, Archetype b)
+      => a?.Equals(b) ?? (b is null);
+
+    public static bool operator !=(Archetype a, Archetype b)
+      => !(a == b);
+
+
+    #endregion
+
+    #region Configuration Helper Functions
+
+    /// <summary>
+    /// Function that gets called by default in builders.
+    /// Can be used to add logic during model setup as a shortcut.
+    /// </summary>
+    internal virtual IModel ConfigureModel(IBuilder builder, IModel model)
+      => model;
+
+    /// <summary>
+    /// Function that gets called by default in builders.
+    /// Can be used to add logic during model setup as a shortcut.
+    /// </summary>
+    internal virtual IModel FinalizeModel(IBuilder builder, IModel model)
+      => model;
+
+    #endregion
+
+    #region Make/Model Construction
+
+    /// <summary>
+    /// Base make helper
+    /// </summary>
+    /// <returns></returns>
+    public abstract IModel MakeDefault();
+    
+    /// <summary>
+    /// Base make helper
+    /// </summary>
+    /// <returns></returns>
+    public abstract IModel MakeDefaultWith(IBuilder builder);
+    
+    /// <summary>
+    /// Base make helper
+    /// </summary>
+    /// <returns></returns>
+    public abstract IModel MakeDefaultWith(Func<IBuilder, IBuilder> builderConfiguration);
+
+    /// <summary>
+    /// Base make helper
+    /// </summary>
+    /// <returns></returns>
+    public TDesiredModel Make<TDesiredModel>()
+      where TDesiredModel : IModel
+        => (TDesiredModel)MakeDefault();
+    
+    /// <summary>
+    /// Base make helper
+    /// </summary>
+    /// <returns></returns>
+    public TDesiredModel Make<TDesiredModel>(IBuilder builder)
+      where TDesiredModel : IModel
+        => (TDesiredModel)MakeDefaultWith(builder);
+
+    /// <summary>
+    /// Base make helper
+    /// </summary>
+    /// <returns></returns>
+    public TDesiredModel Make<TDesiredModel>(Func<IBuilder, IBuilder> builderConfiguration)
+      where TDesiredModel : IModel
+        => (TDesiredModel)MakeDefaultWith(builderConfiguration);
+
+    #endregion
+
+    #region Default Component Implimentations
+
+    /// <summary>
+    /// Publicly readable components
+    /// </summary>
+    public IReadOnlyDictionary<string, Archetype.IComponent> Components
+      => _components.ToDictionary(x => x.Key, y => y.Value as Archetype.IComponent);
+
+    /// <summary>
+    /// The accessor for the default Icomponents implimentation
+    /// </summary>
+    Dictionary<string, Data.IComponent> IReadableComponentStorage._componentsByBuilderKey
+      => _components;
+
+    /// <summary>
+    /// Internally stored components
+    /// </summary>
+    [IsModelComponentsProperty]
+    Dictionary<string, Data.IComponent> _components {
+      get;
+    }
+
+
+
+    #region Read
+
+    /// <summary>
+    /// Get a component if it exists. Throws if it doesn't
+    /// </summary>
+    public IComponent GetComponent(string componentKey)
+      => (this as IReadableComponentStorage).GetComponent(componentKey) as Archetype.IComponent;
+
+    /// <summary>
+    /// Get a component if it exists. Throws if it doesn't
+    /// </summary>
+    public IComponent GetComponent<TComponent>(string componentKey)
+      where TComponent : Model.IComponent
+        => (this as IReadableComponentStorage).GetComponent(componentKey) as Archetype.IComponent;
+
+    /// <summary>
+    /// Get a component if this has a component of that given type
+    /// </summary>
+    public bool HasComponent(System.Type componentType, out Archetype.IComponent component) {
+      if((this as IReadableComponentStorage).HasComponent(componentType, out Data.IComponent found)) {
+        component = found as Archetype.IComponent;
+        return true;
+      }
+
+      component = null;
+      return false;
+    }
+
+    /// <summary>
+    /// Check if this has a given component by base type
+    /// TODO, if this causes a stackoverflow we'll need to use the extensionmethod trick... which may be cleaner anyway lol
+    /// </summary>
+    public bool HasComponent(System.Type componentType)
+      => (this as IReadableComponentStorage).HasComponent(componentType);
+
+    /// <summary>
+    /// Check if this has a component matching the given object
+    /// TODO, if this causes a stackoverflow we'll need to use the extensionmethod trick... which may be cleaner anyway lol
+    /// </summary>
+    public bool HasComponent(string componentBaseKey)
+      => (this as IReadableComponentStorage).HasComponent(componentBaseKey);
+
+    /// <summary>
+    /// Get a component if this has that given component
+    /// </summary>
+    public bool HasComponent(string componentBaseKey, out Archetype.IComponent component) {
+      if((this as IReadableComponentStorage).HasComponent(componentBaseKey, out Data.IComponent found)) {
+        component = found as Archetype.IComponent;
+        return true;
+      }
+
+      component = null;
+      return false;
+    }
+
+    /// <summary>
+    /// Check if this has a component matching the given object
+    /// </summary>
+    public bool HasComponent(Archetype.IComponent componentModel)
+      => (this as IReadableComponentStorage).HasComponent(componentModel);
+
+    /// <summary>
+    /// Get a component if this has that given component
+    /// </summary>
+    public bool HasComponent(Archetype.IComponent componentModel, out Archetype.IComponent component) {
+      if((this as IReadableComponentStorage).HasComponent(componentModel, out Data.IComponent found)) {
+        component = found as Archetype.IComponent;
+        return true;
+      }
+
+      component = null;
+      return false;
+    }
+
+    #endregion
+
+    #region Write
+
+    /// <summary>
+    /// Add a new component, throws if the component key is taken already
+    /// </summary>
+    protected void AddComponent(Archetype.IComponent toAdd) {
+      if(toAdd is IRestrictedComponent restrictedComponent && !restrictedComponent.IsCompatableWith(this)) {
+        throw new System.ArgumentException($"Component of type {toAdd.Key} is not compatable with model of type {GetType()}. The model must inherit from {restrictedComponent.RestrictedTo.FullName}.");
+      }
+
+      (this as IReadableComponentStorage).AddComponent(toAdd);
+    }
+
+    /// <summary>
+    /// replace an existing component
+    /// </summary>
+    protected void UpdateComponent(Archetype.IComponent toUpdate) {
+      (this as IReadableComponentStorage).UpdateComponent(toUpdate);
+    }
+
+    /// <summary>
+    /// update an existing component, given it's current data
+    /// </summary>
+    protected void UpdateComponent<TComponent>(System.Func<TComponent, TComponent> UpdateComponent)
+      where TComponent : Archetype.IComponent {
+      (this as IReadableComponentStorage).UpdateComponent(UpdateComponent);
+    }
+
+    /// <summary>
+    /// Add or replace a component
+    /// </summary>
+    protected void AddOrUpdateComponent(Archetype.IComponent toSet) {
+      if(toSet is IRestrictedComponent restrictedComponent && !restrictedComponent.IsCompatableWith(this)) {
+        throw new System.ArgumentException($"Component of type {toSet.Key} is not compatable with model of type {GetType()}. The model must inherit from {restrictedComponent.RestrictedTo.FullName}.");
+      }
+      (this as IReadableComponentStorage).AddOrUpdateComponent(toSet);
+    }
+
+    /// <summary>
+    /// Remove an existing component
+    /// </summary>
+    protected bool RemoveComponent(Archetype.IComponent toRemove)
+      => (this as IReadableComponentStorage).RemoveComponent(toRemove.Key);
+
+    /// <summary>
+    /// Remove an existing component
+    /// </summary>
+    protected bool RemoveComponent<TComponent>()
+      where TComponent : Archetype.IComponent<TComponent>
+        => (this as IReadableComponentStorage).RemoveComponent<TComponent>();
+
+    /// <summary>
+    /// Remove an existing component
+    /// </summary>
+    protected bool RemoveComponent<TComponent>(out IComponent removed)
+      where TComponent : Archetype.IComponent<TComponent> {
+      if((this as IReadableComponentStorage).RemoveComponent<TComponent>(out Data.IComponent found)) {
+        removed = found as Archetype.IComponent;
+        return true;
+      }
+
+      removed = null;
+      return false;
+    }
+
+    /// <summary>
+    /// Remove an existing component
+    /// </summary>
+    protected bool RemoveComponent(System.Type toRemove)
+      => (this as IReadableComponentStorage).RemoveComponent(toRemove);
+
+    /// <summary>
+    /// Remove an existing component
+    /// </summary>
+    protected bool RemoveComponent(System.Type toRemove, out IComponent removed) {
+      if((this as IReadableComponentStorage).RemoveComponent(toRemove, out Data.IComponent found)) {
+        removed = found as Archetype.IComponent;
+        return true;
+      }
+
+      removed = null;
+      return false;
+    }
+
+    /// <summary>
+    /// Remove and get an existing component
+    /// </summary>
+    protected bool RemoveComponent(string componentKeyToRemove, out Archetype.IComponent removedComponent) {
+      if((this as IReadableComponentStorage).RemoveComponent(componentKeyToRemove, out Data.IComponent component)) {
+        removedComponent = component as Archetype.IComponent;
+        return true;
+      }
+
+      removedComponent = null;
+      return false;
+    }
+
+    #endregion
 
     #endregion
   }
@@ -90,11 +416,13 @@ namespace Meep.Tech.Data {
     where TArchetypeBase : Archetype<TModelBase, TArchetypeBase> 
   {
 
+    #region Archetype Data Members
+
     /// <summary>
     /// The base archetype that all of the ones like it are based on.
     /// </summary>
-    public override Archetype Base
-      => typeof(TArchetypeBase).AsArchetype();
+    public override System.Type BaseType
+      => typeof(TArchetypeBase);
 
     /// <summary>
     /// The most basic model that this archetype family tree can produce
@@ -108,17 +436,42 @@ namespace Meep.Tech.Data {
     public new Identity Id
       => base.Id as Identity;
 
+    #endregion
+
+    #region Archetype Initialization
+
     protected Archetype(Archetype.Identity id, ArchetypeCollection collection = null) 
       : base(id) {
       if(collection is null) {
         collection = (ArchetypeCollection)
-          (Archetypes._collectionsByRootArchetype.ContainsKey(id.Key)
+          // if the base of this is registered somewhere, get the registered one by default
+          (Archetypes._collectionsByRootArchetype.ContainsKey(id.Archetype.BaseType?.TryToGetAsArchetype()?.Id.Key)
             ? Archetypes.GetCollectionFor(this)
+            // else this is the base and we need a new one
             : Archetypes._collectionsByRootArchetype[id.Key] = new ArchetypeCollection());
       }
 
       collection._registerArchetype(this);
+      _initialize();
     }
+
+    /// <summary>
+    /// Initialize this Archetype internally
+    /// </summary>
+    void _initialize() {
+      _initializeInitialComponents();
+    }
+
+    /// <summary>
+    /// Add all initial components
+    /// </summary>
+    void _initializeInitialComponents() {
+      foreach(Archetype.IComponent component in InitialComponents.Values) {
+        AddComponent(component);
+      }
+    }
+
+    #endregion
 
     #region Model Construction 
 
@@ -201,29 +554,70 @@ namespace Meep.Tech.Data {
     /// <summary>
     /// An empty builder used to help build for this archetype:
     /// </summary>
-    Model<TModelBase>.Builder _defaultBuilder
+    Model<TModelBase>.Builder _defaultEmptyBuilder
       = null;
 
     /// <summary>
     /// The default way a new builder is created.
     /// </summary>
-    public Func<Archetype, IBuilder> NewBuilderConstructor {
-      get => _defaultBuilderCtor ??= archetype => new Model<TModelBase>.Builder(archetype);
-      internal set => _defaultBuilderCtor = value;
-    } Func<Archetype, IBuilder> _defaultBuilderCtor;
+    internal protected virtual Func<Archetype, Dictionary<string, object>, IBuilder<TModelBase>> BuilderConstructor {
+      get => _defaultBuilderCtor ??= (archetype, @params) => new Model<TModelBase>.Builder(archetype, @params);
+      set => _defaultBuilderCtor = value;
+    } internal Func<Archetype, Dictionary<string, object>, IBuilder<TModelBase>> _defaultBuilderCtor;
+
+    /// <summary>
+    /// helper for getting the builder constructor from the non-generic base class
+    /// TODO: I can probably cache this at least.
+    /// </summary>
+    protected internal sealed override Func<Archetype, Dictionary<string, object>, IBuilder> GetGenericBuilderConstructor()
+      => _defaultBuilderCtor;
 
     /// <summary>
     /// The builder for the base model type of this archetype.
     /// You can override this and add more default props to the return for utility.
     /// </summary>
-    protected virtual Model<TModelBase>.Builder MakeDefaultBuilder()
-      => (Model<TModelBase>.Builder)NewBuilderConstructor(this);
+    public virtual Model<TModelBase>.Builder MakeDefaultBuilder()
+      => (Model<TModelBase>.Builder)BuilderConstructor(this, null);
 
     /// <summary>
     /// Gets an immutable empty builder for this type to use when null was passed in:
     /// </summary>
     protected virtual Model<TModelBase>.Builder MakeDefaultEmptyBuilder()
-      => (Model<TModelBase>.Builder)MakeDefaultBuilder().asImmutable();
+      => (Model<TModelBase>.Builder)MakeDefaultBuilder().AsImmutable();
+
+    #region Configuration Helper Functions
+
+    /// <summary>
+    /// Function that gets called by default in builders.
+    /// Can be used to add logic during model setup as a shortcut.
+    /// </summary>
+    protected internal virtual TModelBase ConfigureModel(IBuilder<TModelBase> builder, TModelBase model)
+      => model;
+
+    /// <summary>
+    /// Function that gets called by default in builders.
+    /// Can be used to add logic during model setup as a shortcut.
+    /// </summary>
+    protected internal virtual TModelBase FinalizeModel(IBuilder<TModelBase> builder, TModelBase model)
+      => model;
+
+
+    /// <summary>
+    /// Function that gets called by default in builders.
+    /// Can be used to add logic during model setup as a shortcut.
+    /// </summary>
+    internal override IModel ConfigureModel(IBuilder builder, IModel model)
+      => ConfigureModel(builder as IBuilder<TModelBase>, (TModelBase)model);
+
+    /// <summary>
+    /// Function that gets called by default in builders.
+    /// Can be used to add logic during model setup as a shortcut.
+    /// </summary>
+    internal override IModel FinalizeModel(IBuilder builder, IModel model)
+      => FinalizeModel(builder as IBuilder<TModelBase>, (TModelBase)model);
+
+
+    #endregion
 
     #endregion
 
@@ -281,7 +675,7 @@ namespace Meep.Tech.Data {
     /// </summary>
     /// <returns></returns>
     public TModelBase Make(params KeyValuePair<string, object>[] @params)
-      => Make(@params);
+      => Make(@params.AsEnumerable());
 
     /// <summary>
     /// Helper for potentially making an item without initializing a dictionary object
@@ -307,6 +701,26 @@ namespace Meep.Tech.Data {
     /// Make a default model from this Archetype
     /// </summary>
     /// <returns></returns>
+    public sealed override IModel MakeDefault()
+      => BuildModel(null);
+
+    /// <summary>
+    /// Make a default model from this Archetype with the builder
+    /// </summary>
+    /// <returns></returns>
+    public sealed override IModel MakeDefaultWith(Func<IBuilder, IBuilder> builderConfiguration)
+      => Make(builderConfiguration);
+    /// <summary>
+    /// Make a default model from this Archetype with the builder
+    /// </summary>
+    /// <returns></returns>
+    public sealed override IModel MakeDefaultWith(IBuilder builder)
+      => Make(builder as IBuilder<TModelBase>);
+
+    /// <summary>
+    /// Make a default model from this Archetype
+    /// </summary>
+    /// <returns></returns>
     public TModelBase Make()
       => BuildModel(null);
 
@@ -322,7 +736,7 @@ namespace Meep.Tech.Data {
     /// <summary>
     /// Make a default model from this Archetype of the desired sub-type
     /// </summary>
-    public TDesiredModel Make<TDesiredModel>()
+    public new TDesiredModel Make<TDesiredModel>()
       where TDesiredModel : TModelBase
         => (TDesiredModel)BuildModel(null);
 
@@ -362,6 +776,13 @@ namespace Meep.Tech.Data {
     /// <summary>
     /// Make a model that requires an object based builder:
     /// </summary>
+    public TDesiredModel Make<TDesiredModel>(Action<Model.Builder> configureBuilder)
+     where TDesiredModel: TModelBase
+        => (TDesiredModel)Make(configureBuilder);
+
+    /// <summary>
+    /// Make a model that requires an object based builder:
+    /// </summary>
     public TModelBase Make(Action<Model.Builder> configureBuilder)
       => Make(builder => {
         configureBuilder(builder);
@@ -379,13 +800,34 @@ namespace Meep.Tech.Data {
     /// <summary>
     /// Build the model with the builder.
     /// </summary>
-    protected internal TModelBase BuildModel(IBuilder<TModelBase> builder = null) {
+    protected internal virtual  TModelBase BuildModel(IBuilder<TModelBase> builder = null) {
       var builderToUse = builder;
       if(builder is null) {
-        builderToUse = _defaultBuilder ??= MakeDefaultEmptyBuilder();
+        builderToUse = _defaultEmptyBuilder ??= MakeDefaultEmptyBuilder();
       }
 
-      return builderToUse.build();
+      var model = builderToUse.Build();
+      if(model is IReadableComponentStorage storage) {
+        _addModelComponentsToModel(storage, builder);
+      }
+
+      return model;
+    }
+
+    TModelBase _addModelComponentsToModel(IReadableComponentStorage model, IBuilder<TModelBase> builder = null) {
+      foreach(Type componentType in DefaultUnlinkedModelComponentTypes) {
+        // Make a builder to match this component with the params from the parent:
+        IBuilder componentBuilder 
+          = Model.Builder.MakeNewBuilderAndCopyParams(builder, componentType);
+
+        // build the component:
+        Model.IComponent component = (Data.Components.GetBuilderFactoryFor(componentType) as Archetype)
+          .MakeDefaultWith(componentBuilder) as Model.IComponent;
+
+        model.AddComponent(component);
+      }
+
+      return (TModelBase)model;
     }
 
     #endregion

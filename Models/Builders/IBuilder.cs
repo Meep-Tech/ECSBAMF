@@ -8,7 +8,7 @@ namespace Meep.Tech.Data {
 
     internal void _add(string key, object value);
 
-    void forEachParam(Action<(string key, object value)> @do);
+    void ForEachParam(Action<(string key, object value)> @do);
   }
 
   public interface IBuilder<TModelBase>
@@ -19,16 +19,16 @@ namespace Meep.Tech.Data {
       get;
     }
 
-    Func<Model<TModelBase>.Builder, TModelBase> initializeModel
+    Func<Model<TModelBase>.Builder, TModelBase> InitializeModel
       => builder => (TModelBase)builder.Type.ModelConstructor(builder);
 
-    Func<Model<TModelBase>.Builder, TModelBase, TModelBase> configureModel
+    Func<Model<TModelBase>.Builder, TModelBase, TModelBase> ConfigureModel
       => null;
 
-    Func<Model<TModelBase>.Builder, TModelBase, TModelBase> finalizeModel
+    Func<Model<TModelBase>.Builder, TModelBase, TModelBase> FinalizeModel
       => null;
 
-    TModelBase build();
+    TModelBase Build();
   }
 
   public static class BuilderExtensions {
@@ -38,7 +38,7 @@ namespace Meep.Tech.Data {
     /// <summary>
     /// Fetch a param from a collection, or the default if it's not provided, or the provided is a nullable and null is provided
     /// </summary>
-    public static T get<T>(this IBuilder builder, Model.Builder.Param toFetch, T defaultValue = default) {
+    public static T GetParam<T>(this IBuilder builder, Model.Builder.Param toFetch, T defaultValue = default) {
       if(toFetch.ValueType != null && !toFetch.ValueType.IsAssignableFrom(typeof(T))) {
         throw new Model.Builder.Param.MissmatchException($"Param {toFetch.Key}, is clamped to the type: {toFetch.ValueType.FullName}. {typeof(T).FullName} is not a valid type to try to fetch.");
       }
@@ -69,7 +69,7 @@ namespace Meep.Tech.Data {
     /// <summary>
     /// Fetch a param from a collection, or the default if it's not provided, or the provided is a nullable and null is provided
     /// </summary>
-    public static bool tryToGet<T>(this IBuilder builder, Model.Builder.Param toFetch, out T result, T defaultValue = default) {
+    public static bool TryToGetParam<T>(this IBuilder builder, Model.Builder.Param toFetch, out T result, T defaultValue = default) {
       if(toFetch.ValueType != null && !toFetch.ValueType.IsAssignableFrom(typeof(T))) {
         throw new Model.Builder.Param.MissmatchException($"Param {toFetch.Key}, is clamped to the type: {toFetch.ValueType.FullName}. {typeof(T).FullName} is not a valid type to try to fetch.");
       }
@@ -105,7 +105,7 @@ namespace Meep.Tech.Data {
     /// <summary>
     /// Fetch a param from a collection. The param cannot be left out, and no defaults will be replaced.
     /// </summary>
-    public static T getAndValidateAs<T>(this IBuilder builder, Model.Builder.Param toFetch) {
+    public static T GetAndValidateParamAs<T>(this IBuilder builder, Model.Builder.Param toFetch) {
       if(toFetch.ValueType != null && !toFetch.ValueType.IsAssignableFrom(typeof(T))) {
         throw new Param.MissmatchException($"Param {toFetch.Key}, is clamped to the type: {toFetch.ValueType.FullName}. {typeof(T).FullName} is not a valid type to try to fetch.");
       }
@@ -136,7 +136,7 @@ namespace Meep.Tech.Data {
     /// <summary>
     /// Add a default value to the param collection if there isn't one set already
     /// </summary>
-    public static void set<T>(this IBuilder builder, Param toSet, T value = default) {
+    public static void SetParam<T>(this IBuilder builder, Param toSet, T value = default) {
       if(builder is Model.Builder modelBuilder && modelBuilder._isImmutable) {
         throw new AccessViolationException($"Cannot change params on an immutable builder");
       }
@@ -150,7 +150,7 @@ namespace Meep.Tech.Data {
     /// <summary>
     /// Add a default value to the param collection if there isn't one set already
     /// </summary>
-    public static void setDefault<T>(this IBuilder builder, Param toSet, T defaultValue) {
+    public static void SetDefaultParamValue<T>(this IBuilder builder, Param toSet, T defaultValue) {
       if(builder is Model.Builder modelBuilder && modelBuilder._isImmutable) {
         throw new AccessViolationException($"Cannot change params on an immutable builder");
       }
@@ -165,7 +165,7 @@ namespace Meep.Tech.Data {
     /// <summary>
     /// Add a default value to the param collection if there isn't one set already
     /// </summary>
-    public static void setToDefault<T>(this IBuilder builder, Param toSet) {
+    public static void SetParamToDefault<T>(this IBuilder builder, Param toSet) {
       if(builder is Model.Builder modelBuilder && modelBuilder._isImmutable) {
         throw new AccessViolationException($"Cannot change params on an immutable builder");
       }
@@ -186,7 +186,7 @@ namespace Meep.Tech.Data {
     /// <summary>
     /// Fetch a param from a collection, or the default if it's not provided, or the provided is a nullable and null is provided
     /// </summary>
-    public static T get<T>(this IBuilder builder, string paramKey, T defaultValue = default) {
+    public static T GetParam<T>(this IBuilder builder, string paramKey, T defaultValue = default) {
       Type valueType = typeof(T);
       if(builder._tryToGetRawValue(paramKey, out object value)) {
         // if the value is of the requested type, return it
@@ -215,7 +215,7 @@ namespace Meep.Tech.Data {
     /// <summary>
     /// Fetch a param from a collection, or the default if it's not provided, or the provided is a nullable and null is provided
     /// </summary>
-    public static bool tryToGet<T>(this IBuilder builder, string paramKey, out T result, T defaultValue = default) {
+    public static bool TryToGetParam<T>(this IBuilder builder, string paramKey, out T result, T defaultValue = default) {
       Type valueType = typeof(T);
       if(builder._tryToGetRawValue(paramKey, out object value)) {
         // if the value is of the requested type, return it
@@ -248,7 +248,7 @@ namespace Meep.Tech.Data {
     /// <summary>
     /// Fetch a param from a collection. The param cannot be left out, and no defaults will be replaced.
     /// </summary>
-    public static T getAndValidateAs<T>(this IBuilder builder, string paramKey) {
+    public static T GetAndValidateParamAs<T>(this IBuilder builder, string paramKey) {
       Type valueType = typeof(T);
       if(builder._tryToGetRawValue(paramKey, out object value)) {
         // if the value is of the requested type, return it
@@ -277,7 +277,7 @@ namespace Meep.Tech.Data {
     /// <summary>
     /// Add a default value to the param collection if there isn't one set already
     /// </summary>
-    public static void setDefault<T>(this IBuilder builder, string parameter, T defaultValue = default) {
+    public static void SetDefaultParamValue<T>(this IBuilder builder, string parameter, T defaultValue = default) {
       if(builder is Model.Builder modelBuilder && modelBuilder._isImmutable) {
         throw new AccessViolationException($"Cannot change params on an immutable builder");
       }
@@ -289,7 +289,7 @@ namespace Meep.Tech.Data {
     /// <summary>
     /// set a value
     /// </summary>
-    public static void set<T>(this IBuilder builder, string parameter, T defaultValue = default) {
+    public static void SetParam<T>(this IBuilder builder, string parameter, T defaultValue = default) {
       if(builder is Model.Builder modelBuilder && modelBuilder._isImmutable) {
         throw new AccessViolationException($"Cannot change params on an immutable builder");
       }

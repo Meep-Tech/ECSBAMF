@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace Meep.Tech.Data {
+﻿namespace Meep.Tech.Data {
 
   /// <summary>
   /// The base interface for a mutable data model that can be produced by an Archetype.
@@ -13,13 +9,13 @@ namespace Meep.Tech.Data {
     /// <summary>
     /// Copy the model by serializing and deserializing it.
     /// </summary>
-    public IModel copy() =>
-      this.serialize().deserialize();
+    public IModel Copy() =>
+      this.Serialize().Deserialize();
 
     /// <summary>
     /// (optional)Finish deserializing the model
     /// </summary>
-    internal protected virtual void finishDeserialization() {}
+    internal protected virtual void FinishDeserialization() {}
   }
 
   /// <summary>
@@ -43,14 +39,14 @@ namespace Meep.Tech.Data {
     /// <summary>
     /// Turn the model into a serialized data object.
     /// </summary>
-    public static Model.SerializedData serialize(this IModel model)
+    public static Model.SerializedData Serialize(this IModel model)
       => throw new System.NotImplementedException();
 
     /// <summary>
     /// Copy the model by serializing and deserializing it.
     /// Overrideable via IModel.copy()
     /// </summary>
-    public static IModel copy(this IModel original)
-      => original.copy();
+    public static IModel Copy(this IModel original)
+      => original.Copy();
   }
 }

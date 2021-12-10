@@ -59,9 +59,9 @@ namespace Meep.Tech.Data {
       /// The default way a new builder is created.
       /// This can be used to set this for a Model<> without archetypes.
       /// </summary>
-      public new Func<Archetype, IBuilder> NewBuilderConstructor {
-        get => archetype => base.NewBuilderConstructor(archetype) as Builder;
-        set => base.NewBuilderConstructor = value;
+      public new virtual Func<Archetype, Dictionary<string, object>, IBuilder<TModelBase>> BuilderConstructor {
+        get => _defaultBuilderCtor ??= (archetype, @params) => base.BuilderConstructor(archetype, @params) as Builder;
+        set => _defaultBuilderCtor = value;
       }
 
       internal protected BuilderFactory(Archetype.Identity id)

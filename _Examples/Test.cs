@@ -1,11 +1,9 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
+﻿using System.Collections.Generic;
 
 namespace Meep.Tech.Data.Examples {
 
-  public class Item : Model<Item, Item.Type> {
-    public class Type : Archetype<Item, Type> {
+  public class Test : Model<Test, Test.Type> {
+    public class Type : Archetype<Test, Type> {
 
       public new static Identity Id {
         get;
@@ -16,44 +14,46 @@ namespace Meep.Tech.Data.Examples {
       }
     }
 
-    public void main(Item item) {
-      Item.Type itemType;
+    public void main(Test item) {
+      Test.Type archetypeSingleton;
 
-      itemType = Item.Types.Get(Item.Type.Id);
-      itemType = Item.Types.ById[Item.Type.Id];
-      itemType = Item.Types.Get<Item.Type>();
-      itemType = Item.Types.Get(typeof(Item.Type));
-      itemType = Item.Type.Collection.Get(Item.Type.Id);
-      itemType = Archetypes<Item.Type>.Archetype;
-      itemType = Archetypes<Item.Type>.Instance;
-      itemType = Archetypes<Item.Type>._;
-      itemType = Archetypes.All.Get(Item.Type.Id) as Item.Type;
-      itemType = Archetypes.All.ById[Item.Type.Id] as Item.Type;
-      itemType = typeof(Item.Type).AsArchetype<Item.Type>();
-      itemType = typeof(Item.Type).AsArchetype() as Item.Type;
-      itemType = Item.Type.Id.Archetype as Item.Type;
+      archetypeSingleton = Test.Types.Get(Test.Type.Id);
+      archetypeSingleton = Test.Types.Get("Tezt.Type");
+      archetypeSingleton = Test.Types.ById[Test.Type.Id];
+      archetypeSingleton = Test.Types.Get<Test.Type>();
+      archetypeSingleton = Test.Types.Get(typeof(Test.Type));
+      archetypeSingleton = Test.Type.Collection.Get(Test.Type.Id);
+      archetypeSingleton = Archetypes<Test.Type>.Archetype;
+      archetypeSingleton = Archetypes<Test.Type>.Instance;
+      archetypeSingleton = Archetypes<Test.Type>._;
+      archetypeSingleton = Archetypes.All.Get(Test.Type.Id) as Test.Type;
+      archetypeSingleton = Archetypes.All.ById[Test.Type.Id] as Test.Type;
+      archetypeSingleton = typeof(Test.Type).AsArchetype<Test.Type>();
+      archetypeSingleton = typeof(Test.Type).AsArchetype() as Test.Type;
+      archetypeSingleton = Test.Type.Id.Archetype as Test.Type;
+      archetypeSingleton = Archetypes<Test.Type>.Collection.Get<Test.Type>();
 
-      itemType.Make(new Model<Item>.Builder(itemType) {
+      archetypeSingleton.Make(new Model<Test>.Builder(archetypeSingleton) {
         {"color", "red" }
       });
-      Item.Make(itemType, (Builder builder) => {
-        builder.set("color", "red");
+      Test.Make(archetypeSingleton, (Builder builder) => {
+        builder.SetParam("color", "red");
       });
-      Item.Types.Get<Item.Type>().Make((IBuilder<Item> builder) => {
-        builder.set("color", "red");
+      Test.Types.Get<Test.Type>().Make((IBuilder<Test> builder) => {
+        builder.SetParam("color", "red");
         return builder;
       });
-      Item.Types.Get<Item.Type>().Make((IBuilder builder) => builder);
-      Item.Types.Get<Item.Type>().Make((Model<Item>.Builder builder) => builder);
-      Item.Types.Get<Item.Type>().Make(("color", "red"));
-      Item.Types.Get<Item.Type>().Make(new KeyValuePair<string, object>("color", "red"));
-      Item.Types.Get<Item.Type>().Make(
+      Archetypes<Test.Type>._.Make((IBuilder builder) => builder);
+      Archetypes<Test.Type>._.Make((Model<Test>.Builder builder) => builder);
+      Archetypes<Test.Type>._.Make(("color", "red"));
+      Archetypes<Test.Type>.w.Make(new KeyValuePair<string, object>("color", "red"));
+      Archetypes<Test.Type>._.Make(
         ("color", "red"),
         ("count", 3)
       );
-      itemType.Make(builder => {
-        builder.set("color", "red");
-        builder.set("count", 3);
+      archetypeSingleton.Make(builder => {
+        builder.SetParam("color", "red");
+        builder.SetParam("count", 3);
       });
 
       var color = Components<Color>.BuilderFactory.Make(("color", "red"));
@@ -62,19 +62,19 @@ namespace Meep.Tech.Data.Examples {
       var color3 = Components<Color>.BuilderFactory.Make((Color.ColorParam, "red"));
 
       var color4 = Components<Color>.BuilderFactory.Make((IBuilder<Color> builder) => {
-        builder.set(Color.ColorParam, "red");
+        builder.SetParam(Color.ColorParam, "red");
 
         return builder;
       });
 
       var color5 = Components<Color>.BuilderFactory.Make((IBuilder<Color> builder) => {
-        builder.set("color", "red");
+        builder.SetParam("color", "red");
 
         return builder;
       });
 
-      var builder = new IComponent<Color>.Builder();
-      builder.set(Color.ColorParam, "blue");
+      var builder = new IComponent<Color>.LiteBuilder();
+      builder.SetParam(Color.ColorParam, "blue");
       var color6 = Components<Color>.BuilderFactory.Make(builder);
     }
   }
@@ -82,7 +82,6 @@ namespace Meep.Tech.Data.Examples {
   public struct Color : Model.IComponent<Color> {
 
     public static Model.Builder.Param ColorParam {
-
       get;
     } = new Model.Builder.Param("color", typeof(string));
 
@@ -91,18 +90,24 @@ namespace Meep.Tech.Data.Examples {
       private set;
     }
 
+    // TODO: test to see if it can get the builder param with inhertance:
+    Color(IComponent<Color>.LiteBuilder builder) {
+      color = builder.GetParam<string>("color");
+    }
+
+    // OR just:
     Color(IBuilder builder) {
-      color = builder.get<string>("color");
+      color = builder.GetParam<string>("color");
     }
 
     // You could do this instead of the default ctor if you want:
     static Color() {
-      Models<Color>.BuilderFactory.NewBuilderConstructor =
-        type => {
-          var builder = new Model<Color>.Builder(type) {
-            initializeModel = builder => new Color(),
-            configureModel = (builder, color) => {
-              color.color = builder.get<string>("color");
+      Models<Color>.BuilderFactory.BuilderConstructor =
+        (type, @params) => {
+          var builder = new Model<Color>.Builder(type, @params) {
+            InitializeModel = builder => new Color(),
+            ConfigureModel = (builder, color) => {
+              color.color = builder.GetParam<string>("color");
               return color;
             },
           };

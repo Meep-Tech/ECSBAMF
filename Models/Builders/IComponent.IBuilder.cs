@@ -1,8 +1,25 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 
 namespace Meep.Tech.Data {
+
+  public partial interface IComponent {
+
+    /// <summary>
+    /// A simpler, struct based builder for components
+    /// </summary>
+    public interface ILiteBuilder : IBuilder {
+
+      /// <summary>
+      /// The param collection.
+      /// </summary>
+      public IEnumerable<KeyValuePair<string, object>> @params {
+        get;
+      }
+    }
+  }
 
   /// <summary>
   /// The base class for modular data holders for models and archetypes
@@ -11,9 +28,26 @@ namespace Meep.Tech.Data {
     where TComponentBase : IComponent<TComponentBase> {
 
     /// <summary>
+    /// Default builder class for components. Pretty much the same as the model based one.
+    /// </summary>
+    public class Builder : Model<TComponentBase>.Builder {
+      public Builder(Archetype forArchetype) 
+        : base(forArchetype) {}
+
+      public Builder(Archetype forArchetype, Dictionary<string, object> @params) 
+        : base(forArchetype, @params) {}
+
+      public Builder(Archetype forArchetype, Dictionary<Param, object> @params) 
+        : base(forArchetype, @params) {}
+
+      public Builder(Archetype forArchetype, bool Immutable) 
+        : base(forArchetype, Immutable) {}
+    }
+
+    /// <summary>
     /// A simpler builder for components
     /// </summary>
-    public struct Builder : IBuilder<TComponentBase> {
+    public struct LiteBuilder : IBuilder<TComponentBase>, ILiteBuilder {
 
       /// <summary>
       /// The factory this is for.
@@ -26,7 +60,7 @@ namespace Meep.Tech.Data {
       /// Produce a new instance of the model type.
       /// this usually is just calling => new Model(this) to help set the type variable or something.
       /// </summary>
-      public Func<Builder, TComponentBase> initializeModel {
+      public Func<LiteBuilder, TComponentBase> InitializeModel {
         get;
         set;
       }
@@ -34,7 +68,7 @@ namespace Meep.Tech.Data {
       /// <summary>
       /// Configure and set param on the empty new model from InitializeModel.
       /// </summary>
-      public Func<Builder, TComponentBase, TComponentBase> configureModel {
+      public Func<LiteBuilder, TComponentBase, TComponentBase> ConfigureModel {
         get;
         set;
       }
@@ -42,7 +76,7 @@ namespace Meep.Tech.Data {
       /// <summary>
       /// Logic to finish setting up the model.
       /// </summary>
-      public Func<Builder, TComponentBase, TComponentBase> finalizeModel {
+      public Func<LiteBuilder, TComponentBase, TComponentBase> FinalizeModel {
         get;
         set;
       }
@@ -50,55 +84,60 @@ namespace Meep.Tech.Data {
       /// <summary>
       /// The param collection.
       /// </summary>
-      IEnumerable<KeyValuePair<string, object>> _params;
+      public IEnumerable<KeyValuePair<string, object>> @params {
+        get;
+        private set;
+      }
 
-      public Builder(Archetype forArchetype) {
+      public LiteBuilder(Archetype forArchetype) {
         Type = forArchetype;
-        initializeModel =
+        InitializeModel =
           builder => (TComponentBase)forArchetype.ModelConstructor(builder);
-        configureModel = null;
-        finalizeModel = null;
-        _params = null;
+        ConfigureModel = null;
+        FinalizeModel = null;
+        @params = null;
       }
 
-      public Builder(Archetype forArchetype, params KeyValuePair<string, object>[] @params)
+      public LiteBuilder(Archetype forArchetype, params KeyValuePair<string, object>[] @params)
         : this(forArchetype) {
-        _params = @params;
+        this.@params = @params;
       }
 
-      public Builder(Archetype forArchetype, IEnumerable<KeyValuePair<string, object>> @params)
+      public LiteBuilder(Archetype forArchetype, IEnumerable<KeyValuePair<string, object>> @params)
         : this(forArchetype) {
-        _params = @params;
+        this.@params = @params;
       }
 
       void IBuilder._add(string key, object value) {
-        _params = _params.Append(new KeyValuePair<string, object>(key, value));
+        @params = @params.Append(new KeyValuePair<string, object>(key, value));
       }
 
       bool IBuilder._tryToGetRawValue(string key, out object value) {
-        value = _params.FirstOrDefault(entry => entry.Key == key);
+        value = @params.FirstOrDefault(entry => entry.Key == key);
         return value != null;
       }
 
       /// <summary>
       /// Build the model.
       /// </summary>
-      public TComponentBase build() {
-        TComponentBase model = initializeModel(this);
+      public TComponentBase Build() {
+        TComponentBase model = InitializeModel(this);
 
-        if(configureModel != null) {
-          model = configureModel.Invoke(this, model) ?? model;
+        if(ConfigureModel != null) {
+          model = ConfigureModel.Invoke(this, model) ?? model;
+          model = (TComponentBase)Type.ConfigureModel(this, model);
         }
 
-        if(finalizeModel != null) {
-          model = finalizeModel(this, model);
+        if(FinalizeModel != null) {
+          model = FinalizeModel(this, model);
+          model = (TComponentBase)Type.FinalizeModel(this, model);
         }
 
         return model;
       }
 
-      public void forEachParam(Action<(string key, object value)> @do)
-        => _params.ForEach(entry => @do((entry.Key, entry.Value)));
+      public void ForEachParam(Action<(string key, object value)> @do)
+        => @params.ForEach(entry => @do((entry.Key, entry.Value)));
     }
   }
 }

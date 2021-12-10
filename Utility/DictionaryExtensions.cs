@@ -1,9 +1,30 @@
-﻿using System;
-using System.Collections;
+﻿using System.Collections;
 using System.Collections.Generic;
 
 namespace Meep.Tech.Data {
   public static class DictionaryExtensions {
+
+    #region  Append
+
+    /// <summary>
+    /// Append a value to a dictionary and return the collection
+    /// </summary>
+    public static Dictionary<TKey, TValue> Append<TKey, TValue>(this Dictionary<TKey, TValue> current, TKey key, TValue value) {
+      current.Add(key, value);
+      return current;
+    }
+
+    /// <summary>
+    /// Append a component to a dictionary and return the collection
+    /// </summary>
+    public static Dictionary<string, TComponentBase> Append<TComponentBase>(this Dictionary<string, TComponentBase> current, TComponentBase component)
+      where TComponentBase : IComponent
+    {
+      current.Add(component.Key, component);
+      return current;
+    }
+
+    #endregion
 
     #region Merge 
 

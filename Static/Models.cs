@@ -15,6 +15,12 @@ namespace Meep.Tech.Data {
       = new Dictionary<string, Type>();
 
     /// <summary>
+    /// Get the builder for a given component by type.d
+    /// </summary>
+    public static Model.IBuilderFactory GetBuilderFactoryFor(Type type)
+      => Model._factoriesByModelBase[type];
+
+    /// <summary>
     /// Get the base model type of this model type.
     /// </summary>
     public static System.Type GetModelBaseType(this System.Type type)
@@ -86,7 +92,11 @@ namespace Meep.Tech.Data {
     /// </summary>
     static Model<TModel>.BuilderFactory _findFirstInheritedFactory(Type modelType) {
       if(!modelType.IsAssignableToGeneric(typeof(Model<TModel>))) {
-        throw new NotImplementedException($"Model Type: {modelType.FullName} does not inherit from Model<TModelBase>. If you are using Model<TModelBase, TArchetypeBase> then the Archetype Base would be the default FactoryBuilder, and this should variable not be used.")
+        throw new NotImplementedException(
+          $"Model Type: {modelType.FullName} does not inherit from Model<TModelBase>." +
+          $" If you are using Model<TModelBase, TArchetypeBase> then the Archetype " +
+          $"Base would be the default FactoryBuilder, and this should variable not be used."
+        );
       }
 
       Model<TModel>.BuilderFactory factory = null;

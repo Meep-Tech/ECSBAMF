@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Text;
 
 namespace Meep.Tech.Data {
 
@@ -15,7 +14,8 @@ namespace Meep.Tech.Data {
       : Model.IBuilderFactory {
 
       /// <summary>
-      /// The key for the component type
+      /// The key for the component type.
+      /// This is the Component Base Type (the type that inherits initially from one of the IComponent interfaces)
       /// </summary>
       string Key {
         get;
@@ -40,16 +40,26 @@ namespace Meep.Tech.Data {
       IComponent.IBuilderFactory {
 
       /// <summary>
-      /// The key for the component type
+      /// The key for the component type.
+      /// This is the Component Base Type (the type that inherits initially from one of the IComponent interfaces)
       /// </summary>
       public string Key
         => ModelBaseType.FullName;
 
-      static BuilderFactory() {
-        /// By default, these use struct based builders
-        Components<TComponentBase>.BuilderFactory.NewBuilderConstructor
-          = type => new Builder(type);
+      /// <summary>
+      /// The default way a new builder is created.
+      /// This can be used to set this for a Model<> without archetypes.
+      /// </summary>
+      public override Func<Archetype, Dictionary<string, object>, IBuilder<TComponentBase>> BuilderConstructor {
+        get => _defaultBuilderCtor ??= (archetype, @params) => new Builder(archetype, @params);
+        set => _defaultBuilderCtor = value;
       }
+
+      /*static BuilderFactory() {
+        /// By default, these use upclassed builders:
+        Components<TComponentBase>.BuilderFactory.BuilderConstructor
+          = type => new Builder(type);
+      }*/
 
       public BuilderFactory(Data.Archetype.Identity id)
         : base(id) {

@@ -31,10 +31,12 @@ namespace Meep.Tech.Data {
       /// All archetypes registered to this collection by their Identity.
       /// </summary>
       public IReadOnlyDictionary<Archetype.Identity, Archetype> ById {
-        get => _byId;
-      }
-      internal readonly Dictionary<Archetype.Identity, Archetype> _byId
-        = new Dictionary<Archetype.Identity, Archetype>();
+        get => _byId.ToDictionary(
+          entry => Archetypes.Id[entry.Key],
+          entry => entry.Value
+        );
+      } internal readonly Dictionary<string, Archetype> _byId
+        = new Dictionary<string, Archetype>();
 
       /// <summary>
       /// All archetypes:
@@ -47,8 +49,8 @@ namespace Meep.Tech.Data {
       /// <summary>
       /// All archetypes, indexed by their base model types.
       /// </summary>
-      internal static readonly Dictionary<string, Archetype> _byModelBaseType
-      = new Dictionary<string, Archetype>();
+      internal readonly Dictionary<string, Archetype> _byModelBaseType
+        = new Dictionary<string, Archetype>();
 
       #region Initialization
 
@@ -73,7 +75,7 @@ namespace Meep.Tech.Data {
       /// previously registered archetype to another collection.
       /// </summary>
       public void Add(Archetype archetype) {
-        _byId.Add(archetype.Id, archetype);
+        _byId.Add(archetype.Id.Key, archetype);
         _byType.Add(archetype.GetType().FullName, archetype);
         _byModelBaseType.Add(archetype.ModelBaseType.FullName, archetype);
       }
@@ -83,23 +85,59 @@ namespace Meep.Tech.Data {
       #region Accessors
 
       /// <summary>
-      /// Try to get an archetype from this collection by it's type.
+      /// Get an archetype from this collection by it's type.
       /// </summary>
       public TArchetype Get<TArchetype>()
         where TArchetype : Archetype
           => Archetypes<TArchetype>.Instance;
 
       /// <summary>
-      /// Try to get an archetype from this collection by it's type.
+      /// Get an archetype from this collection by it's type.
       /// </summary>
       public Archetype Get(System.Type type)
           => _byType[type.FullName];
 
       /// <summary>
-      /// Try to get an archetype from it's Id.
+      /// Try to get an archetype from this collection by it's type.
+      /// Returns null on failure instead of throwing.
+      /// </summary>
+      public Archetype TryToGet(System.Type type)
+          => _byType.TryGetValue(type.FullName, out var found)
+            ? found
+            : null;
+
+      /// <summary>
+      /// Try to get an archetype from this collection by it's type.
+      /// </summary>
+      public bool TryToGet(System.Type type, out Archetype found)
+          => _byType.TryGetValue(type.FullName, out found);
+
+      /// <summary>
+      /// Get an archetype from it's Id.
       /// </summary>
       public Archetype Get(Identity id)
-          => _byId[id];
+          => _byId[id.Key];
+
+      /// <summary>
+      /// Get an archetype from it's Id.
+      /// </summary>
+      public Archetype Get(string externalId)
+          => _byId[externalId];
+
+      /// <summary>
+      /// Try to get an archetype from this collection by it's externalId.
+      /// Returns null on failure instead of throwing.
+      /// </summary>
+      public Archetype TryToGet(string externalId)
+          => _byId.TryGetValue(externalId, out var found)
+            ? found
+            : null;
+
+      /// <summary>
+      /// Try to get an archetype from this collection by it's externalId.
+      /// </summary>
+      public bool TryToGet(string externalId, out Archetype found)
+          => _byId.TryGetValue(externalId, out found);
 
       #endregion
 
@@ -172,37 +210,95 @@ namespace Meep.Tech.Data {
       #region Accessors
 
       /// <summary>
-      /// Try to get an archetype from this collection by it's type.
+      /// Get an archetype from this collection by it's type.
       /// </summary>
       public new TArchetype Get<TArchetype>()
         where TArchetype : TArchetypeBase
-          => Archetypes<TArchetype>.Instance;
+          => base.Get<TArchetype>();
 
       /// <summary>
-      /// Try to get an archetype from this collection by it's type.
+      /// Get an archetype from this collection by it's type.
       /// </summary>
       public new TArchetypeBase Get(System.Type type)
-          => (TArchetypeBase)_byType[type.FullName];
+          => (TArchetypeBase)base.Get(type);
 
       /// <summary>
-      /// Try to get an archetype from this collection by it's type.
+      /// Get an archetype from this collection by it's type.
       /// </summary>
       public TArchetype Get<TArchetype>(System.Type type)
         where TArchetype : TArchetypeBase
           => (TArchetype)Get(type);
 
       /// <summary>
-      /// Try to get an archetype from it's Id.
+      /// Try to get an archetype from this collection by it's type.
+      /// Returns null on failure instead of throwing.
+      /// </summary>
+      public new TArchetypeBase TryToGet(System.Type type)
+          => (TArchetypeBase)base.TryToGet(type);
+
+      /// <summary>
+      /// Try to get an archetype from this collection by it's type.
+      /// Returns null on failure instead of throwing.
+      /// </summary>
+      public TArchetype TryToGet<TArchetype>(System.Type type)
+        where TArchetype : TArchetypeBase
+          => (TArchetype)TryToGet(type);
+
+      /// <summary>
+      /// Try to get an archetype from this collection by it's type.
+      /// Returns null on failure instead of throwing.
+      /// </summary>
+      public bool TryToGet(System.Type type, out TArchetypeBase found) {
+        if(base.TryToGet(type, out var foundType)) {
+        found = foundType as TArchetypeBase;
+          if (found != null) return true;
+        }
+
+        found = null;
+        return false;
+      }
+
+      /// <summary>
+      /// Try to get an archetype from this collection by it's type.
+      /// Returns null on failure instead of throwing.
+      /// </summary>
+      public bool TryToGet<TArchetype>(System.Type type, out TArchetype found)
+        where TArchetype : TArchetypeBase {
+        if(TryToGet(type, out var foundArchetype)) {
+          found = foundArchetype as TArchetype;
+          if(found != null)
+            return true;
+        }
+
+        found = null;
+        return false;
+      }
+
+      /// <summary>
+      /// Get an archetype from it's Id.
       /// </summary>
       public TArchetypeBase Get(Identity id)
           => (TArchetypeBase)base.Get(id);
 
       /// <summary>
-      /// Try to get an archetype from it's Id.
+      /// Get an archetype from it's Id.
       /// </summary>
       public TArchetype Get<TArchetype>(Identity id)
         where TArchetype : TArchetypeBase
           => (TArchetype)Get(id);
+
+      /// <summary>
+      /// Get an archetype from it's Id.
+      /// </summary>
+      public TArchetype Get<TArchetype>(string externalId)
+        where TArchetype : TArchetypeBase
+          => (TArchetype)Get(externalId);
+
+      /// <summary>
+      /// Get an archetype from it's Id.
+      /// </summary>
+      public new TArchetypeBase Get(string externalId)
+          => (TArchetypeBase)base.Get(externalId);
 
       #endregion
 

@@ -9,7 +9,7 @@ namespace Meep.Tech.Data {
   public interface ICached : IUnique {
 
     internal static void Cache(ICached thingToCache) {
-      _cache.Add(thingToCache.id, thingToCache);
+      _cache.Add(thingToCache.Id, thingToCache);
     }
 
     internal static Dictionary<string, IUnique> _cache
@@ -44,10 +44,10 @@ namespace Meep.Tech.Data {
     }
 
     public static void Cache(T thingToCache) {
-      _cache[thingToCache.id] = thingToCache;
+      _cache[thingToCache.Id] = thingToCache;
     }
 
-    void IModel.finishDeserialization() {
+    void IModel.FinishDeserialization() {
       Cache((T)this);
     }
   }

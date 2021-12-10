@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace Meep.Tech.Data {
 
@@ -9,7 +10,8 @@ namespace Meep.Tech.Data {
   /// This is the non-generic base class for Utility
   /// </summary>
   public partial class Model 
-    : IModel {}
+    : IModel {
+  }
 
   /// <summary>
   /// The base class for a mutable data model that can be produced by an Archetype.
@@ -31,7 +33,8 @@ namespace Meep.Tech.Data {
     /// <summary>
     /// This is the default ctor.
     /// </summary>
-    protected Model(Builder @params = null) : base() {}
+    protected Model(Builder @params = null) 
+      : base() {}
   }
 
   /// <summary>
@@ -52,6 +55,14 @@ namespace Meep.Tech.Data {
         Archetypes.GetCollectionFor(typeof(TArchetypeBase).AsArchetype());
 
     /// <summary>
+    /// The model's archetype:
+    /// </summary>
+    [IsArchetypeProperty]
+    public TArchetypeBase Archetype {
+      get;
+    }
+
+    /// <summary>
     /// Make shortcut.
     /// </summary>
     public static TDesiredModel Make<TDesiredModel>(TArchetypeBase type, Action<Builder> builderConfiguration = null)
@@ -70,15 +81,9 @@ namespace Meep.Tech.Data {
           return builder;
         });
 
-    /// <summary>
-    /// The model's archetype:
-    /// </summary>
-    public TArchetypeBase type {
-      get;
-    }
 
     protected Model(Model<TModelBase>.Builder builder = null) : base() {
-      type = builder.Type as TArchetypeBase;
+      Archetype = builder.Type as TArchetypeBase;
     }
   }
 }

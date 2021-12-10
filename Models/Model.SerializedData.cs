@@ -10,11 +10,11 @@ namespace Meep.Tech.Data {
     /// </summary>
     public struct SerializedData {
 
-      public IModel deserialize() {
+      public IModel Deserialize() {
         throw new NotImplementedException();
       }
       
-      public IModel deserializeAs<TType>() where TType : IModel {
+      public IModel DeserializeAs<TType>() where TType : IModel {
         throw new NotImplementedException();
       }
     }

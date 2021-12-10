@@ -41,10 +41,37 @@ namespace Meep.Tech.Data {
       InternalId = Interlocked.Increment(ref CurrentMaxInternalEnumId) - 1;
     }
 
+    #region Equality, Comparison, and Conversion
+
     /// <summary>
     /// ==
     /// </summary>
-    public abstract bool Equals(Enumeration other);
+    /// 
+    public override bool Equals(object obj)
+      => Equals(obj as Enumeration);
+
+    public bool Equals(Enumeration other) 
+      => !(other is null) && other.ExternalId == ExternalId;
+
+    public static bool operator ==(Enumeration a, Enumeration b)
+      => (a is null && b is null) || a.Equals(b);
+
+    public static bool operator !=(Enumeration a, Enumeration b)
+      => !(a == b);
+
+    /// <summary>
+    /// #
+    /// </summary>
+    public override int GetHashCode() {
+      // TODO: test using internal id here instead for more speeeed in indexing:
+      return ExternalId.GetHashCode();
+    }
+
+    public override string ToString() {
+      return ExternalId.ToString();
+    }
+
+    #endregion
   }
 
   /// <summary>
@@ -52,8 +79,7 @@ namespace Meep.Tech.Data {
   /// </summary>
   /// <typeparam name="TEnumBase"></typeparam>
   public abstract class Enumeration<TEnumBase>
-    : Enumeration,
-      IEquatable<Enumeration<TEnumBase>>
+    : Enumeration
     where TEnumBase : Enumeration<TEnumBase> {
 
     /// <summary>
@@ -75,35 +101,5 @@ namespace Meep.Tech.Data {
       : base(uniqueIdentifier) {
       _all.Add(this);
     }
-
-    #region Equality, Comparison, and Conversion
-
-    /// <summary>
-    /// ==
-    /// </summary>
-    /// 
-    public override bool Equals(object obj)
-      => Equals(obj as Enumeration<TEnumBase>);
-
-    public bool Equals(Enumeration<TEnumBase> other) {
-      return other != null && other.ExternalId == ExternalId;
-    }
-
-    public override bool Equals(Enumeration other)
-      => other is Enumeration<TEnumBase> otherEnum && Equals(otherEnum);
-
-    /// <summary>
-    /// #
-    /// </summary>
-    public override int GetHashCode() {
-      // TODO: test using internal id here instead for more speeeed in indexing:
-      return ExternalId.GetHashCode();
-    }
-
-    public override string ToString() {
-      return ExternalId.ToString();
-    }
-
-    #endregion
   }
 }
