@@ -3,7 +3,8 @@ using System.Collections.Generic;
 
 namespace Meep.Tech.Data {
 
-  public partial class Model {
+  public partial interface IModel {
+
     public abstract partial class Builder {
 
       /// <summary>
@@ -71,7 +72,7 @@ namespace Meep.Tech.Data {
     }
   }
 
-  public partial class Model<TModelBase>
+  public partial interface IModel<TModelBase>
     where TModelBase : IModel<TModelBase> 
   {
     public new partial class Builder {
@@ -79,7 +80,7 @@ namespace Meep.Tech.Data {
       /// <summary>
       /// A parameter constant for a model builder
       /// </summary>
-      public new class Param : Model.Builder.Param {
+      public new class Param : IModel.Builder.Param {
 
         /// <summary>
         /// All params registered for this type of model builder.

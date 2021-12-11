@@ -1,6 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
 
 namespace Meep.Tech.Data {
 
@@ -9,8 +7,21 @@ namespace Meep.Tech.Data {
   /// This includes a components system.
   /// This is the non-generic base class for Utility
   /// </summary>
-  public partial class Model 
-    : IModel {
+  public partial class Model
+    : IModel 
+  {
+
+    /// <summary>
+    /// The universe this model was made inside of
+    /// </summary>
+    public Universe Universe {
+      get;
+    }
+
+    protected Model(IBuilder @params) {
+      Universe 
+        = @params.Type.Id.Universe;
+    }
   }
 
   /// <summary>
@@ -23,18 +34,10 @@ namespace Meep.Tech.Data {
   {
 
     /// <summary>
-    /// Invoke the static initalzer
-    /// TODO: move this to the archetype loader to be called on all IModel<> types.
-    /// </summary>
-    static Model() {
-      Models<TModelBase>.StaticInitalization?.Invoke();
-    }
-
-    /// <summary>
     /// This is the default ctor.
     /// </summary>
-    protected Model(Builder @params = null) 
-      : base() {}
+    protected Model(IModel.Builder @params = null) 
+      : base(@params) {}
   }
 
   /// <summary>
@@ -65,7 +68,7 @@ namespace Meep.Tech.Data {
     /// <summary>
     /// Make shortcut.
     /// </summary>
-    public static TDesiredModel Make<TDesiredModel>(TArchetypeBase type, Action<Builder> builderConfiguration = null)
+    public static TDesiredModel Make<TDesiredModel>(TArchetypeBase type, Action<IModel.Builder> builderConfiguration = null)
       where TDesiredModel : TModelBase
         => type.Make<TDesiredModel>(builder => { 
           builderConfiguration(builder); 
@@ -75,14 +78,14 @@ namespace Meep.Tech.Data {
     /// <summary>
     /// Make shortcut.
     /// </summary>
-    public static TModelBase Make(TArchetypeBase type, Action<Builder> builderConfiguration = null)
+    public static TModelBase Make(TArchetypeBase type, Action<IModel.Builder> builderConfiguration = null)
         => type.Make<TModelBase>(builder => { 
           builderConfiguration(builder); 
           return builder;
         });
 
 
-    protected Model(Model<TModelBase>.Builder builder = null) : base() {
+    protected Model(IModel<TModelBase>.Builder builder = null) : base(builder) {
       Archetype = builder.Type as TArchetypeBase;
     }
   }

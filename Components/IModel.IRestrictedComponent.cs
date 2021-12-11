@@ -1,6 +1,7 @@
 ﻿namespace Meep.Tech.Data {
 
-  public partial class Model {
+  public partial interface IModel {
+
     /// <summary>
     /// Can be used to indicate that this component is restricted to specific types of models based on the provided base model type.
     /// </summary>

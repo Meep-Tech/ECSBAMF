@@ -16,6 +16,13 @@ namespace Meep.Tech.Data {
         IEnumerable<Archetype> {
 
       /// <summary>
+      /// The universe this collection is a part of
+      /// </summary>
+      public Universe Universe {
+        get;
+      }
+
+      /// <summary>
       /// Generic collections have no root archetype.
       /// </summary>
       public virtual Archetype RootArchetype
@@ -54,13 +61,17 @@ namespace Meep.Tech.Data {
 
       #region Initialization
 
-      internal Collection() {
-        Archetypes._collectionsByRootArchetype.Add(RootArchetype?.Id.Key ?? "_all", this);
+      internal Collection(Universe universe) {
+        Universe = universe;
+        if(!(RootArchetype is null)) {
+          Universe.Archetypes._collectionsByRootArchetype.Add(RootArchetype?.Id.Key ?? "_all", this);
+        }
       }
 
       internal void _registerArchetype(Archetype @new) {
         // Register to it's id
         @new.Id.Archetype = @new;
+        @new.Id.Universe = Universe;
 
         // Register to this:
         Add(@new);
@@ -205,7 +216,8 @@ namespace Meep.Tech.Data {
         );
       } Dictionary<Identity, TArchetypeBase> _compiledById;
 
-      public ArchetypeCollection() : base() {}
+      public ArchetypeCollection(Universe universe = null) 
+        : base(universe ?? Archetypes.DefaultUniverse) {}
 
       #region Accessors
 

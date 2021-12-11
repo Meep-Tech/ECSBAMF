@@ -13,9 +13,9 @@
       /// <summary>
       /// Unique id for any type of model
       /// </summary>
-      public static Model.Builder.Param UniqueId {
+      public static IModel.Builder.Param UniqueId {
         get;
-      } = new Model.Builder.Param("Unique Id");
+      } = new IModel.Builder.Param("Unique Id");
     }
 
     /// <summary>

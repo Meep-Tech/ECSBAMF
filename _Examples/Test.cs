@@ -33,10 +33,10 @@ namespace Meep.Tech.Data.Examples {
       archetypeSingleton = Test.Type.Id.Archetype as Test.Type;
       archetypeSingleton = Archetypes<Test.Type>.Collection.Get<Test.Type>();
 
-      archetypeSingleton.Make(new Model<Test>.Builder(archetypeSingleton) {
+      archetypeSingleton.Make(new IModel<Test>.Builder(archetypeSingleton) {
         {"color", "red" }
       });
-      Test.Make(archetypeSingleton, (Builder builder) => {
+      Test.Make(archetypeSingleton, (IModel.Builder builder) => {
         builder.SetParam("color", "red");
       });
       Test.Types.Get<Test.Type>().Make((IBuilder<Test> builder) => {
@@ -44,7 +44,7 @@ namespace Meep.Tech.Data.Examples {
         return builder;
       });
       Archetypes<Test.Type>._.Make((IBuilder builder) => builder);
-      Archetypes<Test.Type>._.Make((Model<Test>.Builder builder) => builder);
+      Archetypes<Test.Type>._.Make((IModel<Test>.Builder builder) => builder);
       Archetypes<Test.Type>._.Make(("color", "red"));
       Archetypes<Test.Type>.w.Make(new KeyValuePair<string, object>("color", "red"));
       Archetypes<Test.Type>._.Make(
@@ -58,7 +58,7 @@ namespace Meep.Tech.Data.Examples {
 
       var color = Components<Color>.BuilderFactory.Make(("color", "red"));
       var color1 = Components<Color>.BuilderFactory.Make(new KeyValuePair<string, object>("color", "red"));
-      var color2 = Components<Color>.BuilderFactory.Make(new KeyValuePair<Model.Builder.Param, object>(Color.ColorParam, "red"));
+      var color2 = Components<Color>.BuilderFactory.Make(new KeyValuePair<IModel.Builder.Param, object>(Color.ColorParam, "red"));
       var color3 = Components<Color>.BuilderFactory.Make((Color.ColorParam, "red"));
 
       var color4 = Components<Color>.BuilderFactory.Make((IBuilder<Color> builder) => {
@@ -79,11 +79,11 @@ namespace Meep.Tech.Data.Examples {
     }
   }
 
-  public struct Color : Model.IComponent<Color> {
+  public struct Color : IModel.IComponent<Color> {
 
-    public static Model.Builder.Param ColorParam {
+    public static IModel.Builder.Param ColorParam {
       get;
-    } = new Model.Builder.Param("color", typeof(string));
+    } = new IModel.Builder.Param("color", typeof(string));
 
     public string color {
       get;
@@ -104,7 +104,7 @@ namespace Meep.Tech.Data.Examples {
     static Color() {
       Models<Color>.BuilderFactory.BuilderConstructor =
         (type, @params) => {
-          var builder = new Model<Color>.Builder(type, @params) {
+          var builder = new IModel<Color>.Builder(type, @params) {
             InitializeModel = builder => new Color(),
             ConfigureModel = (builder, color) => {
               color.color = builder.GetParam<string>("color");

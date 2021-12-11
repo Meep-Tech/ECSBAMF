@@ -4,7 +4,7 @@
   /// The base interface for a mutable data model that can be produced by an Archetype.
   /// This is the non generic for Utility only
   /// </summary>
-  public interface IModel {
+  public partial interface IModel {
 
     /// <summary>
     /// Copy the model by serializing and deserializing it.
@@ -21,9 +21,17 @@
   /// <summary>
   /// The base interface for a mutable data model that can be produced by an Archetype.
   /// </summary>
-  public interface IModel<TModelBase>
+  public partial interface IModel<TModelBase>
     : IModel
-    where TModelBase : IModel<TModelBase> {}
+    where TModelBase : IModel<TModelBase> {
+
+    /// <summary>
+    /// The universe this model was made in
+    /// </summary>
+    public Universe Universe {
+      get;
+    }
+  }
 
   /// <summary>
   /// The base interface for a mutable data model that can be produced by an Archetype.

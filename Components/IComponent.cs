@@ -24,9 +24,16 @@
   /// The base class for modular data holders for models and archetypes
   /// </summary>
   public partial interface IComponent<TComponentBase> : IModel<TComponentBase>, IComponent 
-    where TComponentBase : IComponent<TComponentBase>  
+    where TComponentBase : IComponent<TComponentBase> 
   {
+
+    /// <summary>
+    /// This can be overriden if you want, but by default, struct based components don't have universe info at hand
+    /// </summary>
+    Universe IModel<TComponentBase>.Universe
+      => null;
   }
+
   public static class ComponentExtensions {
 
     /// <summary>

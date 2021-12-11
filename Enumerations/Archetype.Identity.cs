@@ -40,6 +40,14 @@
         => InternalId;
 
       /// <summary>
+      /// The universe this identity is a part of
+      /// </summary>
+      public Universe Universe {
+        get;
+        internal set;
+      }
+
+      /// <summary>
       /// Make a new ID.
       /// </summary>
       /// <param name="name"></param>

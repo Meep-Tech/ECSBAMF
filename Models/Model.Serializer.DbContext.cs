@@ -3,7 +3,8 @@
 namespace Meep.Tech.Data {
 
   public partial class Model {
-    public static partial class Serializer {
+    public partial class Serializer {
+
       /// <summary>
       /// The default db context class for the model serializer.
       /// If you use your own, make sure to call modelBuilder.SetUpEcsbamModels();

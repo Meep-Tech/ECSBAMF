@@ -3,41 +3,35 @@ using System.Collections.Generic;
 
 namespace Meep.Tech.Data {
 
-  public partial class Model {
-
-    /// <summary>
-    /// The collection of all base model BuilderFactories.
-    /// </summary>
-    internal static Archetype.Collection _factories
-      = new Archetype.Collection();
-
-    /// <summary>
-    /// The collection of all base model BuilderFactories.
-    /// </summary>
-    internal static Dictionary<Type, Model.IBuilderFactory> _factoriesByModelBase
-      = new Dictionary<Type, Model.IBuilderFactory>();
+  public partial interface IModel {
 
     /// <summary>
     /// The default factory for Models without Archetypes.
     /// One of these is instantiated for each Model<> class and IComponent<> class by default.
     /// This is the base non-generic utility class
     /// </summary>
-    public interface IBuilderFactory {}
+    public interface IBuilderFactory {
+
+      /// <summary>
+      /// Overrideable Model Constructor
+      /// </summary>
+      Func<IBuilder, IModel> ModelConstructor {
+        get;
+        internal set;
+      }
+    }
   }
 
   public partial class Model<TModelBase> where TModelBase : IModel<TModelBase> {
 
     /// <summary>
-    /// The builder collection for these types:
-    /// </summary>
-    internal new static Archetype<TModelBase, BuilderFactory>.ArchetypeCollection _factories
-      = new Archetype<TModelBase, BuilderFactory>.ArchetypeCollection();
-
-    /// <summary>
     /// The factory that was used to make this object
     /// </summary>
-    public BuilderFactory Factory 
+    public IModel<TModelBase>.BuilderFactory DefaultFactory
       => Models<TModelBase>.BuilderFactory;
+  }
+
+  public partial interface IModel<TModelBase> where TModelBase : IModel<TModelBase> {
 
     /// <summary>
     /// The default builder for Models without Archetypes.
@@ -49,11 +43,23 @@ namespace Meep.Tech.Data {
       IBuilderFactory 
     {
 
+      Func<IBuilder, IModel> IBuilderFactory.ModelConstructor {
+        get => builder => base.ModelConstructor((Builder)builder);
+        set => base.ModelConstructor = 
+          builder => (TModelBase)value(builder);
+      }
+
       /// <summary>
       /// The static instance of this type of builder factory.
       /// </summary>
-      public static BuilderFactory Instance
-        => Model._factories.Get<BuilderFactory>();
+      public static BuilderFactory DefaultInstance
+        => Archetypes.All.Get<BuilderFactory>();
+
+      /// <summary>
+      /// The static instance of this type of builder factory.
+      /// </summary>
+      public static BuilderFactory InstanceFor(Universe universe)
+        => universe.Archetypes.All.Get<BuilderFactory>();
 
       /// <summary>
       /// The default way a new builder is created.
@@ -65,8 +71,16 @@ namespace Meep.Tech.Data {
       }
 
       internal protected BuilderFactory(Archetype.Identity id)
-        : base(id, Model<TModelBase>._factories) {
-        Model._factories.Add(this);
+        : base(
+            id,
+            (ArchetypeCollection)(id.Universe.Models._factoriesByModelBases
+              .TryGetValue(typeof(TModelBase), out var collection)
+                ? collection 
+                : id.Universe.Models._factoriesByModelBases[typeof(TModelBase)] 
+                  = new ArchetypeCollection(id.Universe))
+        )
+      {
+        Id.Universe.Models._factories.Add(this);
       }
     }
 

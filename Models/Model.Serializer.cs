@@ -4,35 +4,50 @@ using Microsoft.EntityFrameworkCore;
 namespace Meep.Tech.Data {
 
   public partial class Model {
-    public static partial class Serializer {
+    public partial class Serializer {
 
       /// <summary>
       /// Settings for the Serializer
       /// </summary>
-      public static class Settings {
+      public class Settings {
 
         /// <summary>
         /// Json serializer settings for easy Component serialization
         /// </summary>
-        public static JsonSerializerSettings ComponentJsonSerializerSettings {
+        public JsonSerializerSettings ComponentJsonSerializerSettings {
           get;
-          internal set;
+          set;
         }
 
         /// <summary>
         /// Compiled component serializer from the above settings
         /// </summary>
-        public static JsonSerializer ComponentJsonSerializer {
+        public JsonSerializer ComponentJsonSerializer {
           get => _componentJsonSerializer ??= JsonSerializer.Create(ComponentJsonSerializerSettings);
-        } static JsonSerializer _componentJsonSerializer;
+        } JsonSerializer _componentJsonSerializer;
 
         /// <summary>
         /// The db context used by the serializer
         /// </summary>
-        public static DbContext DbContext {
+        public DbContext DbContext {
           get;
-          internal set;
+          set;
         }
+      }
+
+      /// <summary>
+      /// The serializer options
+      /// </summary>
+      public Settings Options {
+        get;
+      }
+
+      /// <summary>
+      /// Make a new serializer for a universe
+      /// </summary>
+      /// <param name="options"></param>
+      internal Serializer(Settings options = null) {
+        Options = options ?? new Settings();
       }
     }
   }

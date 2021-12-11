@@ -1,6 +1,6 @@
 ﻿namespace Meep.Tech.Data {
 
-  public partial class Model {
+  public partial interface IModel {
 
     public partial interface IComponent : Data.IComponent {}
 
@@ -12,7 +12,6 @@
         Data.IComponent<TComponentBase>
       where TComponentBase : IComponent<TComponentBase> 
     {
-
     }
   }
 }

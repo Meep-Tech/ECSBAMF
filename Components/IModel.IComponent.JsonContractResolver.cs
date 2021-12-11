@@ -4,7 +4,7 @@ using System.Reflection;
 
 namespace Meep.Tech.Data {
 
-  public partial class Model {
+  public partial interface IModel {
 
     /// <summary>
     /// A Component for an Model. Contains datas. Logic should usually be kept to Archetypes
@@ -14,13 +14,13 @@ namespace Meep.Tech.Data {
       /// <summary>
       /// Prevent serialization of the type:
       /// </summary>
-      public class ShouldSerializeTypeInComponentsContractResolver : DefaultContractResolver {
+      /*public class ShouldSerializeTypeInComponentsContractResolver : DefaultContractResolver {
 
         /// <summary>
         /// Instance
         /// </summary>
         public static readonly ShouldSerializeTypeInComponentsContractResolver Instance
-      = new ShouldSerializeTypeInComponentsContractResolver();
+          = new ShouldSerializeTypeInComponentsContractResolver();
 
         protected override JsonProperty CreateProperty(MemberInfo member, MemberSerialization memberSerialization) {
           JsonProperty property = base.CreateProperty(member, memberSerialization);
@@ -31,7 +31,7 @@ namespace Meep.Tech.Data {
 
           return property;
         }
-      }
+      }*/
     }
   }
 }

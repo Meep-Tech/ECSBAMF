@@ -240,7 +240,7 @@ namespace Meep.Tech.Data {
     /// Get a component if it exists. Throws if it doesn't
     /// </summary>
     public IComponent GetComponent<TComponent>(string componentKey)
-      where TComponent : Model.IComponent
+      where TComponent : IModel.IComponent
         => (this as IReadableComponentStorage).GetComponent(componentKey) as Archetype.IComponent;
 
     /// <summary>
@@ -442,14 +442,14 @@ namespace Meep.Tech.Data {
 
     protected Archetype(Archetype.Identity id, ArchetypeCollection collection = null) 
       : base(id) {
-      if(collection is null) {
+      /*if(collection is null) {
         collection = (ArchetypeCollection)
           // if the base of this is registered somewhere, get the registered one by default
           (Archetypes._collectionsByRootArchetype.ContainsKey(id.Archetype.BaseType?.TryToGetAsArchetype()?.Id.Key)
             ? Archetypes.GetCollectionFor(this)
             // else this is the base and we need a new one
             : Archetypes._collectionsByRootArchetype[id.Key] = new ArchetypeCollection());
-      }
+      }*/
 
       collection._registerArchetype(this);
       _initialize();
@@ -480,35 +480,35 @@ namespace Meep.Tech.Data {
     /// <summary>
     /// Overrideable Model Constructor
     /// </summary>
-    public new virtual Func<Model<TModelBase>.Builder, TModelBase> ModelConstructor {
+    public new virtual Func<IModel<TModelBase>.Builder, TModelBase> ModelConstructor {
       get {
         if(base.ModelConstructor == null) {
           base.ModelConstructor 
-            = (builder) => GetDefaultCtorFor(typeof(TModelBase)).Invoke(((Model<TModelBase>.Builder)builder));
+            = (builder) => GetDefaultCtorFor(typeof(TModelBase)).Invoke(((IModel<TModelBase>.Builder)builder));
         }
 
         return (builder) => (TModelBase)base.ModelConstructor(builder);
       }
       protected internal set => base.ModelConstructor
-       = builder => value.Invoke((Model<TModelBase>.Builder)builder);
+       = builder => value.Invoke((IModel<TModelBase>.Builder)builder);
     }
 
     /// <summary>
     /// Make an object ctor from a provided default ctor.
     /// Valid CTORS:
-    ///  - public|private|protected Model(Model.Builder builder)
+    ///  - public|private|protected Model(IModel.Builder builder)
     ///  - public|private|protected Model()
     /// </summary>
     /// <param name="modelType"></param>
     /// <returns></returns>
     /// <exception cref="NotImplementedException"></exception>
-    static Func<Model<TModelBase>.Builder, TModelBase> GetDefaultCtorFor(Type modelType) {
+    static Func<IModel<TModelBase>.Builder, TModelBase> GetDefaultCtorFor(Type modelType) {
       var ctor = modelType.GetConstructor(
         System.Reflection.BindingFlags.Public 
           | System.Reflection.BindingFlags.Instance
           | System.Reflection.BindingFlags.NonPublic,
         null,
-        new[] { typeof(Model.Builder) },
+        new[] { typeof(IModel.Builder) },
         null
       );
       if(ctor is null) {
@@ -527,7 +527,7 @@ namespace Meep.Tech.Data {
         }
       }
       if(ctor is null) {
-        Func<Model<TModelBase>.Builder, TModelBase> activator 
+        Func<IModel<TModelBase>.Builder, TModelBase> activator 
           = _ => (TModelBase)System.Activator.CreateInstance(modelType);
 
         // this tests it to make sure it works:
@@ -537,7 +537,7 @@ namespace Meep.Tech.Data {
         } catch {}
       }
       if(ctor is null) {
-        throw new NotImplementedException($"No Ctor that takes a single argument of Model.Builder, or 0 arguments found for Model type: {modelType.FullName}. An activator could also not be built for the type.");
+        throw new NotImplementedException($"No Ctor that takes a single argument of IModel.Builder, or 0 arguments found for Model type: {modelType.FullName}. An activator could also not be built for the type.");
       }
 
       //TODO: is there a faster way to cache this?
@@ -554,14 +554,14 @@ namespace Meep.Tech.Data {
     /// <summary>
     /// An empty builder used to help build for this archetype:
     /// </summary>
-    Model<TModelBase>.Builder _defaultEmptyBuilder
+    IModel<TModelBase>.Builder _defaultEmptyBuilder
       = null;
 
     /// <summary>
     /// The default way a new builder is created.
     /// </summary>
     internal protected virtual Func<Archetype, Dictionary<string, object>, IBuilder<TModelBase>> BuilderConstructor {
-      get => _defaultBuilderCtor ??= (archetype, @params) => new Model<TModelBase>.Builder(archetype, @params);
+      get => _defaultBuilderCtor ??= (archetype, @params) => new IModel<TModelBase>.Builder(archetype, @params);
       set => _defaultBuilderCtor = value;
     } internal Func<Archetype, Dictionary<string, object>, IBuilder<TModelBase>> _defaultBuilderCtor;
 
@@ -576,14 +576,14 @@ namespace Meep.Tech.Data {
     /// The builder for the base model type of this archetype.
     /// You can override this and add more default props to the return for utility.
     /// </summary>
-    public virtual Model<TModelBase>.Builder MakeDefaultBuilder()
-      => (Model<TModelBase>.Builder)BuilderConstructor(this, null);
+    public virtual IModel<TModelBase>.Builder MakeDefaultBuilder()
+      => (IModel<TModelBase>.Builder)BuilderConstructor(this, null);
 
     /// <summary>
     /// Gets an immutable empty builder for this type to use when null was passed in:
     /// </summary>
-    protected virtual Model<TModelBase>.Builder MakeDefaultEmptyBuilder()
-      => (Model<TModelBase>.Builder)MakeDefaultBuilder().AsImmutable();
+    protected virtual IModel<TModelBase>.Builder MakeDefaultEmptyBuilder()
+      => (IModel<TModelBase>.Builder)MakeDefaultBuilder().AsImmutable();
 
     #region Configuration Helper Functions
 
@@ -632,7 +632,7 @@ namespace Meep.Tech.Data {
       => BuildModel(MakeDefaultBuilder().Merge(@params.ToDictionary(
         param => param.Key,
         param => param.Value
-      )) as Model<TModelBase>.Builder);
+      )) as IModel<TModelBase>.Builder);
 
     /// <summary>
     /// Helper for potentially making an item without initializing a Builder object.
@@ -649,26 +649,26 @@ namespace Meep.Tech.Data {
     /// <summary>
     /// Helper for potentially making an item without initializing a Builder object.
     /// </summary>
-    public TModelBase Make(IEnumerable<(Model.Builder.Param key, object value)> @params)
-      => Make(@params.Select(entry => new KeyValuePair<Model.Builder.Param, object>(entry.key, entry.value)));
+    public TModelBase Make(IEnumerable<(IModel.Builder.Param key, object value)> @params)
+      => Make(@params.Select(entry => new KeyValuePair<IModel.Builder.Param, object>(entry.key, entry.value)));
 
     /// <summary>
     /// Helper for potentially making an item without initializing a Builder object.
     /// </summary>
-    public TModelBase Make(params (Model.Builder.Param key, object value)[] @params)
-      => Make((IEnumerable<(Model.Builder.Param key, object value)>)@params);
+    public TModelBase Make(params (IModel.Builder.Param key, object value)[] @params)
+      => Make((IEnumerable<(IModel.Builder.Param key, object value)>)@params);
 
     /// <summary>
     /// Helper for potentially making an item without initializing a Builder object.
     /// </summary>
-    public TModelBase Make(IEnumerable<KeyValuePair<Model.Builder.Param, object>> @params)
+    public TModelBase Make(IEnumerable<KeyValuePair<IModel.Builder.Param, object>> @params)
       => Make(@params.Select(entry => new KeyValuePair<string,object>(entry.Key.Key, entry.Value)));
 
     /// <summary>
     /// Helper for potentially making an item without initializing a Builder object.
     /// </summary>
-    public TModelBase Make(params KeyValuePair<Model.Builder.Param, object>[] @params)
-      => Make((IEnumerable<KeyValuePair<Model.Builder.Param, object>>)@params);
+    public TModelBase Make(params KeyValuePair<IModel.Builder.Param, object>[] @params)
+      => Make((IEnumerable<KeyValuePair<IModel.Builder.Param, object>>)@params);
 
     /// <summary>
     /// Helper for potentially making an item without initializing a dictionary object
@@ -724,10 +724,10 @@ namespace Meep.Tech.Data {
     public TModelBase Make()
       => BuildModel(null);
 
-    public TModelBase Make(Func<Model<TModelBase>.Builder, Model<TModelBase>.Builder> configureBuilder)
+    public TModelBase Make(Func<IModel<TModelBase>.Builder, IModel<TModelBase>.Builder> configureBuilder)
       => BuildModel(configureBuilder(MakeDefaultBuilder()));
 
-    public TModelBase Make(Model<TModelBase>.Builder builder)
+    public TModelBase Make(IModel<TModelBase>.Builder builder)
       => BuildModel(builder);
 
     public TModelBase Make(IBuilder<TModelBase> builder)
@@ -743,7 +743,7 @@ namespace Meep.Tech.Data {
     /// <summary>
     /// Make a model from this archetype using a fully qualified builder.
     /// </summary>
-    public TDesiredModel Make<TDesiredModel>(Model<TModelBase>.Builder builder)
+    public TDesiredModel Make<TDesiredModel>(IModel<TModelBase>.Builder builder)
       where TDesiredModel : TModelBase
         => (TDesiredModel)BuildModel(builder);
 
@@ -757,7 +757,7 @@ namespace Meep.Tech.Data {
     /// <summary>
     /// Make a model from this archetype by passing down and updating a default builder.
     /// </summary>
-    public TDesiredModel Make<TDesiredModel>(Func<Model<TModelBase>.Builder, Model<TModelBase>.Builder> configureBuilder)
+    public TDesiredModel Make<TDesiredModel>(Func<IModel<TModelBase>.Builder, IModel<TModelBase>.Builder> configureBuilder)
       where TDesiredModel : TModelBase
         => (TDesiredModel)BuildModel(configureBuilder(MakeDefaultBuilder()));
 
@@ -776,14 +776,14 @@ namespace Meep.Tech.Data {
     /// <summary>
     /// Make a model that requires an object based builder:
     /// </summary>
-    public TDesiredModel Make<TDesiredModel>(Action<Model.Builder> configureBuilder)
+    public TDesiredModel Make<TDesiredModel>(Action<IModel.Builder> configureBuilder)
      where TDesiredModel: TModelBase
         => (TDesiredModel)Make(configureBuilder);
 
     /// <summary>
     /// Make a model that requires an object based builder:
     /// </summary>
-    public TModelBase Make(Action<Model.Builder> configureBuilder)
+    public TModelBase Make(Action<IModel.Builder> configureBuilder)
       => Make(builder => {
         configureBuilder(builder);
 
@@ -818,11 +818,11 @@ namespace Meep.Tech.Data {
       foreach(Type componentType in DefaultUnlinkedModelComponentTypes) {
         // Make a builder to match this component with the params from the parent:
         IBuilder componentBuilder 
-          = Model.Builder.MakeNewBuilderAndCopyParams(builder, componentType);
+          = IModel.Builder.MakeNewBuilderAndCopyParams(builder, componentType);
 
         // build the component:
-        Model.IComponent component = (Data.Components.GetBuilderFactoryFor(componentType) as Archetype)
-          .MakeDefaultWith(componentBuilder) as Model.IComponent;
+        IModel.IComponent component = (Data.Components.GetBuilderFactoryFor(componentType) as Archetype)
+          .MakeDefaultWith(componentBuilder) as IModel.IComponent;
 
         model.AddComponent(component);
       }

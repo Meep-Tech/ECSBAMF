@@ -18,8 +18,8 @@ namespace Meep.Tech.Data {
       /// <summary>
       /// Publicly readable components
       /// </summary>
-      public IReadOnlyDictionary<string, Model.IComponent> components
-        => _components.ToDictionary(x => x.Key, y => y.Value as Model.IComponent);
+      public IReadOnlyDictionary<string, IModel.IComponent> components
+        => _components.ToDictionary(x => x.Key, y => y.Value as IModel.IComponent);
 
       /// <summary>
       /// The accessor for the default Icomponents implimentation
@@ -44,21 +44,21 @@ namespace Meep.Tech.Data {
       /// Get a component if it exists. Throws if it doesn't
       /// </summary>
       public virtual IComponent GetComponent(string componentKey)
-        => (this as IReadableComponentStorage).GetComponent(componentKey) as Model.IComponent;
+        => (this as IReadableComponentStorage).GetComponent(componentKey) as IModel.IComponent;
 
       /// <summary>
       /// Get a component if it exists. Throws if it doesn't
       /// </summary>
       public virtual IComponent GetComponent<TComponent>(string componentKey)
-        where TComponent : Model.IComponent
-          => (this as IReadableComponentStorage).GetComponent(componentKey) as Model.IComponent;
+        where TComponent : IModel.IComponent
+          => (this as IReadableComponentStorage).GetComponent(componentKey) as IModel.IComponent;
 
       /// <summary>
       /// Get a component if this has a component of that given type
       /// </summary>
-      public virtual bool HasComponent(System.Type componentType, out Model.IComponent component) {
+      public virtual bool HasComponent(System.Type componentType, out IModel.IComponent component) {
         if((this as IReadableComponentStorage).HasComponent(componentType, out Data.IComponent found)) {
-          component = found as Model.IComponent;
+          component = found as IModel.IComponent;
           return true;
         }
 
@@ -83,9 +83,9 @@ namespace Meep.Tech.Data {
       /// <summary>
       /// Get a component if this has that given component
       /// </summary>
-      public virtual bool HasComponent(string componentBaseKey, out Model.IComponent component) {
+      public virtual bool HasComponent(string componentBaseKey, out IModel.IComponent component) {
         if((this as IReadableComponentStorage).HasComponent(componentBaseKey, out Data.IComponent found)) {
-          component = found as Model.IComponent;
+          component = found as IModel.IComponent;
           return true;
         }
 
@@ -96,15 +96,15 @@ namespace Meep.Tech.Data {
       /// <summary>
       /// Check if this has a component matching the given object
       /// </summary>
-      public virtual bool HasComponent(Model.IComponent componentModel)
+      public virtual bool HasComponent(IModel.IComponent componentModel)
         => (this as IReadableComponentStorage).HasComponent(componentModel);
 
       /// <summary>
       /// Get a component if this has that given component
       /// </summary>
-      public virtual bool HasComponent(Model.IComponent componentModel, out Model.IComponent component) {
+      public virtual bool HasComponent(IModel.IComponent componentModel, out IModel.IComponent component) {
         if((this as IReadableComponentStorage).HasComponent(componentModel, out Data.IComponent found)) {
-          component = found as Model.IComponent;
+          component = found as IModel.IComponent;
           return true;
         }
 
@@ -119,8 +119,8 @@ namespace Meep.Tech.Data {
       /// <summary>
       /// Add a new component, throws if the component key is taken already
       /// </summary>
-      protected virtual void AddComponent(Model.IComponent toAdd) {
-        if(toAdd is IRestrictedComponent restrictedComponent && !restrictedComponent.IsCompatableWith(this)) {
+      protected virtual void AddComponent(IModel.IComponent toAdd) {
+        if(toAdd is IModel.IRestrictedComponent restrictedComponent && !restrictedComponent.IsCompatableWith(this)) {
           throw new System.ArgumentException($"Component of type {toAdd.Key} is not compatable with model of type {GetType()}. The model must inherit from {restrictedComponent.RestrictedTo.FullName}.");
         }
 
@@ -130,7 +130,7 @@ namespace Meep.Tech.Data {
       /// <summary>
       /// replace an existing component
       /// </summary>
-      protected virtual void UpdateComponent(Model.IComponent toUpdate) {
+      protected virtual void UpdateComponent(IModel.IComponent toUpdate) {
         (this as IReadableComponentStorage).UpdateComponent(toUpdate);
       }
 
@@ -138,15 +138,15 @@ namespace Meep.Tech.Data {
       /// update an existing component, given it's current data
       /// </summary>
       protected virtual void UpdateComponent<TComponent>(System.Func<TComponent, TComponent> UpdateComponent)
-        where TComponent : Model.IComponent {
+        where TComponent : IModel.IComponent {
         (this as IReadableComponentStorage).UpdateComponent(UpdateComponent);
       }
 
       /// <summary>
       /// Add or replace a component
       /// </summary>
-      protected virtual void AddOrUpdateComponent(Model.IComponent toSet) {
-        if(toSet is IRestrictedComponent restrictedComponent && !restrictedComponent.IsCompatableWith(this)) {
+      protected virtual void AddOrUpdateComponent(IModel.IComponent toSet) {
+        if(toSet is IModel.IRestrictedComponent restrictedComponent && !restrictedComponent.IsCompatableWith(this)) {
           throw new System.ArgumentException($"Component of type {toSet.Key} is not compatable with model of type {GetType()}. The model must inherit from {restrictedComponent.RestrictedTo.FullName}.");
         }
         (this as IReadableComponentStorage).AddOrUpdateComponent(toSet);
@@ -155,23 +155,23 @@ namespace Meep.Tech.Data {
       /// <summary>
       /// Remove an existing component
       /// </summary>
-      protected virtual bool RemoveComponent(Model.IComponent toRemove)
+      protected virtual bool RemoveComponent(IModel.IComponent toRemove)
         => (this as IReadableComponentStorage).RemoveComponent(toRemove.Key);
 
       /// <summary>
       /// Remove an existing component
       /// </summary>
       protected virtual bool RemoveComponent<TComponent>()
-        where TComponent : Model.IComponent<TComponent>
+        where TComponent : IModel.IComponent<TComponent>
           => (this as IReadableComponentStorage).RemoveComponent<TComponent>();
 
       /// <summary>
       /// Remove an existing component
       /// </summary>
       protected virtual bool RemoveComponent<TComponent>(out IComponent removed)
-        where TComponent : Model.IComponent<TComponent> {
+        where TComponent : IModel.IComponent<TComponent> {
         if((this as IReadableComponentStorage).RemoveComponent<TComponent>(out Data.IComponent found)) {
-          removed = found as Model.IComponent;
+          removed = found as IModel.IComponent;
           return true;
         }
 
@@ -190,7 +190,7 @@ namespace Meep.Tech.Data {
       /// </summary>
       protected virtual bool RemoveComponent(System.Type toRemove, out IComponent removed) {
         if((this as IReadableComponentStorage).RemoveComponent(toRemove, out Data.IComponent found)) {
-          removed = found as Model.IComponent;
+          removed = found as IModel.IComponent;
           return true;
         }
 
@@ -201,9 +201,9 @@ namespace Meep.Tech.Data {
       /// <summary>
       /// Remove and get an existing component
       /// </summary>
-      protected virtual bool RemoveComponent(string componentKeyToRemove, out Model.IComponent removedComponent) {
+      protected virtual bool RemoveComponent(string componentKeyToRemove, out IModel.IComponent removedComponent) {
         if((this as IReadableComponentStorage).RemoveComponent(componentKeyToRemove, out Data.IComponent component)) {
-          removedComponent = component as Model.IComponent;
+          removedComponent = component as IModel.IComponent;
           return true;
         }
 
@@ -231,8 +231,8 @@ namespace Meep.Tech.Data {
       /// <summary>
       /// Publicly readable components
       /// </summary>
-      public IReadOnlyDictionary<string, Model.IComponent> components
-        => _components.ToDictionary(x => x.Key, y => y.Value as Model.IComponent);
+      public IReadOnlyDictionary<string, IModel.IComponent> components
+        => _components.ToDictionary(x => x.Key, y => y.Value as IModel.IComponent);
 
       /// <summary>
       /// The accessor for the default Icomponents implimentation
@@ -256,21 +256,21 @@ namespace Meep.Tech.Data {
       /// Get a component if it exists. Throws if it doesn't
       /// </summary>
       public virtual IComponent GetComponent(string componentKey)
-        => (this as IReadableComponentStorage).GetComponent(componentKey) as Model.IComponent;
+        => (this as IReadableComponentStorage).GetComponent(componentKey) as IModel.IComponent;
 
       /// <summary>
       /// Get a component if it exists. Throws if it doesn't
       /// </summary>
       public virtual IComponent GetComponent<TComponent>(string componentKey)
-        where TComponent : Model.IComponent
-          => (this as IReadableComponentStorage).GetComponent(componentKey) as Model.IComponent;
+        where TComponent : IModel.IComponent
+          => (this as IReadableComponentStorage).GetComponent(componentKey) as IModel.IComponent;
 
       /// <summary>
       /// Get a component if this has a component of that given type
       /// </summary>
-      public virtual bool HasComponent(System.Type componentType, out Model.IComponent component) {
+      public virtual bool HasComponent(System.Type componentType, out IModel.IComponent component) {
         if((this as IReadableComponentStorage).HasComponent(componentType, out Data.IComponent found)) {
-          component = found as Model.IComponent;
+          component = found as IModel.IComponent;
           return true;
         }
 
@@ -295,9 +295,9 @@ namespace Meep.Tech.Data {
       /// <summary>
       /// Get a component if this has that given component
       /// </summary>
-      public virtual bool HasComponent(string componentBaseKey, out Model.IComponent component) {
+      public virtual bool HasComponent(string componentBaseKey, out IModel.IComponent component) {
         if((this as IReadableComponentStorage).HasComponent(componentBaseKey, out Data.IComponent found)) {
-          component = found as Model.IComponent;
+          component = found as IModel.IComponent;
           return true;
         }
 
@@ -308,15 +308,15 @@ namespace Meep.Tech.Data {
       /// <summary>
       /// Check if this has a component matching the given object
       /// </summary>
-      public virtual bool HasComponent(Model.IComponent componentModel)
+      public virtual bool HasComponent(IModel.IComponent componentModel)
         => (this as IReadableComponentStorage).HasComponent(componentModel);
 
       /// <summary>
       /// Get a component if this has that given component
       /// </summary>
-      public virtual bool HasComponent(Model.IComponent componentModel, out Model.IComponent component) {
+      public virtual bool HasComponent(IModel.IComponent componentModel, out IModel.IComponent component) {
         if((this as IReadableComponentStorage).HasComponent(componentModel, out Data.IComponent found)) {
-          component = found as Model.IComponent;
+          component = found as IModel.IComponent;
           return true;
         }
 
@@ -331,8 +331,8 @@ namespace Meep.Tech.Data {
       /// <summary>
       /// Add a new component, throws if the component key is taken already
       /// </summary>
-      protected virtual void AddComponent(Model.IComponent toAdd) {
-        if(toAdd is IRestrictedComponent restrictedComponent && !restrictedComponent.IsCompatableWith(this)) {
+      protected virtual void AddComponent(IModel.IComponent toAdd) {
+        if(toAdd is IModel.IRestrictedComponent restrictedComponent && !restrictedComponent.IsCompatableWith(this)) {
           throw new System.ArgumentException($"Component of type {toAdd.Key} is not compatable with model of type {GetType()}. The model must inherit from {restrictedComponent.RestrictedTo.FullName}.");
         }
 
@@ -342,7 +342,7 @@ namespace Meep.Tech.Data {
       /// <summary>
       /// replace an existing component
       /// </summary>
-      protected virtual void UpdateComponent(Model.IComponent toUpdate) {
+      protected virtual void UpdateComponent(IModel.IComponent toUpdate) {
         (this as IReadableComponentStorage).UpdateComponent(toUpdate);
       }
 
@@ -350,15 +350,15 @@ namespace Meep.Tech.Data {
       /// update an existing component, given it's current data
       /// </summary>
       protected virtual void UpdateComponent<TComponent>(System.Func<TComponent, TComponent> UpdateComponent)
-        where TComponent : Model.IComponent {
+        where TComponent : IModel.IComponent {
         (this as IReadableComponentStorage).UpdateComponent(UpdateComponent);
       }
 
       /// <summary>
       /// Add or replace a component
       /// </summary>
-      protected virtual void AddOrUpdateComponent(Model.IComponent toSet) {
-        if(toSet is IRestrictedComponent restrictedComponent && !restrictedComponent.IsCompatableWith(this)) {
+      protected virtual void AddOrUpdateComponent(IModel.IComponent toSet) {
+        if(toSet is IModel.IRestrictedComponent restrictedComponent && !restrictedComponent.IsCompatableWith(this)) {
           throw new System.ArgumentException($"Component of type {toSet.Key} is not compatable with model of type {GetType()}. The model must inherit from {restrictedComponent.RestrictedTo.FullName}.");
         }
         (this as IReadableComponentStorage).AddOrUpdateComponent(toSet);
@@ -367,23 +367,23 @@ namespace Meep.Tech.Data {
       /// <summary>
       /// Remove an existing component
       /// </summary>
-      protected virtual bool RemoveComponent(Model.IComponent toRemove)
+      protected virtual bool RemoveComponent(IModel.IComponent toRemove)
         => (this as IReadableComponentStorage).RemoveComponent(toRemove.Key);
 
       /// <summary>
       /// Remove an existing component
       /// </summary>
       protected virtual bool RemoveComponent<TComponent>()
-        where TComponent : Model.IComponent<TComponent>
+        where TComponent : IModel.IComponent<TComponent>
           => (this as IReadableComponentStorage).RemoveComponent<TComponent>();
 
       /// <summary>
       /// Remove an existing component
       /// </summary>
       protected virtual bool RemoveComponent<TComponent>(out IComponent removed)
-        where TComponent : Model.IComponent<TComponent> {
+        where TComponent : IModel.IComponent<TComponent> {
         if((this as IReadableComponentStorage).RemoveComponent<TComponent>(out Data.IComponent found)) {
-          removed = found as Model.IComponent;
+          removed = found as IModel.IComponent;
           return true;
         }
 
@@ -402,7 +402,7 @@ namespace Meep.Tech.Data {
       /// </summary>
       protected virtual bool RemoveComponent(System.Type toRemove, out IComponent removed) {
         if((this as IReadableComponentStorage).RemoveComponent(toRemove, out Data.IComponent found)) {
-          removed = found as Model.IComponent;
+          removed = found as IModel.IComponent;
           return true;
         }
 
@@ -413,9 +413,9 @@ namespace Meep.Tech.Data {
       /// <summary>
       /// Remove and get an existing component
       /// </summary>
-      protected virtual bool RemoveComponent(string componentKeyToRemove, out Model.IComponent removedComponent) {
+      protected virtual bool RemoveComponent(string componentKeyToRemove, out IModel.IComponent removedComponent) {
         if((this as IReadableComponentStorage).RemoveComponent(componentKeyToRemove, out Data.IComponent component)) {
-          removedComponent = component as Model.IComponent;
+          removedComponent = component as IModel.IComponent;
           return true;
         }
 

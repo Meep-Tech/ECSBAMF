@@ -1,6 +1,7 @@
 ﻿namespace Meep.Tech.Data {
 
   public abstract partial class Archetype {
+
     /// <summary>
     /// Can be used to indicate that this component is restricted to a specific branch of archetypes based on the provided base archetype.
     /// </summary>
@@ -13,7 +14,7 @@
       /// <summary>
       /// Check if this is compatable with an archetype
       /// </summary>
-      bool IRestrictedComponent.IsCompatableWith(Archetype archetype)
+      bool Archetype.IRestrictedComponent.IsCompatableWith(Archetype archetype)
         => archetype is TArchetypeBase;
     }
 

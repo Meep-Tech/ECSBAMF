@@ -4,13 +4,20 @@ using System.Linq;
 
 namespace Meep.Tech.Data {
 
-  public partial class Model {
+  public partial interface IModel {
 
     /// <summary>
     /// A modifyable parameter container that is used to build a model.
     /// The non-generic base class for utility.
     /// </summary>
     public abstract partial class Builder : Dictionary<string, object>, IBuilder {
+
+      /// <summary>
+      /// The archetype/factory using this builder.
+      /// </summary>
+      public Archetype Type {
+        get;
+      }
 
       /// <summary>
       /// If this builder can be modified
@@ -20,21 +27,28 @@ namespace Meep.Tech.Data {
       /// <summary>
       /// Empty new builder
       /// </summary>
-      protected Builder(bool Immutable = false) 
-        : base() {_isImmutable = Immutable; }
+      protected Builder(Archetype type, bool Immutable = false) 
+        : base() {
+        Type = type;
+        _isImmutable = Immutable;
+      }
 
       /// <summary>
       /// New builder from a collection of param names
       /// </summary>
-      protected Builder(Dictionary<string, object> @params) : base(@params) { }
+      protected Builder(Archetype type, Dictionary<string, object> @params) 
+        : base(@params) {
+        Type = type;
+      }
 
       /// <summary>
       /// New builder from a collection of params
       /// </summary>
-      protected Builder(Dictionary<Param, object> @params) : base(@params.ToDictionary(
-        param => param.Key.Key,
-        param => param.Value
-      )) { }
+      protected Builder(Archetype type, Dictionary<Param, object> @params) 
+        : this(type, @params.ToDictionary(
+          param => param.Key.Key,
+          param => param.Value
+        )) { }
 
       /// <summary>
       /// Copy a builder for a new target type
@@ -113,46 +127,32 @@ namespace Meep.Tech.Data {
     }
   }
 
-  public partial class Model<TModelBase> 
+  public partial interface IModel<TModelBase> 
     where TModelBase : IModel<TModelBase> 
   {
 
     /// <summary>
     /// A modifyable parameter container that is used to build a model.
     /// </summary>
-    public new partial class Builder : Model.Builder, IBuilder<TModelBase> {
-
-      /// <summary>
-      /// The archetype/factory using this builder.
-      /// </summary>
-      public Archetype Type {
-        get;
-      }
+    public new partial class Builder : IModel.Builder, IBuilder<TModelBase> {
 
       /// <summary>
       /// Empty new builder
       /// </summary>
       public Builder(Archetype forArchetype)
-        : base() {
-        Type = forArchetype;
-      }
+        : base(forArchetype) {}
 
       /// <summary>
       /// Empty new builder, immutable, for internal use only
       /// </summary>
       public Builder(Archetype forArchetype, bool Immutable)
-        : base(Immutable) {
-        Type = forArchetype;
-      }
+        : base(forArchetype, Immutable) {}
 
       /// <summary>
       /// New builder from a collection of param names
       /// </summary>
-      /// 
       public Builder(Archetype forArchetype, Dictionary<string, object> @params)
-        : base(@params) {
-        Type = forArchetype;
-      }
+        : base(forArchetype, @params) {}
 
       /// <summary>
       /// New builder from a collection of params
@@ -160,12 +160,10 @@ namespace Meep.Tech.Data {
       public Builder(
         Archetype forArchetype,
         Dictionary<Param, object> @params
-      ) : base(@params.ToDictionary(
+      ) : base(forArchetype, @params.ToDictionary(
         param => param.Key.Key,
         param => param.Value
-      )) {
-        Type = forArchetype;
-      }
+      )) { }
 
       /// <summary>
       /// Produce a new instance of the model type.

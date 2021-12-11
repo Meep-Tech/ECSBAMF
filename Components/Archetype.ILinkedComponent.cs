@@ -10,20 +10,20 @@ namespace Meep.Tech.Data {
     public interface ILinkedComponent<TLinkedModelComponent>
       : ILinkedComponent,
         IComponent
-      where TLinkedModelComponent : Model.IComponent<TLinkedModelComponent>
+      where TLinkedModelComponent : IModel.IComponent<TLinkedModelComponent>
     {
 
       /// <summary>
       /// Build and get a default model component that is linked to this archetype component.
       /// This behavior can be overriden by default if you choose. It could even just be a ctor call.
       /// </summary>
-      public new TLinkedModelComponent BuildDefaultModelComponent(Model.Builder parentModelBuilder)
+      public new TLinkedModelComponent BuildDefaultModelComponent(IModel.Builder parentModelBuilder)
         => Components<TLinkedModelComponent>.BuilderFactory.Make(parentModelBuilder.AsEnumerable());
 
       /// <summary>
       /// Build and get a default model component that is linked to this archetype component.
       /// </summary>
-      Model.IComponent ILinkedComponent.BuildDefaultModelComponent(Model.Builder parentModelBuilder)
+      IModel.IComponent ILinkedComponent.BuildDefaultModelComponent(IModel.Builder parentModelBuilder)
         => BuildDefaultModelComponent(parentModelBuilder);
     }
 
@@ -37,7 +37,7 @@ namespace Meep.Tech.Data {
       /// <summary>
       /// Build and get a default model component that is linked to this archetype component.
       /// </summary>
-      public Model.IComponent BuildDefaultModelComponent(Model.Builder parentModelBuilder)
+      public IModel.IComponent BuildDefaultModelComponent(IModel.Builder parentModelBuilder)
         => null;
     }
   }

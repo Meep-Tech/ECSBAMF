@@ -10,8 +10,8 @@ namespace Meep.Tech.Data {
     /// One of these is instantiated for each Model<> class and IComponent<> class by default.
     /// This is the base interface.
     /// </summary>
-    public interface IBuilderFactory
-      : Model.IBuilderFactory {
+    public new interface IBuilderFactory
+      : IModel.IBuilderFactory {
 
       /// <summary>
       /// The key for the component type.
@@ -35,8 +35,8 @@ namespace Meep.Tech.Data {
   public partial interface IComponent<TComponentBase> : IModel<TComponentBase>, IComponent
     where TComponentBase : IComponent<TComponentBase> {
 
-    public class BuilderFactory
-      : Model<TComponentBase>.BuilderFactory,
+    public new class BuilderFactory
+      : IModel<TComponentBase>.BuilderFactory,
       IComponent.IBuilderFactory {
 
       /// <summary>
@@ -51,7 +51,7 @@ namespace Meep.Tech.Data {
       /// This can be used to set this for a Model<> without archetypes.
       /// </summary>
       public override Func<Archetype, Dictionary<string, object>, IBuilder<TComponentBase>> BuilderConstructor {
-        get => _defaultBuilderCtor ??= (archetype, @params) => new Builder(archetype, @params);
+        get => _defaultBuilderCtor ??= (archetype, @params) => new IModel<TComponentBase>.Builder(archetype, @params);
         set => _defaultBuilderCtor = value;
       }
 

@@ -1,4 +1,5 @@
 ﻿namespace Meep.Tech.Data {
+
   /// <summary>
   /// Can be used to indicate that this component is restricted to a specific branch of models or archetypes based on the provided base type.
   /// </summary>
@@ -21,7 +22,7 @@
     /// <summary>
     /// The base type this component is restricted to use with.
     /// </summary>
-    System.Type IRestrictedComponent.RestrictedTo
+    System.Type Data.IRestrictedComponent.RestrictedTo
      => typeof(TRestrictionBase);
   }
 }

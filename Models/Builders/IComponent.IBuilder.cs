@@ -30,7 +30,8 @@ namespace Meep.Tech.Data {
     /// <summary>
     /// Default builder class for components. Pretty much the same as the model based one.
     /// </summary>
-    public class Builder : Model<TComponentBase>.Builder {
+    public new class Builder : IModel<TComponentBase>.Builder {
+
       public Builder(Archetype forArchetype) 
         : base(forArchetype) {}
 

@@ -5,49 +5,49 @@ using System.Linq;
 namespace Meep.Tech.Data {
 
   /// <summary>
-  /// TODO: Sets of Archetypes could be stored in a Universe accessable from each Identity within that universe via Identity.Universe or something.
+  /// Static data for archetyps in the DefaultUniverse
   /// </summary>
   public static class Archetypes {
+
+    /// <summary>
+    /// The default universe to use for static access shortcuts
+    /// </summary>
+    public static Universe DefaultUniverse {
+      get;
+      set;
+    }
 
     #region Data Access
 
     /// <summary>
     /// All archetypes:
     /// </summary>
-    public static Archetype.Collection All {
-      get;
-    } = new Archetype.Collection();
+    public static Archetype.Collection All
+      => DefaultUniverse.Archetypes.All;
 
     /// <summary>
     /// All registered Archetype Identities
     /// </summary>
     public static IEnumerable<Archetype.Identity> Ids
-      => _ids.Values;
-    static Dictionary<string, Archetype.Identity> _ids
-      = new Dictionary<string, Archetype.Identity>();
+      => DefaultUniverse.Archetypes.Ids;
 
     /// <summary>
     /// Ids, indexed by external id value
     /// </summary>
     public static IReadOnlyDictionary<string , Archetype.Identity> Id
-      => _ids;
+      => DefaultUniverse.Archetypes.Id;
 
     /// <summary>
     /// All archetypes:
     /// </summary>
-    public static IEnumerable<Archetype.Collection> Collections {
-      get => _collectionsByRootArchetype.Values.Distinct();
-    } internal static readonly Dictionary<string, Archetype.Collection> _collectionsByRootArchetype
-      = new Dictionary<string, Archetype.Collection>();
+    public static IEnumerable<Archetype.Collection> Collections 
+      => DefaultUniverse.Archetypes.Collections;
 
     /// <summary>
     /// Get a collection registered to an archetype root:
     /// </summary>
     public static Archetype.Collection GetCollectionFor(Archetype root)
-      => _collectionsByRootArchetype.TryGetValue(root.Id.Key, out Archetype.Collection collection)
-        ? collection
-        // recurse until it's found. This should throw a null exception eventually if one isn't found.
-        : GetCollectionFor(root.Type.BaseType.TryToGetAsArchetype());
+      => DefaultUniverse.Archetypes.GetCollectionFor(root);
 
     #endregion
 
@@ -76,7 +76,7 @@ namespace Meep.Tech.Data {
   }
 
   /// <summary>
-  /// Static data for archetypes, by archetype class.
+  /// Static data for archetypes in the DefaultUniverse, by archetype class.
   /// </summary>
   public static class Archetypes<TArchetype> 
     where TArchetype : Archetype {
