@@ -29,6 +29,12 @@ namespace Meep.Tech.Data {
         => null;
 
       /// <summary>
+      /// Generic collections have no root archetype.
+      /// </summary>
+      public virtual System.Type RootArchetypeType
+        => null;
+
+      /// <summary>
       /// All archetypes registered to this collection
       /// </summary>
       public IEnumerable<Archetype> All
@@ -39,7 +45,7 @@ namespace Meep.Tech.Data {
       /// </summary>
       public IReadOnlyDictionary<Archetype.Identity, Archetype> ById {
         get => _byId.ToDictionary(
-          entry => Archetypes.Id[entry.Key],
+          entry => Universe.Archetypes.Id[entry.Key],
           entry => entry.Value
         );
       } internal readonly Dictionary<string, Archetype> _byId
@@ -56,22 +62,22 @@ namespace Meep.Tech.Data {
       /// <summary>
       /// All archetypes, indexed by their base model types.
       /// </summary>
-      internal readonly Dictionary<string, Archetype> _byModelBaseType
-        = new Dictionary<string, Archetype>();
+      /*internal readonly Dictionary<string, Archetype> _byModelBaseType
+        = new Dictionary<string, Archetype>();*/
 
       #region Initialization
 
       internal Collection(Universe universe) {
         Universe = universe;
-        if(!(RootArchetype is null)) {
-          Universe.Archetypes._collectionsByRootArchetype.Add(RootArchetype?.Id.Key ?? "_all", this);
+        if(!(Universe.Archetypes is null || Universe.Models is null || Universe.Components is null)) {
+          Universe.Archetypes._collectionsByRootArchetype.Add(RootArchetypeType?.FullName ?? "_all", this);
         }
       }
 
       internal void _registerArchetype(Archetype @new) {
         // Register to it's id
-        @new.Id.Archetype = @new;
         @new.Id.Universe = Universe;
+        @new.Id.Archetype = @new;
 
         // Register to this:
         Add(@new);
@@ -88,7 +94,7 @@ namespace Meep.Tech.Data {
       public void Add(Archetype archetype) {
         _byId.Add(archetype.Id.Key, archetype);
         _byType.Add(archetype.GetType().FullName, archetype);
-        _byModelBaseType.Add(archetype.ModelBaseType.FullName, archetype);
+        //_byModelBaseType.Add(archetype.ModelBaseType.FullName, archetype);
       }
 
       #endregion
@@ -171,7 +177,8 @@ namespace Meep.Tech.Data {
       : Archetype<TModelBase, TArchetypeBase>.ArchetypeCollection
       where TModelBase : IModel<TModelBase>
       where TArchetypeBase : Archetype<TModelBase, TArchetypeBase> {
-      public Collection() : base() {}
+      public Collection(Universe universe = null) 
+        : base(universe) {}
     }
   }
 
@@ -195,10 +202,16 @@ namespace Meep.Tech.Data {
     {
 
       /// <summary>
-      /// Generic collections have no root archetype.
+      /// The root archetype. This may be null if the root archetype type is abstract.
       /// </summary>
       public override Archetype RootArchetype
-        => typeof(TArchetypeBase).AsArchetype();
+        => typeof(TArchetypeBase).TryToGetAsArchetype();
+
+      /// <summary>
+      ///  The archetype type of the root archetype of this collection (if it's not abstract).
+      /// </summary>
+      public override System.Type RootArchetypeType
+        => typeof(TArchetypeBase);
 
       /// <summary>
       /// All archetypes registered to this collection

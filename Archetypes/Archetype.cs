@@ -6,10 +6,21 @@ using System.Linq.Expressions;
 
 namespace Meep.Tech.Data {
 
+  public interface IFactory {
+
+    /// <summary>
+    /// Overrideable Model Constructor
+    /// </summary>
+    Func<IBuilder, IModel> ModelConstructor {
+      get;
+      internal set;
+    }
+  }
+
   /// <summary>
   /// A singleton data store and factory.
   /// </summary>
-  public abstract partial class Archetype : IReadableComponentStorage, IEquatable<Archetype> {
+  public abstract partial class Archetype : IFactory, IReadableComponentStorage, IEquatable<Archetype> {
 
     #region Archetype Data Members
 
@@ -35,6 +46,14 @@ namespace Meep.Tech.Data {
     }
 
     /// <summary>
+    /// <inheritdoc/>
+    /// </summary>
+    Func<IBuilder, IModel> IFactory.ModelConstructor {
+      get;
+      set;
+    } = null;
+
+    /// <summary>
     /// The System.Type of this Archetype
     /// </summary>
     public Type Type {
@@ -52,14 +71,6 @@ namespace Meep.Tech.Data {
     #region Archetype Configuration Settings
 
     /// <summary>
-    /// Overrideable Model Constructor
-    /// </summary>
-    public virtual Func<IBuilder, IModel> ModelConstructor {
-      get;
-      internal set;
-    } = null;
-
-    /// <summary>
     /// The initial default components to add to this archetype on it's creation.
     /// </summary>
     protected virtual Dictionary<string, Archetype.IComponent> InitialComponents {
@@ -67,12 +78,28 @@ namespace Meep.Tech.Data {
     } = new Dictionary<string, IComponent>();
 
     /// <summary>
-    /// The default components to initialize on a model made by this Archetype.
+    /// The Archetype components linked to model components
+    /// </summary>
+    public IEnumerable<Archetype.IComponent> ModelLinkedComponents
+      => _modelLinkedComponents;
+    internal HashSet<Archetype.IComponent> _modelLinkedComponents
+      = new HashSet<IComponent>();
+
+    /// <summary>
+    /// constructors to make default components on a model made by this Archetype,
     /// Usually you'll want to use an Archetype.ILinkedComponent but this is here too.
     /// </summary>
-    protected virtual HashSet<System.Type> DefaultUnlinkedModelComponentTypes {
+    protected internal virtual HashSet<Func<IBuilder, IModel.IComponent>> DefaultUnlinkedModelComponentCtors {
       get;
-    } = new HashSet<Type>();
+    } = new HashSet<Func<IBuilder, IModel.IComponent>>();
+
+    /// <summary>
+    /// The default component types to initialize with default values on a new model made by this archetype
+    /// Usually you'll want to use an Archetype.ILinkedComponent but this is here too.
+    /// </summary>
+    protected internal virtual HashSet<System.Type> DefaultUnlinkedModelComponentTypes {
+      get;
+    } = new HashSet<System.Type>();
 
     /// <summary>
     /// If this is true, this Archetype can have it's component collection modified before load by mods and other libraries.
@@ -80,6 +107,12 @@ namespace Meep.Tech.Data {
     /// </summary>
     public virtual bool AllowExternalComponentConfiguration
       => true;
+
+    /// <summary>
+    /// Default params for testing
+    /// </summary>
+    internal protected virtual Dictionary<string, object> DefaultTestParams
+      => new Dictionary<string, object>();
 
     /// <summary>
     /// Finish setting this up
@@ -94,6 +127,9 @@ namespace Meep.Tech.Data {
     /// Make a new archetype
     /// </summary>
     protected Archetype(Identity id) {
+      if(id is null) {
+        throw new ArgumentNullException("id");
+      }
       Id = id;
       Type = GetType();
     }
@@ -107,16 +143,6 @@ namespace Meep.Tech.Data {
     #endregion
 
     #region Hash and Equality
-
-    /// <summary>
-    /// Used to convert an Archetype to a general string for storage
-    /// </summary>
-    public class ToKeyStringConverter : ValueConverter<Archetype, string> {
-      public ToKeyStringConverter() : base(
-        archetype => archetype.Id.Key,
-        key => Archetypes.Id[key].Archetype
-      ) {}
-    }
 
     public override int GetHashCode() 
       => Id.GetHashCode();
@@ -224,9 +250,7 @@ namespace Meep.Tech.Data {
     [IsModelComponentsProperty]
     Dictionary<string, Data.IComponent> _components {
       get;
-    }
-
-
+    } = new Dictionary<string, Data.IComponent>();
 
     #region Read
 
@@ -411,10 +435,37 @@ namespace Meep.Tech.Data {
   /// Can be used as a static key.
   /// </summary>
   public abstract partial class Archetype<TModelBase, TArchetypeBase> 
-    : Archetype
+    : Archetype, IFactory
     where TModelBase : IModel<TModelBase>
     where TArchetypeBase : Archetype<TModelBase, TArchetypeBase> 
   {
+
+    /// <summary>
+    /// Used to convert an Archetype to a general string for storage
+    /// </summary>
+    public class ToKeyStringConverter : ValueConverter<TArchetypeBase, string> {
+      public ToKeyStringConverter() :
+        base(convertToProviderExpression, convertFromProviderExpression) {
+      }
+
+      private static Expression<Func<string, TArchetypeBase>> convertFromProviderExpression = x => ToTimeObject(x);
+      private static Expression<Func<TArchetypeBase, string>> convertToProviderExpression = x => ToTimeLong(x);
+
+      static TArchetypeBase ToTimeObject(string key) {
+        return key.Split("@") is string[] parts
+          ? parts.Length == 1
+            ? (TArchetypeBase)Archetypes.Id[key].Archetype
+            : parts.Length == 2
+              ? (TArchetypeBase)Universe.Get(parts[1]).Archetypes.Id[parts[2]].Archetype
+              : throw new ArgumentException("ArchetypeKey")
+          : throw new ArgumentNullException("ArchetypeKey");
+      }
+
+      static string ToTimeLong(TArchetypeBase archetype)
+        => archetype.Id.Key + (!string.IsNullOrEmpty(archetype.Id.Universe.Key)
+          ? "@" + archetype.Id.Universe.Key
+          : "");
+    }
 
     #region Archetype Data Members
 
@@ -442,14 +493,18 @@ namespace Meep.Tech.Data {
 
     protected Archetype(Archetype.Identity id, ArchetypeCollection collection = null) 
       : base(id) {
-      /*if(collection is null) {
+      if(collection is null) {
         collection = (ArchetypeCollection)
           // if the base of this is registered somewhere, get the registered one by default
-          (Archetypes._collectionsByRootArchetype.ContainsKey(id.Archetype.BaseType?.TryToGetAsArchetype()?.Id.Key)
-            ? Archetypes.GetCollectionFor(this)
+          (Archetypes.DefaultUniverse.Archetypes._tryToGetCollectionFor(GetType(), out var found)
+            ? found is ArchetypeCollection
+              ? found
+              : Archetypes.DefaultUniverse.Archetypes._collectionsByRootArchetype[typeof(TArchetypeBase).FullName]
+                = new ArchetypeCollection()
             // else this is the base and we need a new one
-            : Archetypes._collectionsByRootArchetype[id.Key] = new ArchetypeCollection());
-      }*/
+            : Archetypes.DefaultUniverse.Archetypes._collectionsByRootArchetype[typeof(TArchetypeBase).FullName] 
+              = new ArchetypeCollection());
+      }
 
       collection._registerArchetype(this);
       _initialize();
@@ -468,6 +523,9 @@ namespace Meep.Tech.Data {
     void _initializeInitialComponents() {
       foreach(Archetype.IComponent component in InitialComponents.Values) {
         AddComponent(component);
+        if(component is Archetype.ILinkedComponent linkedComponent) {
+          _modelLinkedComponents.Add(linkedComponent);
+        }
       }
     }
 
@@ -480,64 +538,90 @@ namespace Meep.Tech.Data {
     /// <summary>
     /// Overrideable Model Constructor
     /// </summary>
-    public new virtual Func<IModel<TModelBase>.Builder, TModelBase> ModelConstructor {
+    public virtual Func<IBuilder<TModelBase>, TModelBase> ModelConstructor {
       get {
-        if(base.ModelConstructor == null) {
-          base.ModelConstructor 
-            = (builder) => GetDefaultCtorFor(typeof(TModelBase)).Invoke(((IModel<TModelBase>.Builder)builder));
+        if(_modelConstructor == null) {
+          _modelConstructor
+            = (builder) => GetDefaultCtorFor(typeof(TModelBase))
+              .Invoke(builder);
         }
 
-        return (builder) => (TModelBase)base.ModelConstructor(builder);
+        return (builder) 
+          => (TModelBase)_modelConstructor(builder);
       }
-      protected internal set => base.ModelConstructor
-       = builder => value.Invoke((IModel<TModelBase>.Builder)builder);
+      protected internal set {
+        _modelConstructor
+          = builder => value.Invoke(builder);
+        Id.Universe.Archetypes._rootArchetypeTypesByBaseModelType[_modelConstructor(null).GetType().FullName]
+          = GetType();
+      }
+    } Func<IBuilder<TModelBase>, IModel> _modelConstructor;
+
+    /// <summary>
+    /// <inheritdoc/>
+    /// </summary>
+    Func<IBuilder, IModel> IFactory.ModelConstructor {
+      get => builder => ModelConstructor((IBuilder<TModelBase>)builder);
+      set => ModelConstructor = builder => (TModelBase)value(builder);
     }
 
     /// <summary>
     /// Make an object ctor from a provided default ctor.
     /// Valid CTORS:
-    ///  - public|private|protected Model(IModel.Builder builder)
+    ///  - public|private|protected Model(IBuilder builder)
     ///  - public|private|protected Model()
     /// </summary>
-    /// <param name="modelType"></param>
-    /// <returns></returns>
-    /// <exception cref="NotImplementedException"></exception>
-    static Func<IModel<TModelBase>.Builder, TModelBase> GetDefaultCtorFor(Type modelType) {
-      var ctor = modelType.GetConstructor(
+    static Func<IBuilder<TModelBase>, TModelBase> GetDefaultCtorFor(Type modelType) {
+      // try to get any matching builder ctor:
+      System.Reflection.ConstructorInfo ctor = modelType.GetConstructors(
         System.Reflection.BindingFlags.Public 
-          | System.Reflection.BindingFlags.Instance
-          | System.Reflection.BindingFlags.NonPublic,
-        null,
-        new[] { typeof(IModel.Builder) },
-        null
-      );
-      if(ctor is null) {
-        ctor = modelType.GetConstructor(
-          System.Reflection.BindingFlags.Public
-            | System.Reflection.BindingFlags.Instance
-            | System.Reflection.BindingFlags.NonPublic,
-          null,
-          new Type[0],
-          null
-        );
-        if(!(ctor is null)) {
-          //TODO: is there a faster way to cache this?
-          return (builder)
-            => (TModelBase)ctor.Invoke(null);
+        | System.Reflection.BindingFlags.NonPublic 
+        | System.Reflection.BindingFlags.Instance
+      // TODO: add an attribute to specify highest priority
+      // sort by priority:
+      ).Select(constructor => {
+        var @params = constructor.GetParameters();
+        if (@params.Length > 0) {
+          if (@params.Length == 1) {
+            if (typeof(IBuilder<TModelBase>).IsAssignableFrom(@params[0].ParameterType)) {
+              return (constructor.IsFamily || constructor.IsPublic ? 3 : 2, constructor);
+            }
+          }
+
+          // non compatable
+          return (0, constructor);
+        } // if there's an empty ctor, return that one
+        else {
+          return (1, constructor);
+        }
+      })
+      // remove incompatable ctors before the sort and pick
+      .Where(rankedConstructor => rankedConstructor.Item1 > 0)
+      .OrderByDescending(rankedConstructor => rankedConstructor.Item1)
+      .FirstOrDefault().constructor;
+
+      // no args ctor:
+      if(!(ctor is null) && ctor.GetParameters().Length == 0) {
+        //TODO: is there a faster way to cache this?
+        return (builder)
+          => (TModelBase)ctor.Invoke(null);
+      }
+
+      // structs may use the activator
+      if(ctor is null && modelType.IsValueType) {
+        Func<IBuilder<TModelBase>, TModelBase> activator = (_)
+          => (TModelBase)Activator.CreateInstance(modelType);
+        try {
+          if(!(activator.Invoke(null) is null)) {
+            return activator;
+          }
+        } catch (Exception e) {
+          throw new NotImplementedException($"No Ctor that takes a single argument of IModel.Builder, or 0 arguments found for Model type: {modelType.FullName}. An activator could also not be built for the type.", e);
         }
       }
-      if(ctor is null) {
-        Func<IModel<TModelBase>.Builder, TModelBase> activator 
-          = _ => (TModelBase)System.Activator.CreateInstance(modelType);
 
-        // this tests it to make sure it works:
-        try {
-          activator.Invoke(null);
-          return activator;
-        } catch {}
-      }
       if(ctor is null) {
-        throw new NotImplementedException($"No Ctor that takes a single argument of IModel.Builder, or 0 arguments found for Model type: {modelType.FullName}. An activator could also not be built for the type.");
+        throw new NotImplementedException($"No Ctor that takes a single argument of IModel.Builder, or 0 arguments found for Model type: {modelType.FullName}.");
       }
 
       //TODO: is there a faster way to cache this?
@@ -554,14 +638,18 @@ namespace Meep.Tech.Data {
     /// <summary>
     /// An empty builder used to help build for this archetype:
     /// </summary>
-    IModel<TModelBase>.Builder _defaultEmptyBuilder
+    IBuilder<TModelBase> _defaultEmptyBuilder
       = null;
 
     /// <summary>
     /// The default way a new builder is created.
+    /// The dictionary passed in has the potential to be null
     /// </summary>
     internal protected virtual Func<Archetype, Dictionary<string, object>, IBuilder<TModelBase>> BuilderConstructor {
-      get => _defaultBuilderCtor ??= (archetype, @params) => new IModel<TModelBase>.Builder(archetype, @params);
+      get => _defaultBuilderCtor ??= (archetype, @params) 
+        => !(@params is null) 
+          ? new IModel<TModelBase>.Builder(archetype, @params)
+          : new IModel<TModelBase>.Builder(archetype); 
       set => _defaultBuilderCtor = value;
     } internal Func<Archetype, Dictionary<string, object>, IBuilder<TModelBase>> _defaultBuilderCtor;
 
@@ -570,20 +658,24 @@ namespace Meep.Tech.Data {
     /// TODO: I can probably cache this at least.
     /// </summary>
     protected internal sealed override Func<Archetype, Dictionary<string, object>, IBuilder> GetGenericBuilderConstructor()
-      => _defaultBuilderCtor;
+      => BuilderConstructor;
 
     /// <summary>
     /// The builder for the base model type of this archetype.
     /// You can override this and add more default props to the return for utility.
     /// </summary>
-    public virtual IModel<TModelBase>.Builder MakeDefaultBuilder()
-      => (IModel<TModelBase>.Builder)BuilderConstructor(this, null);
+    public virtual IBuilder<TModelBase> MakeDefaultBuilder()
+      => BuilderConstructor(this, null);
 
     /// <summary>
     /// Gets an immutable empty builder for this type to use when null was passed in:
     /// </summary>
-    protected virtual IModel<TModelBase>.Builder MakeDefaultEmptyBuilder()
-      => (IModel<TModelBase>.Builder)MakeDefaultBuilder().AsImmutable();
+    protected virtual IBuilder<TModelBase> MakeDefaultEmptyBuilder()
+      => MakeDefaultBuilder() is IBuilder<TModelBase> builder
+        ? builder is IModel<TModelBase>.Builder objectBasedBuilder
+          ? objectBasedBuilder.AsImmutable() as IBuilder<TModelBase>
+          : builder
+        : default;
 
     #region Configuration Helper Functions
 
@@ -629,10 +721,10 @@ namespace Meep.Tech.Data {
     /// </summary>
     /// <returns></returns>
     public virtual TModelBase Make(IEnumerable<KeyValuePair<string, object>> @params)
-      => BuildModel(MakeDefaultBuilder().Merge(@params.ToDictionary(
+      => BuildModel(BuilderConstructor(this, @params.ToDictionary(
         param => param.Key,
         param => param.Value
-      )) as IModel<TModelBase>.Builder);
+      )));
 
     /// <summary>
     /// Helper for potentially making an item without initializing a Builder object.
@@ -724,7 +816,7 @@ namespace Meep.Tech.Data {
     public TModelBase Make()
       => BuildModel(null);
 
-    public TModelBase Make(Func<IModel<TModelBase>.Builder, IModel<TModelBase>.Builder> configureBuilder)
+    public TModelBase Make(Func<IBuilder<TModelBase>, IBuilder<TModelBase>> configureBuilder)
       => BuildModel(configureBuilder(MakeDefaultBuilder()));
 
     public TModelBase Make(IModel<TModelBase>.Builder builder)
@@ -759,13 +851,17 @@ namespace Meep.Tech.Data {
     /// </summary>
     public TDesiredModel Make<TDesiredModel>(Func<IModel<TModelBase>.Builder, IModel<TModelBase>.Builder> configureBuilder)
       where TDesiredModel : TModelBase
-        => (TDesiredModel)BuildModel(configureBuilder(MakeDefaultBuilder()));
+        => (TDesiredModel)BuildModel(configureBuilder((IModel<TModelBase>.Builder)MakeDefaultBuilder()));
 
     /// <summary>
     /// Make a model that requires a struct based builder:
     /// </summary>
-    public TModelBase Make(Func<IBuilder<TModelBase>, IBuilder<TModelBase>> configureBuilder)
-      => BuildModel(configureBuilder(MakeDefaultBuilder()));
+    public TModelBase Make(Action<IModel<TModelBase>.Builder> configureBuilder) {
+      IModel<TModelBase>.Builder builder = (IModel<TModelBase>.Builder)MakeDefaultBuilder();
+      configureBuilder(builder);
+
+      return BuildModel(builder);
+    }
 
     /// <summary>
     /// Make a model that requires a struct based builder:
@@ -785,7 +881,7 @@ namespace Meep.Tech.Data {
     /// </summary>
     public TModelBase Make(Action<IModel.Builder> configureBuilder)
       => Make(builder => {
-        configureBuilder(builder);
+        configureBuilder((IModel.Builder)builder);
 
         return builder;
       });
@@ -807,27 +903,8 @@ namespace Meep.Tech.Data {
       }
 
       var model = builderToUse.Build();
-      if(model is IReadableComponentStorage storage) {
-        _addModelComponentsToModel(storage, builder);
-      }
 
       return model;
-    }
-
-    TModelBase _addModelComponentsToModel(IReadableComponentStorage model, IBuilder<TModelBase> builder = null) {
-      foreach(Type componentType in DefaultUnlinkedModelComponentTypes) {
-        // Make a builder to match this component with the params from the parent:
-        IBuilder componentBuilder 
-          = IModel.Builder.MakeNewBuilderAndCopyParams(builder, componentType);
-
-        // build the component:
-        IModel.IComponent component = (Data.Components.GetBuilderFactoryFor(componentType) as Archetype)
-          .MakeDefaultWith(componentBuilder) as IModel.IComponent;
-
-        model.AddComponent(component);
-      }
-
-      return (TModelBase)model;
     }
 
     #endregion

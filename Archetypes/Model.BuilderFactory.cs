@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using static Meep.Tech.Data.Configuration.Loader.Settings;
 
 namespace Meep.Tech.Data {
 
@@ -22,7 +23,7 @@ namespace Meep.Tech.Data {
     }
   }
 
-  public partial class Model<TModelBase> where TModelBase : IModel<TModelBase> {
+  public partial class Model<TModelBase> where TModelBase : Model<TModelBase> {
 
     /// <summary>
     /// The factory that was used to make this object
@@ -38,10 +39,24 @@ namespace Meep.Tech.Data {
     /// One of these is instantiated for each Model<> class and IComponent<> class by default.
     /// They can be overriden.
     /// </summary>
-    public class BuilderFactory 
-      : Archetype<TModelBase, BuilderFactory>,
+    public class BuilderFactory
+      : BuilderFactory<BuilderFactory> {
+
+      public BuilderFactory(Archetype.Identity id, Universe universe = null) 
+        : base(id, universe) {}
+    }
+
+    /// <summary>
+    /// The base of all BuilderFactories.
+    /// Custom factories aren't built initially, you should maintain the singleton pattern yourself by setting it
+    /// in the static constructor, or the Setup(Universe) override
+    /// </summary>
+    [DoNotBuildThisOrChildrenInInitialLoad]
+    public abstract class BuilderFactory<TBuilderFactoryBase>
+      : Archetype<TModelBase, TBuilderFactoryBase>,
       IBuilderFactory 
-    {
+      where TBuilderFactoryBase : BuilderFactory<TBuilderFactoryBase>
+      {
 
       Func<IBuilder, IModel> IBuilderFactory.ModelConstructor {
         get => builder => base.ModelConstructor((Builder)builder);
@@ -70,14 +85,14 @@ namespace Meep.Tech.Data {
         set => _defaultBuilderCtor = value;
       }
 
-      internal protected BuilderFactory(Archetype.Identity id)
+      internal protected BuilderFactory(Archetype.Identity id, Universe universe = null)
         : base(
             id,
-            (ArchetypeCollection)(id.Universe.Models._factoriesByModelBases
+            (ArchetypeCollection)((universe ?? Models.DefaultUniverse).Models._factoriesByModelBases
               .TryGetValue(typeof(TModelBase), out var collection)
                 ? collection 
-                : id.Universe.Models._factoriesByModelBases[typeof(TModelBase)] 
-                  = new ArchetypeCollection(id.Universe))
+                : (universe ?? Models.DefaultUniverse).Models._factoriesByModelBases[typeof(TModelBase)] 
+                  = new ArchetypeCollection((universe ?? Models.DefaultUniverse)))
         )
       {
         Id.Universe.Models._factories.Add(this);

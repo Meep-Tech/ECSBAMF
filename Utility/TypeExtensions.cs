@@ -28,6 +28,45 @@ namespace Meep.Tech.Data {
       return baseType.IsAssignableToGeneric(genericType);
     }
 
+    /// <summary>
+    /// Get the generic arguments from a type this inherits from
+    /// </summary>
+    /// <returns></returns>
+    public static IEnumerable<Type> GetInheritedGenericTypes(this Type type, Type genericParentType) {
+      List<Type> inheritedGenericTypes = new List<Type>();
+      foreach(Type intType in type.GetParentTypes()) {
+        if(intType.IsGenericType && intType.GetGenericTypeDefinition() == genericParentType) {
+          return intType.GetGenericArguments();
+        }
+      }
+
+      return inheritedGenericTypes;
+    }
+
+    /// <summary>
+    /// Get all parent types and interfaces 
+    /// </summary>
+    /// <param name="type"></param>
+    /// <returns></returns>
+    public static IEnumerable<Type> GetParentTypes(this Type type) {
+      // is there any base type?
+      if(type == null) {
+        yield break;
+      }
+
+      // return all implemented or inherited interfaces
+      foreach(var i in type.GetInterfaces()) {
+        yield return i;
+      }
+
+      // return all inherited types
+      var currentBaseType = type.BaseType;
+      while(currentBaseType != null) {
+        yield return currentBaseType;
+        currentBaseType = currentBaseType.BaseType;
+      }
+    }
+
     #endregion
 
     #region Casting

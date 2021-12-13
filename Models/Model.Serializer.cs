@@ -1,5 +1,8 @@
 ﻿using Newtonsoft.Json;
 using Microsoft.EntityFrameworkCore;
+using System.Collections.Generic;
+using System;
+using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace Meep.Tech.Data {
 
@@ -25,6 +28,14 @@ namespace Meep.Tech.Data {
         public JsonSerializer ComponentJsonSerializer {
           get => _componentJsonSerializer ??= JsonSerializer.Create(ComponentJsonSerializerSettings);
         } JsonSerializer _componentJsonSerializer;
+
+        /// <summary>
+        /// The types to map to the db context.
+        /// You can provide a config function if you want, but don't have to.
+        /// </summary>
+        public Dictionary<System.Type, Action<EntityTypeBuilder>> TypesToMapToDbContext {
+          get;
+        } = new Dictionary<System.Type, Action<EntityTypeBuilder>>();
 
         /// <summary>
         /// The db context used by the serializer

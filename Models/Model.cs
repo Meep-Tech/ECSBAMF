@@ -7,7 +7,7 @@ namespace Meep.Tech.Data {
   /// This includes a components system.
   /// This is the non-generic base class for Utility
   /// </summary>
-  public partial class Model
+  public abstract partial class Model
     : IModel 
   {
 
@@ -16,11 +16,23 @@ namespace Meep.Tech.Data {
     /// </summary>
     public Universe Universe {
       get;
+      private set;
     }
 
-    protected Model(IBuilder @params) {
-      Universe 
-        = @params.Type.Id.Universe;
+    /// <summary>
+    /// For the base configure calls
+    /// </summary>
+    IModel IModel.Configure(IBuilder @params)
+      => _initialize(@params);
+
+    /// <summary>
+    /// Initialization logic
+    /// </summary>
+    internal virtual Model _initialize(IBuilder builder) {
+      Universe
+        = builder.Type.Id.Universe;
+
+      return this;
     }
   }
 
@@ -28,23 +40,31 @@ namespace Meep.Tech.Data {
   /// The base class for a mutable data model that can be produced by an Archetype.
   /// This includes a components system, and uses a built in default Builder as it's base archetype.
   /// </summary>
-  public partial class Model<TModelBase>
+  public abstract partial class Model<TModelBase>
     : Model, IModel<TModelBase>
-    where TModelBase : IModel<TModelBase> 
+    where TModelBase : Model<TModelBase>
   {
 
+    internal override Model _initialize(IBuilder builder) {
+      Model model = base._initialize(builder);
+      model = (model as Model<TModelBase>)
+        .Initialize((IBuilder<TModelBase>)builder);
+
+      return model;
+    }
+
     /// <summary>
-    /// This is the default ctor.
+    /// Can be used to initialize a model after the ctor call in xbam
     /// </summary>
-    protected Model(IModel.Builder @params = null) 
-      : base(@params) {}
+    protected virtual TModelBase Initialize(IBuilder<TModelBase> builder)
+      => (TModelBase)this;
   }
 
   /// <summary>
   /// The base class for a mutable data model that can be produced by an Archetype.
   /// This includes a components system.
   /// </summary>
-  public partial class Model<TModelBase, TArchetypeBase>
+  public abstract partial class Model<TModelBase, TArchetypeBase>
     : Model, IModel<TModelBase, TArchetypeBase>
     where TModelBase : IModel<TModelBase, TArchetypeBase> 
     where TArchetypeBase : Archetype<TModelBase, TArchetypeBase>
@@ -63,7 +83,15 @@ namespace Meep.Tech.Data {
     [IsArchetypeProperty]
     public TArchetypeBase Archetype {
       get;
+      private set;
     }
+
+    internal override Model _initialize(IBuilder builder) {
+      Model model = base._initialize(builder);
+      Archetype = builder?.Type as TArchetypeBase;
+
+      return model;
+    } 
 
     /// <summary>
     /// Make shortcut.
@@ -83,10 +111,5 @@ namespace Meep.Tech.Data {
           builderConfiguration(builder); 
           return builder;
         });
-
-
-    protected Model(IModel<TModelBase>.Builder builder = null) : base(builder) {
-      Archetype = builder.Type as TArchetypeBase;
-    }
   }
 }

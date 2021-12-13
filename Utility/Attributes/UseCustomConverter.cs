@@ -10,7 +10,7 @@ namespace Meep.Tech.Data {
   /// </summary>
   public class IsArchetypePropertyAttribute : UseCustomConverterAttribute {
     public IsArchetypePropertyAttribute() 
-      : base(typeof(Archetype.ToKeyStringConverter)) {}
+      : base(null) {}
   }
 
   /// <summary>
@@ -20,7 +20,7 @@ namespace Meep.Tech.Data {
   public class IsModelComponentsProperty : UseCustomConverterAttribute {
     public IsModelComponentsProperty() 
       // TODO: this should be a json converter
-      : base(typeof(Archetype.ToKeyStringConverter)) {}
+      : base(null) {}
   }
 
   /// <summary>
@@ -41,6 +41,11 @@ namespace Meep.Tech.Data {
     }
 
     public UseCustomConverterAttribute(Type customConverterType) {
+      // these are handled differently in the logic
+      if(this is IsArchetypePropertyAttribute || this is IsModelComponentsProperty) {
+        return;
+      }
+
       if(!customConverterType.IsAssignableToGeneric(typeof(ValueConverter<,>))) {
         throw new ArgumentException($"Type of {customConverterType} is not a Converter<,>.");
       }

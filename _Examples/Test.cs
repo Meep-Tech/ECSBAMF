@@ -2,7 +2,7 @@
 
 namespace Meep.Tech.Data.Examples {
 
-  public class Test : Model<Test, Test.Type> {
+  /*public class Test : Model<Test, Test.Type> {
     public class Type : Archetype<Test, Type> {
 
       public new static Identity Id {
@@ -44,7 +44,7 @@ namespace Meep.Tech.Data.Examples {
         return builder;
       });
       Archetypes<Test.Type>._.Make((IBuilder builder) => builder);
-      Archetypes<Test.Type>._.Make((IModel<Test>.Builder builder) => builder);
+      Archetypes<Test.Type>._.Make((IModel<Test>.Builder builder) => builder["test"] = "1212");
       Archetypes<Test.Type>._.Make(("color", "red"));
       Archetypes<Test.Type>.w.Make(new KeyValuePair<string, object>("color", "red"));
       Archetypes<Test.Type>._.Make(
@@ -115,5 +115,5 @@ namespace Meep.Tech.Data.Examples {
           return builder;
         };
     }
-  }
+  }*/
 }

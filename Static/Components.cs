@@ -53,16 +53,9 @@ namespace Meep.Tech.Data {
         Components.DefaultUniverse.Components
           .GetBuilderFactoryFor<TComponent>();
       set {
-        Components.DefaultUniverse.Models._factoriesByModelType[typeof(TComponent)] = value;
+        Components.DefaultUniverse.Components
+          .SetBuilderFactoryFor<TComponent>(value);
       }
     }
-
-    /// <summary>
-    /// Get the default factory for a model type:
-    /// </summary>
-    static IComponent<TComponent>.BuilderFactory _makeDefaultFactoryFor(Type modelType)
-      => new IComponent<TComponent>.BuilderFactory(
-        new IComponent<TComponent>.BuilderFactory.Identity(modelType.FullName)
-      );
   }
 }

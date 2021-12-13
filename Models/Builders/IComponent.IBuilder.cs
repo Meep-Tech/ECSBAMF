@@ -93,7 +93,7 @@ namespace Meep.Tech.Data {
       public LiteBuilder(Archetype forArchetype) {
         Type = forArchetype;
         InitializeModel =
-          builder => (TComponentBase)forArchetype.ModelConstructor(builder);
+          builder => (TComponentBase)((IFactory)forArchetype).ModelConstructor(builder);
         ConfigureModel = null;
         FinalizeModel = null;
         @params = null;
@@ -114,8 +114,8 @@ namespace Meep.Tech.Data {
       }
 
       bool IBuilder._tryToGetRawValue(string key, out object value) {
-        value = @params.FirstOrDefault(entry => entry.Key == key);
-        return value != null;
+        value = @params?.FirstOrDefault(entry => entry.Key == key).Value;
+        return !(value is null);
       }
 
       /// <summary>
@@ -123,16 +123,17 @@ namespace Meep.Tech.Data {
       /// </summary>
       public TComponentBase Build() {
         TComponentBase model = InitializeModel(this);
+        model = (TComponentBase)(model as IModel).Configure(this);
 
         if(ConfigureModel != null) {
           model = ConfigureModel.Invoke(this, model) ?? model;
-          model = (TComponentBase)Type.ConfigureModel(this, model);
         }
+        model = (TComponentBase)Type.ConfigureModel(this, model);
 
         if(FinalizeModel != null) {
           model = FinalizeModel(this, model);
-          model = (TComponentBase)Type.FinalizeModel(this, model);
         }
+        model = (TComponentBase)Type.FinalizeModel(this, model);
 
         return model;
       }

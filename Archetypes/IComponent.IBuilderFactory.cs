@@ -36,7 +36,7 @@ namespace Meep.Tech.Data {
     where TComponentBase : IComponent<TComponentBase> {
 
     public new class BuilderFactory
-      : IModel<TComponentBase>.BuilderFactory,
+      : BuilderFactory<BuilderFactory>,
       IComponent.IBuilderFactory {
 
       /// <summary>
@@ -61,8 +61,8 @@ namespace Meep.Tech.Data {
           = type => new Builder(type);
       }*/
 
-      public BuilderFactory(Data.Archetype.Identity id)
-        : base(id) {
+      protected internal BuilderFactory(Identity id, Universe universe = null)
+        : base(id, universe) {
       }
     }
   }

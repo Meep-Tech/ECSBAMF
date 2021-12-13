@@ -9,7 +9,7 @@
     /// <summary>
     /// Access to the builder factory for this type of component
     /// </summary>
-    public IComponent.IBuilderFactory Factory
+    public Data.IComponent.IBuilderFactory Factory
       => Components.GetBuilderFactoryFor(GetType());
 
     /// <summary>
@@ -18,6 +18,18 @@
     /// </summary>
     string Key
       => Factory.Key;
+
+    /// <summary>
+    /// Default configuration
+    /// </summary>
+    IModel IModel.Configure(IBuilder builder)
+      => this;
+
+    /// <summary>
+    /// optional finalization logic for components after the model has been finalized
+    /// </summary>
+    public Data.IComponent FinalizeComponentAfterParent(IModel parent)
+      => this;
   }
 
   /// <summary>

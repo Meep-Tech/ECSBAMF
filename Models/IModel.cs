@@ -5,12 +5,25 @@
   /// This is the non generic for Utility only
   /// </summary>
   public partial interface IModel {
+    
+    /// <summary>
+    /// Overrideable static initializer for model classes.
+    /// Called right after the static initializer
+    /// </summary>
+    /// <param name="universe">The current universe being set up</param>
+    protected internal static void Setup(Universe universe) { }
 
     /// <summary>
     /// Copy the model by serializing and deserializing it.
     /// </summary>
     public IModel Copy() =>
       this.Serialize().Deserialize();
+
+    /// <summary>
+    /// Can be used to initially configure a model in the base ctor.
+    /// Account for a null builder
+    /// </summary>
+    protected internal IModel Configure(IBuilder builder);
 
     /// <summary>
     /// (optional)Finish deserializing the model

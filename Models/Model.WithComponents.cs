@@ -3,14 +3,14 @@ using System.Linq;
 
 namespace Meep.Tech.Data {
 
-  public partial class Model<TModelBase>
-    where TModelBase : IModel<TModelBase> 
+  public abstract partial class Model<TModelBase>
+    where TModelBase : Model<TModelBase> 
   {
 
     /// <summary>
     /// A Model with Components built in
     /// </summary>
-    public class WithComponents
+    public abstract class WithComponents
       : Model<TModelBase>,
       IReadableComponentStorage 
     {
@@ -33,7 +33,7 @@ namespace Meep.Tech.Data {
       [IsModelComponentsProperty]
       Dictionary<string, Data.IComponent> _components {
         get;
-      }
+      } = new Dictionary<string, Data.IComponent>();
 
 
       #region Default Component Implimentations
@@ -217,13 +217,13 @@ namespace Meep.Tech.Data {
     }
   }
 
-  public partial class Model<TModelBase, TArchetypeBase> where TModelBase : IModel<TModelBase, TArchetypeBase> 
+  public abstract partial class Model<TModelBase, TArchetypeBase> where TModelBase : IModel<TModelBase, TArchetypeBase> 
     where TArchetypeBase : Archetype<TModelBase, TArchetypeBase>
   {
     /// <summary>
     /// A Model with Components built in
     /// </summary>
-    public class WithComponents
+    public abstract class WithComponents
       : Model<TModelBase, TArchetypeBase>,
       IReadableComponentStorage 
     {
@@ -246,7 +246,7 @@ namespace Meep.Tech.Data {
       [IsModelComponentsProperty]
       Dictionary<string, Data.IComponent> _components {
         get;
-      }
+      } = new Dictionary<string, IComponent>();
 
       #region Default Component Implimentations
 

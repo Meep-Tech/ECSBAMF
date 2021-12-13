@@ -21,7 +21,7 @@ namespace Meep.Tech.Data {
   {
 
     Func<IModel<TModelBase>.Builder, TModelBase> InitializeModel
-      => builder => (TModelBase)builder.Type.ModelConstructor(builder);
+      => builder => (TModelBase)((IFactory)builder.Type).ModelConstructor(builder);
 
     Func<IModel<TModelBase>.Builder, TModelBase, TModelBase> ConfigureModel
       => null;

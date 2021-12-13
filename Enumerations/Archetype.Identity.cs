@@ -91,7 +91,7 @@
       /// <param name="name">Used to generate the final part of the key. Spaces are removed before then.</param>
       /// <param name="keyPrefixEndingAdditions">Added to the key right before the end here: Type..{keyPrefixEndingAdditions}.name</param>
       public Identity(string name, string keyPrefixEndingAdditions = null) 
-        : base(name, $"{BaseKeyString ?? typeof(TModelBase).Name}.{keyPrefixEndingAdditions ?? ""}.{name}") {}
+        : base(name, $"{BaseKeyString ?? typeof(TModelBase).FullName}.{keyPrefixEndingAdditions ?? ""}{(string.IsNullOrEmpty(keyPrefixEndingAdditions) ? "" : ".")}{name}") {}
     }
   }
 }

@@ -79,12 +79,6 @@ namespace Meep.Tech.Data.Configuration {
     int _remainingFinalizationAttempts;
 
     /// <summary>
-    /// The types we need to construct and map data to
-    /// </summary>
-    HashSet<string> _initializedDbContexts
-        = new HashSet<string>();
-
-    /// <summary>
     /// Externally fetched assemblies for loading
     /// </summary>
     List<Assembly> _unorderedAssembliesToLoad;
@@ -111,7 +105,7 @@ namespace Meep.Tech.Data.Configuration {
     /// Try to load all archetypes, using the Settings
     /// </summary>
     public void Initialize(Universe universe = null) {
-      Universe = universe ?? new Universe(this);
+      Universe = universe ?? new Universe(this, Options.UniverseName);
       _initializeModelSerializerSettings();
       _initalizeCompatableArchetypeData();
       _initializeModelsAndArchetypesByAssembly();
@@ -166,10 +160,16 @@ namespace Meep.Tech.Data.Configuration {
             }
           }
         };
+    }
 
+    /// <summary>
+    /// load the dbcontext settings from the info we've gotten from all the models
+    /// </summary>
+    void _finalizeModelSerializerSettings() {
       Universe.ModelSerializer.Options.DbContext
-        ??= new Model.Serializer.DbContext(
-          new DbContextOptions<Model.Serializer.DbContext>()
+        ??= Options.GetDefaultDbContextForModelSerialization(
+          new DbContextOptions<Model.Serializer.DbContext>(),
+          Universe
         );
     }
 
@@ -267,16 +267,16 @@ namespace Meep.Tech.Data.Configuration {
           _registerComponentType(systemType);
         }
 
-        // then register models
-        foreach(Type systemType in typesToBuild.Models) {
-          _registerModelType(systemType);
-        }
-
         // then initialize archetypes:
         foreach(Type systemType in typesToBuild.Archetypes) {
           if(!_tryToInitialzeArchetype(systemType)) {
             _uninitializedArchetypes.Add(systemType);
           }
+        }
+
+        // then register models
+        foreach(Type systemType in typesToBuild.Models) {
+          _registerModelType(systemType);
         }
       }
     }
@@ -285,20 +285,51 @@ namespace Meep.Tech.Data.Configuration {
     /// Register a new type of model.
     /// </summary>
     void _registerModelType(Type systemType) {
-      _testBuildDefaultModel(systemType);
-      // TODO: this may actually work fine?
-      // TODO: this shouldn't attach this type, it should find the 
-      // first base model type with it's own db settings, or just use the base model type.
-      Universe.ModelSerializer.Options.DbContext.Attach(systemType);
 
-      _initializedDbContexts.Add(systemType.Name);
+      // invoke static ctor
+      System.Runtime.CompilerServices
+        .RuntimeHelpers
+        .RunClassConstructor(systemType.TypeHandle);
+
+      systemType.GetMethod(
+        nameof(IModel.Setup),
+        BindingFlags.Instance
+          | BindingFlags.NonPublic
+          | BindingFlags.Static
+      )?.Invoke(null, new object[] { Universe });
+
+      // assign root archetype references
+      if(systemType.IsAssignableToGeneric(typeof(IModel<,>))) {
+        var types = systemType.GetInheritedGenericTypes(typeof(IModel<,>));
+        if(!typeof(IModel.IBuilderFactory).IsAssignableFrom(types.Last())) {
+          Universe.Archetypes._rootArchetypeTypesByBaseModelType[systemType.FullName] 
+            = types.Last();
+        }
+      }
+
+      _testBuildDefaultModel(systemType);
+      if(!Universe.ModelSerializer.Options.TypesToMapToDbContext.ContainsKey(systemType)) {
+        Universe.ModelSerializer.Options.TypesToMapToDbContext[systemType] = null;
+      }
     }
 
     /// <summary>
     /// Register types of components
     /// </summary>
-    /// <param name="systemType"></param>
     void _registerComponentType(Type systemType) {
+
+      // invoke static ctor
+      System.Runtime.CompilerServices
+        .RuntimeHelpers
+        .RunClassConstructor(systemType.TypeHandle);
+
+      systemType.GetMethod(
+        nameof(IModel.Setup),
+        BindingFlags.Instance
+          | BindingFlags.NonPublic
+          | BindingFlags.Static
+      )?.Invoke(null, new object[] { Universe });
+
       _testBuildDefaultComponent(systemType);
     }
 
@@ -307,11 +338,12 @@ namespace Meep.Tech.Data.Configuration {
     /// </summary>
     void _testBuildDefaultModel(Type systemType) {
       Archetype defaultFactory;
-      if(systemType.IsAssignableToGeneric(typeof(Model<>))) {
-        defaultFactory = Models.GetBuilderFactoryFor(systemType) as Archetype;
+      if(systemType.IsAssignableToGeneric(typeof(Model<,>))) {
+        defaultFactory 
+          = Universe.Archetypes.GetDefaultForModelOfType(systemType);
       }
       else {
-        defaultFactory = Archetypes.All._byModelBaseType[systemType.FullName];
+        defaultFactory = Universe.Models.GetBuilderFactoryFor(systemType) as Archetype;
       }
 
       if(defaultFactory == null) {
@@ -319,7 +351,13 @@ namespace Meep.Tech.Data.Configuration {
       }
 
       try {
-        defaultFactory.MakeDefault();
+        Func<Archetype, Dictionary<string, object>, IBuilder> builderCtor
+          = defaultFactory.GetGenericBuilderConstructor();
+        IBuilder builder = builderCtor.Invoke(
+          defaultFactory,
+          defaultFactory.DefaultTestParams
+        );
+        defaultFactory.MakeDefaultWith(builder);
       }
       catch {
         throw new Exception($"Could not make a default model for model of type: {systemType.FullName}, using default archeytpe of type: {defaultFactory}.");
@@ -330,15 +368,21 @@ namespace Meep.Tech.Data.Configuration {
     /// Test build a model of the given type using it's default archetype or builder.
     /// </summary>
     void _testBuildDefaultComponent(Type systemType) {
-      if(!(Data.Components.GetBuilderFactoryFor(systemType) is Archetype defaultFactory)) {
+      if(!(Universe.Components.GetBuilderFactoryFor(systemType) is Archetype defaultFactory)) {
         throw new Exception($"Could not make a default component model of type: {systemType.FullName}. Could not fine a default BuilderFactory to build it with.");
       }
 
       try {
-        defaultFactory.MakeDefault();
+        Func<Archetype, Dictionary<string, object>, IBuilder> builderCtor 
+          = defaultFactory.GetGenericBuilderConstructor();
+        IBuilder builder = builderCtor.Invoke(
+          defaultFactory,
+          defaultFactory.DefaultTestParams
+        );
+        defaultFactory.MakeDefaultWith(builder);
       }
-      catch {
-        throw new Exception($"Could not make a default component model of type: {systemType.FullName}, using default archeytpe of type: {defaultFactory}.");
+      catch (Exception e) {
+        throw new Exception($"Could not make a default component model of type: {systemType.FullName}, using default archeytpe of type: {defaultFactory}.", e);
       }
     }
 
@@ -446,10 +490,26 @@ namespace Meep.Tech.Data.Configuration {
 
       /// Try to construct it.
       /// The CTor should register it to it's main collection.
+      Archetype archetype;
       try {
-        object archetype = archetypeConstructor.Invoke(ctorArgs);
+         archetype = (Archetype)archetypeConstructor.Invoke(ctorArgs);
+
+        // Try to make the default model, and register what that is:
+        Func<Archetype, Dictionary<string, object>, IBuilder> builderCtor
+          = archetype.GetGenericBuilderConstructor();
+
+        IBuilder builder = builderCtor.Invoke(
+          archetype,
+          archetype.DefaultTestParams
+        );
+
+        IModel defaultModel = archetype.MakeDefaultWith(builder);
+        if(!Universe.Archetypes._rootArchetypeTypesByBaseModelType.ContainsKey(defaultModel.GetType().FullName)) {
+          Universe.Archetypes._rootArchetypeTypesByBaseModelType[defaultModel.GetType().FullName] = archetype.GetType();
+        }
+
         // success:
-        _initializedArchetypes.Add(archetype as Archetype);
+        _initializedArchetypes.Add(archetype);
       } // attempt failure: 
       catch(FailedToConfigureNewArchetypeException e) {
         string failureMessage;
@@ -551,16 +611,15 @@ namespace Meep.Tech.Data.Configuration {
     /// Finish initialization
     /// </summary>
     void _finalize() {
+      _finalizeModelSerializerSettings();
       Universe.ModelSerializer.Options.DbContext.SaveChanges();
 
       _uninitializedArchetypes = null;
       _initializedArchetypes = null;
-      _initializedDbContexts = null;
       _uninitializedComponents = null;
       _uninitializedModels = null;
       _assemblyTypesToBuild = null;
       _unorderedAssembliesToLoad = null;
-      _initializedDbContexts = null;
       _orderedAssemblyFiles = null;
       _remainingFinalizationAttempts = Options.FinalizationAttempts;
       _remainingInitializationAttempts = Options.InitializationAttempts;

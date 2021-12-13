@@ -172,7 +172,7 @@ namespace Meep.Tech.Data {
       public virtual Func<Builder, TModelBase> InitializeModel {
         get;
         set;
-      } = builder => (TModelBase)builder.Type.ModelConstructor(builder);
+      } = builder => (TModelBase)((IFactory)builder.Type).ModelConstructor(builder);
 
       /// <summary>
       /// Configure and set param on the empty new model from InitializeModel.
@@ -195,6 +195,7 @@ namespace Meep.Tech.Data {
       /// </summary>
       public TModelBase Build() {
         TModelBase model = InitializeModel(this);
+        model = (TModelBase)(model as IModel).Configure(this);
 
         /// Unique ID logic:
         /// TOOD: move this to IUnique somehow
@@ -212,7 +213,7 @@ namespace Meep.Tech.Data {
 
         IReadableComponentStorage componentStorage = model as IReadableComponentStorage;
         if(componentStorage != null) {
-          model = _initializeModelComponents(model);
+          model = _initializeModelComponents(componentStorage);
         }
 
         // finalize the parent model
@@ -221,7 +222,7 @@ namespace Meep.Tech.Data {
 
         // finalize the child components:
         if(componentStorage != null) {
-          model = _finalizeModelComponents(model);
+          model = _finalizeModelComponents(componentStorage);
         }
 
         // cache the model if it's cacheable
@@ -236,14 +237,42 @@ namespace Meep.Tech.Data {
       /// Loop though each model component and initialize them.
       /// This also adds all model data componnets linked to an archetype component first.
       /// </summary>
-      protected TModelBase _initializeModelComponents(TModelBase model)
-        => throw new NotImplementedException();
+      protected TModelBase _initializeModelComponents(IReadableComponentStorage model) {
+        foreach(Type componentType in Type.DefaultUnlinkedModelComponentTypes) {
+          // Make a builder to match this component with the params from the parent:
+          IBuilder componentBuilder
+          = MakeNewBuilderAndCopyParams(this, componentType);
+
+          // build the component:
+          IModel.IComponent component = (Data.Components.GetBuilderFactoryFor(componentType) as Archetype)
+            .MakeDefaultWith(componentBuilder) as IModel.IComponent;
+
+          model.AddComponent(component);
+        }
+
+        // add components built from a given ctor
+        foreach(Func<IBuilder, IModel.IComponent> ctor in Type.DefaultUnlinkedModelComponentCtors) {
+          model.AddComponent(ctor(this)); 
+        }
+
+        /// add link components from the archetype
+        foreach(Archetype.ILinkedComponent linkComponent in Type.ModelLinkedComponents) {
+          model.AddComponent(linkComponent.BuildDefaultModelComponent(this, Type.Id.Universe));
+        }
+
+        return (TModelBase)model;
+      }
 
       /// <summary>
       /// Loop though each model component and finalize them.
       /// </summary>
-      protected TModelBase _finalizeModelComponents(TModelBase model)
-        => throw new NotImplementedException();
+      protected TModelBase _finalizeModelComponents(IReadableComponentStorage model) {
+        foreach(IModel.IComponent component in model._componentsByBuilderKey.Values) {
+          component.FinalizeComponentAfterParent(model as IModel);
+        }
+
+        return (TModelBase)model;
+      }
     }
   }
 }

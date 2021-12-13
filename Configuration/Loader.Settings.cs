@@ -1,4 +1,5 @@
 ﻿using Meep.Tech.Data.Utility;
+using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -49,7 +50,8 @@ namespace Meep.Tech.Data.Configuration {
         "Microsoft.",
         "Newtonsoft.Json",
         "netstandard",
-        "NuGet."
+        "NuGet.",
+        "Meep.Tech.ECSBAM"
       };
 
       /// <summary>
@@ -100,6 +102,23 @@ namespace Meep.Tech.Data.Configuration {
         get;
         set;
       } = new Map<ushort, string>();
+
+      /// <summary>
+      /// The default entity framework db serializer context
+      /// </summary>
+      public Func<
+        DbContextOptions<Model.Serializer.DbContext>, // general options obj
+        Universe,
+        Model.Serializer.DbContext // the returned options
+      > GetDefaultDbContextForModelSerialization {
+        get;
+        set;
+      } = (options, universe) 
+        => new Model.Serializer.DbContext(
+          (optionBuilder) => { },
+          options,
+          universe
+        );
 
       /// <summary>
       /// Assembled mod load order.
