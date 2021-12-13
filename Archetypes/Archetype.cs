@@ -144,6 +144,33 @@ namespace Meep.Tech.Data {
 
     #region Hash and Equality
 
+    /// <summary>
+    /// Used to convert an Archetype to a general string for storage
+    /// </summary>
+    public class ToKeyStringConverter : ValueConverter<Archetype, string> {
+      public ToKeyStringConverter() :
+        base(convertToProviderExpression, convertFromProviderExpression) {
+      }
+
+      private static Expression<Func<string, Archetype>> convertFromProviderExpression = x => ToTimeObject(x);
+      private static Expression<Func<Archetype, string>> convertToProviderExpression = x => ToTimeLong(x);
+
+      static Archetype ToTimeObject(string key) {
+        return key.Split("@") is string[] parts
+          ? parts.Length == 1
+            ? Archetypes.Id[key].Archetype
+            : parts.Length == 2
+              ? Universe.Get(parts[1]).Archetypes.Id[parts[2]].Archetype
+              : throw new ArgumentException("ArchetypeKey")
+          : throw new ArgumentNullException("ArchetypeKey");
+      }
+
+      static string ToTimeLong(Archetype archetype)
+        => archetype.Id.Key + (!string.IsNullOrEmpty(archetype.Id.Universe.Key)
+          ? "@" + archetype.Id.Universe.Key
+          : "");
+    }
+
     public override int GetHashCode() 
       => Id.GetHashCode();
 
@@ -155,7 +182,7 @@ namespace Meep.Tech.Data {
     }
 
     public bool Equals(Archetype other) 
-      => Id == other?.Id;
+      => Id.Key == other?.Id.Key;
 
     public static bool operator ==(Archetype a, Archetype b)
       => a?.Equals(b) ?? (b is null);
@@ -443,7 +470,7 @@ namespace Meep.Tech.Data {
     /// <summary>
     /// Used to convert an Archetype to a general string for storage
     /// </summary>
-    public class ToKeyStringConverter : ValueConverter<TArchetypeBase, string> {
+    public new class ToKeyStringConverter : ValueConverter<TArchetypeBase, string> {
       public ToKeyStringConverter() :
         base(convertToProviderExpression, convertFromProviderExpression) {
       }
@@ -737,6 +764,14 @@ namespace Meep.Tech.Data {
     /// </summary>
     public TModelBase Make(params (string key, object value)[] @params)
       => Make((IEnumerable<(string key, object value)>)@params);
+
+    /// <summary>
+    /// Helper for potentially making an item without initializing a dictionary object
+    /// </summary>
+    /// <returns></returns>
+    public TDesiredModel Make<TDesiredModel>(params (string key, object value)[] @params)
+      where TDesiredModel : TModelBase
+        => (TDesiredModel)Make((IEnumerable<(string key, object value)>)@params);
 
     /// <summary>
     /// Helper for potentially making an item without initializing a Builder object.

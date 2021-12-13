@@ -1,5 +1,10 @@
-﻿using System;
+﻿using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
+using System;
 using System.Collections.Generic;
+using System.Linq;
+using System.Linq.Expressions;
 
 namespace Meep.Tech.Data {
 
@@ -58,6 +63,30 @@ namespace Meep.Tech.Data {
       }
 
       return true;
+    }
+
+    /// <summary>
+    /// Used to convert a collection of components to and from a json array
+    /// </summary>
+    public class ComponentsToJsonCollectionConverter : ValueConverter<Dictionary<string, IModel.IComponent>, string> {
+
+      public ComponentsToJsonCollectionConverter() :
+        base(convertToProviderExpression, convertFromProviderExpression) {
+      }
+
+      private static Expression<Func<string, Dictionary<string, IModel.IComponent>>> convertFromProviderExpression = x => FromJsonString(x);
+      private static Expression<Func<Dictionary<string, IModel.IComponent>, string>> convertToProviderExpression = x => ToJsonString(x);
+
+      static Dictionary<string, IModel.IComponent> FromJsonString(string componentsJson)
+        => JArray.Parse(componentsJson).Select(token =>
+          IComponent.FromJson(token as JObject)
+        ).ToDictionary(
+          component => component.Key,
+          component => component
+        );
+
+      static string ToJsonString(Dictionary<string, IModel.IComponent> components)
+        => JArray.FromObject(components.Select(componentData => componentData.Value.ToJson())).ToString();
     }
 
     #region Implicit Implementations

@@ -1,4 +1,6 @@
-﻿using System;
+﻿using Newtonsoft.Json;
+using System;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace Meep.Tech.Data {
 
@@ -14,6 +16,8 @@ namespace Meep.Tech.Data {
     /// <summary>
     /// The universe this model was made inside of
     /// </summary>
+    [NotMapped]
+    [JsonIgnore]
     public Universe Universe {
       get;
       private set;
@@ -47,6 +51,7 @@ namespace Meep.Tech.Data {
 
     internal override Model _initialize(IBuilder builder) {
       Model model = base._initialize(builder);
+      Factory = (IModel.IBuilderFactory)builder.Type;
       model = (model as Model<TModelBase>)
         .Initialize((IBuilder<TModelBase>)builder);
 
@@ -71,16 +76,17 @@ namespace Meep.Tech.Data {
   {
 
     /// <summary>
-    /// Pre-fetchable model types constant, with all potential types for a given type of model.
+    /// Default collection of archetypes for this model type based on the Default Univese
     /// </summary>
-    public static Archetype.Collection<TModelBase, TArchetypeBase> Types
-      => (Archetype.Collection<TModelBase, TArchetypeBase>)
-        Archetypes.GetCollectionFor(typeof(TArchetypeBase).AsArchetype());
+    public static Archetype<TModelBase, TArchetypeBase>.ArchetypeCollection Types
+      => (Archetype<TModelBase, TArchetypeBase>.ArchetypeCollection)
+        Archetypes.DefaultUniverse.Archetypes.GetCollectionFor(typeof(TArchetypeBase));
 
     /// <summary>
     /// The model's archetype:
     /// </summary>
     [IsArchetypeProperty]
+    [JsonConverter(typeof(Archetype.ToKeyStringConverter))]
     public TArchetypeBase Archetype {
       get;
       private set;

@@ -9,15 +9,6 @@ namespace Meep.Tech.Data.Configuration {
     public partial class Settings {
 
       /// <summary>
-      /// The name to configure for the current universe.
-      /// This will be used as it's unique key in the db
-      /// </summary>
-      public string UniverseName {
-        get;
-        set;
-      }
-
-      /// <summary>
       /// Prevents a type that inherits from Archetype<,> or IModel<> from being built as an archetype during initial loading. this is NOT inherited.
       /// </summary>
       [AttributeUsage(AttributeTargets.Class | AttributeTargets.Struct, Inherited = false)]

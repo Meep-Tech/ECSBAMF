@@ -83,7 +83,9 @@ namespace Meep.Tech.Data {
         Add(@new);
 
         // Add to All:
-        Archetypes.All.Add(@new);
+        // TODO: should collect all the registraction stuff into a register function in the Univese.XxxData types
+        Universe.Archetypes.All.Add(@new);
+        Universe.Archetypes._ids.Add(@new.Id.Key, @new.Id);
       }
 
       /// <summary>
@@ -186,11 +188,11 @@ namespace Meep.Tech.Data {
     where TArchetypeBase : Archetype<TModelBase, TArchetypeBase> {
 
     /// <summary>
-    /// Quick link to the collection
+    /// Quick link to the collection for the default universe
     /// </summary>
-    public new static ArchetypeCollection Collection
+    public static ArchetypeCollection DefaultCollection
       => (ArchetypeCollection)
-        Archetypes.GetCollectionFor(typeof(TArchetypeBase).AsArchetype());
+        Archetypes.DefaultUniverse.Archetypes.GetCollectionFor(typeof(TArchetypeBase));
 
     /// <summary>
     /// A Collection of Archetypes.
@@ -224,8 +226,8 @@ namespace Meep.Tech.Data {
       /// </summary>
       public new IReadOnlyDictionary<Identity, TArchetypeBase> ById {
         get => _compiledById ??= _byId.ToDictionary(
-          archetype => archetype.Key as Identity,
-          archetype => archetype.Value as TArchetypeBase
+          archetype => (Identity)Universe.Archetypes.Id[archetype.Key],
+          archetype => (TArchetypeBase)archetype.Value
         );
       } Dictionary<Identity, TArchetypeBase> _compiledById;
 

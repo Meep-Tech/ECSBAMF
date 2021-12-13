@@ -92,7 +92,7 @@ namespace Meep.Tech.Data {
       }
 
       void IBuilder._add(string key, object value) 
-        => Add(key, value);
+        => base.Add(key, value);
 
       bool IBuilder._tryToGetRawValue(string key, out object value)
         => TryGetValue(key, out value);

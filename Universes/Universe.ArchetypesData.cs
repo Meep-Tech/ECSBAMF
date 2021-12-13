@@ -27,7 +27,7 @@ namespace Meep.Tech.Data {
       /// </summary>
       public IEnumerable<Archetype.Identity> Ids
         => _ids.Values;
-      Dictionary<string, Archetype.Identity> _ids
+      internal Dictionary<string, Archetype.Identity> _ids
         = new Dictionary<string, Archetype.Identity>();
 
       /// <summary>
@@ -47,8 +47,7 @@ namespace Meep.Tech.Data {
       /// </summary>
       public IEnumerable<Archetype.Collection> Collections {
         get => _collectionsByRootArchetype.Values.Distinct();
-      }
-      internal readonly Dictionary<string, Archetype.Collection> _collectionsByRootArchetype
+      } internal readonly Dictionary<string, Archetype.Collection> _collectionsByRootArchetype
       = new Dictionary<string, Archetype.Collection>();
 
       internal ArchetypesData(Universe universe) {

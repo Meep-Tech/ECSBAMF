@@ -95,6 +95,15 @@ namespace Meep.Tech.Data.Configuration {
       } = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "mods");
 
       /// <summary>
+      /// The name to configure for the current universe.
+      /// This will be used as it's unique key in the db
+      /// </summary>
+      public string UniverseName {
+        get;
+        set;
+      }
+
+      /// <summary>
       /// A pre-settable setting for specifying how to order certain mods for loading.
       /// This will throw if there's a conflict with order.json
       /// </summary>

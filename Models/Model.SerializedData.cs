@@ -1,9 +1,9 @@
 ﻿using System;
 
-namespace Meep.Tech.Data {
+namespace Meep.Tech.Data {/*
+
 
   public partial class Model {
-
     /// <summary>
     /// A set of pre-serialized packaged model data.
     /// TODO: can this be removed with EF?
@@ -19,5 +19,5 @@ namespace Meep.Tech.Data {
       }
     }
   
-  }
+  }*/
 }

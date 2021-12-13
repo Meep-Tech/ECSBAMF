@@ -28,8 +28,10 @@ namespace Meep.Tech.Data {
     /// <summary>
     /// The factory that was used to make this object
     /// </summary>
-    public IModel<TModelBase>.BuilderFactory DefaultFactory
-      => Models<TModelBase>.BuilderFactory;
+    public IModel.IBuilderFactory Factory {
+      get;
+      private set;
+    }
   }
 
   public partial interface IModel<TModelBase> where TModelBase : IModel<TModelBase> {

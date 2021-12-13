@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using static Meep.Tech.Data.Configuration.Loader.Settings;
 
 namespace Meep.Tech.Data.Configuration {
 
@@ -357,7 +358,8 @@ namespace Meep.Tech.Data.Configuration {
           defaultFactory,
           defaultFactory.DefaultTestParams
         );
-        defaultFactory.MakeDefaultWith(builder);
+        IModel defaultModel = defaultFactory.MakeDefaultWith(builder);
+        Universe.Models._modelTypesProducedByArchetypes[defaultFactory] = defaultModel.GetType();
       }
       catch {
         throw new Exception($"Could not make a default model for model of type: {systemType.FullName}, using default archeytpe of type: {defaultFactory}.");
@@ -380,6 +382,11 @@ namespace Meep.Tech.Data.Configuration {
           defaultFactory.DefaultTestParams
         );
         defaultFactory.MakeDefaultWith(builder);
+
+        /// Register component key
+        Universe.Components.
+          _byKey[(defaultFactory as IComponent.IBuilderFactory).Key] 
+            = systemType;
       }
       catch (Exception e) {
         throw new Exception($"Could not make a default component model of type: {systemType.FullName}, using default archeytpe of type: {defaultFactory}.", e);
@@ -503,6 +510,21 @@ namespace Meep.Tech.Data.Configuration {
           archetype.DefaultTestParams
         );
 
+        // load branch attribute if there is one
+        BranchAttribute branchAttribute;
+        // (first one is newest inherited)
+        if((branchAttribute = archetypeSystemType.GetCustomAttributes<BranchAttribute>().FirstOrDefault()) != null) {
+          // TODO: faster cache for this?
+          (archetype as IFactory).ModelConstructor = builder
+            => (IModel)Activator.CreateInstance(
+              branchAttribute.NewBaseModelType 
+                // Defaults to decalring type (surrounding type) if one wasn't specified.
+                ??= GetFirstDeclaringParent(archetypeSystemType),
+              // nonpublic ctors allowed
+              true
+            );
+        }
+
         IModel defaultModel = archetype.MakeDefaultWith(builder);
         if(!Universe.Archetypes._rootArchetypeTypesByBaseModelType.ContainsKey(defaultModel.GetType().FullName)) {
           Universe.Archetypes._rootArchetypeTypesByBaseModelType[defaultModel.GetType().FullName] = archetype.GetType();
@@ -526,6 +548,21 @@ namespace Meep.Tech.Data.Configuration {
         string fatalMessage = $"Cannot initialize archetype of type: {archetypeSystemType?.FullName ?? "NULLTYPE"} Due to unknown inner exception. \n ---------- \n Will Not Retry \n ---------- \n.";
         throw new CannotInitializeArchetypeException(fatalMessage, e);
       }
+    }
+
+    /// <summary>
+    /// Go up the tree and find a declaring type that these types inherit from.
+    /// </summary>
+    static Type GetFirstDeclaringParent(Type archetypeSystemType) {
+      if(archetypeSystemType.DeclaringType == null) {
+        if(archetypeSystemType.BaseType != null) {
+          return GetFirstDeclaringParent(archetypeSystemType.BaseType);
+        }
+        else
+          return null;
+      }
+      else
+        return archetypeSystemType.DeclaringType;
     }
 
     /// <summary>

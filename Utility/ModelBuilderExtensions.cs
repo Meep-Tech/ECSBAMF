@@ -28,6 +28,12 @@ namespace Meep.Tech.Data {
         if(typeof(IUnique).IsAssignableFrom(modelType)) {
           modelBuilder.Entity(modelType.FullName).Property(typeof(string), "Id")
             .IsRequired().HasAnnotation("Key", 0);
+        } // if a user wants to set a custom key, they need to apply this interface. 
+        else if (!typeof(IUniqueWithCustomKeyColumn).IsAssignableFrom(modelType)
+          // only apply HasNoKey to base model types
+          && modelType.GetModelBaseType().Equals(modelType)
+        ) {
+          builder.HasNoKey();
         }
 
         // custom config

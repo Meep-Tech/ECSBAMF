@@ -9,6 +9,8 @@ namespace Meep.Tech.Data {
   public partial class Model {
     public partial class Serializer {
 
+      public const string ComponentKeyPropertyName = "__key_";
+
       /// <summary>
       /// Settings for the Serializer
       /// </summary>

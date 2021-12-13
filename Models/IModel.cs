@@ -1,11 +1,48 @@
-﻿namespace Meep.Tech.Data {
+﻿using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
+using System;
+
+namespace Meep.Tech.Data {
 
   /// <summary>
   /// The base interface for a mutable data model that can be produced by an Archetype.
   /// This is the non generic for Utility only
   /// </summary>
   public partial interface IModel {
-    
+
+    /// <summary>
+    /// Make a component from a jobject
+    /// </summary>
+    public static IModel FromJson(JObject json) {
+      string key;
+      Universe universe;
+      string compoundKey = json.Value<string>(nameof(Archetype));
+      string[] parts = compoundKey.Split('@');
+      if(parts.Length == 1) {
+        key = compoundKey;
+        universe = Models.DefaultUniverse;
+      }
+      else if(parts.Length == 2) {
+        key = parts[0];
+        universe = Universe.Get(parts[1]);
+      }
+      else
+        throw new ArgumentException($"No __key_ identifier provided in component data: \n{json}");
+
+      return (IModel)json.ToObject(
+        universe.Models.GetModelTypeProducedBy(
+          universe.Archetypes.All.Get(key)
+        )
+      );
+    }
+
+    /// <summary>
+    /// The universe this model was made in
+    /// </summary>
+    public Universe Universe {
+      get;
+    }
+
     /// <summary>
     /// Overrideable static initializer for model classes.
     /// Called right after the static initializer
@@ -17,7 +54,7 @@
     /// Copy the model by serializing and deserializing it.
     /// </summary>
     public IModel Copy() =>
-      this.Serialize().Deserialize();
+       FromJson(this.ToJson());
 
     /// <summary>
     /// Can be used to initially configure a model in the base ctor.
@@ -37,13 +74,6 @@
   public partial interface IModel<TModelBase>
     : IModel
     where TModelBase : IModel<TModelBase> {
-
-    /// <summary>
-    /// The universe this model was made in
-    /// </summary>
-    public Universe Universe {
-      get;
-    }
   }
 
   /// <summary>
@@ -60,8 +90,20 @@
     /// <summary>
     /// Turn the model into a serialized data object.
     /// </summary>
-    public static Model.SerializedData Serialize(this IModel model)
-      => throw new System.NotImplementedException();
+    /*public static Model.SerializedData Serialize(this IModel model)
+      => throw new System.NotImplementedException();*/
+
+    /// <summary>
+    /// Turn the model into a serialized data object.
+    /// </summary>
+    /*public static void Save(this IModel model)
+      => throw new System.NotImplementedException();*/
+
+    /// <summary>
+    /// Turn the model into a serialized data object.
+    /// </summary>
+    public static JObject ToJson(this IModel model)
+      => JObject.FromObject(model);
 
     /// <summary>
     /// Copy the model by serializing and deserializing it.

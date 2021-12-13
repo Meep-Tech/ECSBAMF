@@ -1,8 +1,5 @@
 ﻿namespace Meep.Tech.Data {
 
-  /// <summary>
-  /// A Model with a unique id
-  /// </summary>
   public interface IUnique : IModel {
 
     /// <summary>

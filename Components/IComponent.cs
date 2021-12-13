@@ -1,10 +1,38 @@
-﻿namespace Meep.Tech.Data {
+﻿using Newtonsoft.Json.Linq;
+using System;
+
+namespace Meep.Tech.Data {
 
   /// <summary>
   /// The base class for modular data holders for models and archetypes
   /// This is the non-generic for utility reasons.
   /// </summary>
   public partial interface IComponent : IModel {
+
+    /// <summary>
+    /// Make a component from a jobject
+    /// </summary>
+    public new static IComponent FromJson(JObject json) {
+      string key;
+      Universe universe;
+      string compoundKey = json.Value<string>(Model.Serializer.ComponentKeyPropertyName);
+      string[] parts = compoundKey.Split('@');
+      if(parts.Length == 1) {
+        key = compoundKey;
+        universe = Models.DefaultUniverse;
+      }
+      else if(parts.Length == 2) {
+        key = parts[0];
+        universe = Universe.Get(parts[1]);
+      }
+      else
+        throw new ArgumentException($"No Archetype identifier provided in component data: \n{json}");
+
+      return (IComponent)json.ToObject(
+        universe.Components.Get(key), 
+        universe.ModelSerializer.Options.ComponentJsonSerializer
+      );
+    }
 
     /// <summary>
     /// Access to the builder factory for this type of component
@@ -38,15 +66,19 @@
   public partial interface IComponent<TComponentBase> : IModel<TComponentBase>, IComponent 
     where TComponentBase : IComponent<TComponentBase> 
   {
-
-    /// <summary>
-    /// This can be overriden if you want, but by default, struct based components don't have universe info at hand
-    /// </summary>
-    Universe IModel<TComponentBase>.Universe
-      => null;
   }
 
   public static class ComponentExtensions {
+
+    /// <summary>
+    /// Turn the model into a serialized data object.
+    /// </summary>
+    public static JObject ToJson(this IComponent component, Universe universe = null) {
+      var json = JObject.FromObject(component, (universe ?? component.Universe).ModelSerializer.Options.ComponentJsonSerializer);
+      json.Add(Model.Serializer.ComponentKeyPropertyName, component.Key);
+
+      return json;
+    }
 
     /// <summary>
     /// Helper function to fetch the key for this component type

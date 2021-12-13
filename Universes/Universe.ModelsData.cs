@@ -1,4 +1,6 @@
-﻿using System;
+﻿using Microsoft.EntityFrameworkCore.Metadata.Builders;
+using Newtonsoft.Json;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -12,6 +14,12 @@ namespace Meep.Tech.Data {
       /// </summary>
       Dictionary<string, System.Type> _modelBaseTypes
         = new Dictionary<string, Type>();
+
+      /// <summary>
+      /// Cached model base types
+      /// </summary>
+      internal Dictionary<Archetype, System.Type> _modelTypesProducedByArchetypes
+        = new Dictionary<Archetype, Type>();
 
       /// <summary>
       /// The collection of all base model BuilderFactories.
@@ -68,6 +76,25 @@ namespace Meep.Tech.Data {
         where TModel : IModel<TModel>
           => _universe.Models._factoriesByModelType[typeof(TModel)]
             = factory;
+
+      /// <summary>
+      /// Update the EFCore entity builder for this model type
+      /// </summary>
+      public void ModifyEfCoreBuilderFor<TModel>(Action<EntityTypeBuilder> action)
+        where TModel : IModel<TModel> {
+        if(_universe.ModelSerializer.Options.TypesToMapToDbContext.TryGetValue(typeof(TModel), out var found)) {
+          _universe.ModelSerializer.Options.TypesToMapToDbContext[typeof(TModel)] = action + found;
+        }
+        else {
+          _universe.ModelSerializer.Options.TypesToMapToDbContext[typeof(TModel)] = action;
+        }
+      }
+
+      /// <summary>
+      /// Get the model type an archetype should produce by default.
+      /// </summary>
+      public Type GetModelTypeProducedBy(Archetype archetype)
+        => _modelTypesProducedByArchetypes[archetype];
 
       /// <summary>
       /// Get the base model type of this model type.

@@ -1,4 +1,6 @@
-﻿namespace Meep.Tech.Data {
+﻿using System;
+
+namespace Meep.Tech.Data {
 
   public abstract partial class Archetype {
 
@@ -8,6 +10,12 @@
     /// </summary>
     public interface IComponent
       : Data.IComponent {
+
+      /// <summary>
+      /// Archetype component's shouldn't need to know about the universe they're in.
+      /// </summary>
+      Universe IModel.Universe
+        => throw new NotImplementedException("Archetype component's shouldn't need to know about the universe they're in by default. This can be overriden via IModel.Universe.get");
     }
 
     /// <summary>

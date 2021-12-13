@@ -12,11 +12,20 @@ namespace Meep.Tech.Data {
       Dictionary<string, System.Type> _baseTypes
         = new Dictionary<string, Type>();
 
+      /// <summary>
+      /// Cached model base types
+      /// </summary>
+      internal Dictionary<string, System.Type> _byKey
+        = new Dictionary<string, Type>();
+
       Universe _universe;
 
       public ComponentsData(Universe universe) {
         _universe = universe;
       }
+
+      public Type Get(string key)
+        => _byKey[key];
 
       /// <summary>
       /// Get the builder for a given component by type.d
