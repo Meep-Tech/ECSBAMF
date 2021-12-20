@@ -23,6 +23,7 @@
       internal protected set;
     }
 
+
     /// <summary>
     /// Copy the model by serializing and deserializing it.
     /// </summary>
@@ -35,6 +36,7 @@
       return copy;
     }
   }
+
 
   public static class IUniqueExtensions {
 

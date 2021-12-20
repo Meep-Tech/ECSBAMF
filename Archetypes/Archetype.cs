@@ -73,9 +73,10 @@ namespace Meep.Tech.Data {
     /// <summary>
     /// The initial default components to add to this archetype on it's creation.
     /// </summary>
-    protected virtual Dictionary<string, Archetype.IComponent> InitialComponents {
+    public virtual HashSet<Archetype.IComponent> InitialComponents {
       get;
-    } = new Dictionary<string, IComponent>();
+      init;
+    } = new HashSet<IComponent>();
 
     /// <summary>
     /// The Archetype components linked to model components
@@ -89,16 +90,18 @@ namespace Meep.Tech.Data {
     /// constructors to make default components on a model made by this Archetype,
     /// Usually you'll want to use an Archetype.ILinkedComponent but this is here too.
     /// </summary>
-    protected internal virtual HashSet<Func<IBuilder, IModel.IComponent>> DefaultUnlinkedModelComponentCtors {
+    public virtual HashSet<Func<IBuilder, IModel.IComponent>> InitialUnlinkedModelComponentCtors {
       get;
+      init;
     } = new HashSet<Func<IBuilder, IModel.IComponent>>();
 
     /// <summary>
     /// The default component types to initialize with default values on a new model made by this archetype
     /// Usually you'll want to use an Archetype.ILinkedComponent but this is here too.
     /// </summary>
-    protected internal virtual HashSet<System.Type> DefaultUnlinkedModelComponentTypes {
+    public virtual HashSet<System.Type> InitialUnlinkedModelComponentTypes {
       get;
+      init;
     } = new HashSet<System.Type>();
 
     /// <summary>
@@ -111,8 +114,10 @@ namespace Meep.Tech.Data {
     /// <summary>
     /// Default params for testing
     /// </summary>
-    internal protected virtual Dictionary<string, object> DefaultTestParams
-      => new Dictionary<string, object>();
+    internal protected virtual Dictionary<string, object> DefaultTestParams {
+      get;
+      init;
+    } = new Dictionary<string, object>();
 
     /// <summary>
     /// Finish setting this up
@@ -548,7 +553,7 @@ namespace Meep.Tech.Data {
     /// Add all initial components
     /// </summary>
     void _initializeInitialComponents() {
-      foreach(Archetype.IComponent component in InitialComponents.Values) {
+      foreach(Archetype.IComponent component in InitialComponents) {
         AddComponent(component);
         if(component is Archetype.ILinkedComponent linkedComponent) {
           _modelLinkedComponents.Add(linkedComponent);
@@ -598,7 +603,7 @@ namespace Meep.Tech.Data {
     ///  - public|private|protected Model(IBuilder builder)
     ///  - public|private|protected Model()
     /// </summary>
-    static Func<IBuilder<TModelBase>, TModelBase> GetDefaultCtorFor(Type modelType) {
+    internal static Func<IBuilder<TModelBase>, TModelBase> GetDefaultCtorFor(Type modelType) {
       // try to get any matching builder ctor:
       System.Reflection.ConstructorInfo ctor = modelType.GetConstructors(
         System.Reflection.BindingFlags.Public 
@@ -672,27 +677,34 @@ namespace Meep.Tech.Data {
     /// The default way a new builder is created.
     /// The dictionary passed in has the potential to be null
     /// </summary>
-    internal protected virtual Func<Archetype, Dictionary<string, object>, IBuilder<TModelBase>> BuilderConstructor {
-      get => _defaultBuilderCtor ??= (archetype, @params) 
+    internal protected virtual Func<Archetype, Dictionary<string, object>, Universe, IBuilder<TModelBase>> BuilderConstructor {
+      get => _defaultBuilderCtor ??= (archetype, @params, universe) 
         => !(@params is null) 
-          ? new IModel<TModelBase>.Builder(archetype, @params)
-          : new IModel<TModelBase>.Builder(archetype); 
+          ? new IModel<TModelBase>.Builder(archetype, @params, universe)
+          : new IModel<TModelBase>.Builder(archetype, universe); 
       set => _defaultBuilderCtor = value;
-    } internal Func<Archetype, Dictionary<string, object>, IBuilder<TModelBase>> _defaultBuilderCtor;
+    } internal Func<Archetype, Dictionary<string, object>, Universe, IBuilder<TModelBase>> _defaultBuilderCtor;
 
     /// <summary>
     /// helper for getting the builder constructor from the non-generic base class
     /// TODO: I can probably cache this at least.
     /// </summary>
     protected internal sealed override Func<Archetype, Dictionary<string, object>, IBuilder> GetGenericBuilderConstructor()
-      => BuilderConstructor;
+      => (archetype, @params) => BuilderConstructor(archetype, @params, null);
 
     /// <summary>
     /// The builder for the base model type of this archetype.
     /// You can override this and add more default props to the return for utility.
     /// </summary>
     public virtual IBuilder<TModelBase> MakeDefaultBuilder()
-      => BuilderConstructor(this, null);
+      => (IBuilder<TModelBase>)GetGenericBuilderConstructor()(this, null);
+
+    /// <summary>
+    /// The builder for the base model type of this archetype.
+    /// You can override this and add more default props to the return for utility.
+    /// </summary>
+    public IBuilder<TModelBase> MakeBuilder(Dictionary<string, object> @params)
+      => (IBuilder<TModelBase>)GetGenericBuilderConstructor()(this, @params);
 
     /// <summary>
     /// Gets an immutable empty builder for this type to use when null was passed in:
@@ -748,7 +760,7 @@ namespace Meep.Tech.Data {
     /// </summary>
     /// <returns></returns>
     public virtual TModelBase Make(IEnumerable<KeyValuePair<string, object>> @params)
-      => BuildModel(BuilderConstructor(this, @params.ToDictionary(
+      => BuildModel(MakeBuilder(@params.ToDictionary(
         param => param.Key,
         param => param.Value
       )));

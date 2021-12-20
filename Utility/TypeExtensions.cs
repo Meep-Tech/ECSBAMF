@@ -10,6 +10,13 @@ namespace Meep.Tech.Data {
   public static class TypeExtensions {
 
     #region Inheritance Testing
+
+    /// <summary>
+    /// Check if a given type is assignable to a generic type
+    /// </summary>
+    /// <param name="givenType"></param>
+    /// <param name="genericType"></param>
+    /// <returns></returns>
     public static bool IsAssignableToGeneric(this Type givenType, Type genericType) {
       var interfaceTypes = givenType.GetInterfaces();
 
@@ -31,7 +38,6 @@ namespace Meep.Tech.Data {
     /// <summary>
     /// Get the generic arguments from a type this inherits from
     /// </summary>
-    /// <returns></returns>
     public static IEnumerable<Type> GetInheritedGenericTypes(this Type type, Type genericParentType) {
       List<Type> inheritedGenericTypes = new List<Type>();
       foreach(Type intType in type.GetParentTypes()) {
@@ -46,8 +52,6 @@ namespace Meep.Tech.Data {
     /// <summary>
     /// Get all parent types and interfaces 
     /// </summary>
-    /// <param name="type"></param>
-    /// <returns></returns>
     public static IEnumerable<Type> GetParentTypes(this Type type) {
       // is there any base type?
       if(type == null) {

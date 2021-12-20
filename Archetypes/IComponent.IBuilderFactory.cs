@@ -50,20 +50,22 @@ namespace Meep.Tech.Data {
       /// The default way a new builder is created.
       /// This can be used to set this for a Model<> without archetypes.
       /// </summary>
-      public override Func<Archetype, Dictionary<string, object>, IBuilder<TComponentBase>> BuilderConstructor {
-        get => _defaultBuilderCtor ??= (archetype, @params) => new IModel<TComponentBase>.Builder(archetype, @params);
+      public override Func<Archetype, Dictionary<string, object>, Universe, IBuilder<TComponentBase>> BuilderConstructor {
+        get => _defaultBuilderCtor ??= (archetype, @params, universe) => new IModel<TComponentBase>.Builder(archetype, @params, universe);
         set => _defaultBuilderCtor = value;
       }
 
-      /*static BuilderFactory() {
-        /// By default, these use upclassed builders:
-        Components<TComponentBase>.BuilderFactory.BuilderConstructor
-          = type => new Builder(type);
-      }*/
+      public BuilderFactory(
+        Archetype.Identity id,
+        Universe universe = null
+      )  : base(id, universe) {}
 
-      protected internal BuilderFactory(Identity id, Universe universe = null)
-        : base(id, universe) {
-      }
+      public BuilderFactory(
+        Archetype.Identity id,
+        Universe universe,
+        HashSet<IComponent> archetypeComponents,
+        IEnumerable<Func<IBuilder, IModel.IComponent>> modelComponentCtors
+      )  : base(id, universe, archetypeComponents, modelComponentCtors) {}
     }
   }
 }

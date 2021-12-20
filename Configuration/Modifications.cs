@@ -17,7 +17,7 @@ namespace Meep.Tech.Data.Configuration {
     }
 
     internal Modifications(Universe universe) {
-      this.Universe = universe;
+      Universe = universe;
     }
 
     /// <summary>

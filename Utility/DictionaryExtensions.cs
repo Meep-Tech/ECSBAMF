@@ -9,6 +9,14 @@ namespace Meep.Tech.Data {
     /// <summary>
     /// Append a value to a dictionary and return the collection
     /// </summary>
+    public static HashSet<TValue> Append<TValue>(this HashSet<TValue> current, TValue value) {
+      current.Add(value);
+      return current;
+    }
+
+    /// <summary>
+    /// Append a value to a dictionary and return the collection
+    /// </summary>
     public static Dictionary<TKey, TValue> Append<TKey, TValue>(this Dictionary<TKey, TValue> current, TKey key, TValue value) {
       current.Add(key, value);
       return current;

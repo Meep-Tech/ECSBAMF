@@ -9,4 +9,3 @@ C:\Users\super\Projects\meep-tech\libraries\c-sharp\Meep.Tech.ECSBAMF\obj\Debug\
 C:\Users\super\Projects\meep-tech\libraries\c-sharp\Meep.Tech.ECSBAMF\obj\Debug\net5\Meep.Tech.ECSBAM.dll
 C:\Users\super\Projects\meep-tech\libraries\c-sharp\Meep.Tech.ECSBAMF\obj\Debug\net5\ref\Meep.Tech.ECSBAM.dll
 C:\Users\super\Projects\meep-tech\libraries\c-sharp\Meep.Tech.ECSBAMF\obj\Debug\net5\Meep.Tech.ECSBAM.pdb
-C:\Users\super\Projects\meep-tech\libraries\c-sharp\Meep.Tech.ECSBAMF\obj\Debug\net5\Meep.Tech.ECSBAM.csproj.AssemblyReference.cache

@@ -34,7 +34,7 @@ namespace Meep.Tech.Data {
     /// </summary>
     internal virtual Model _initialize(IBuilder builder) {
       Universe
-        = builder.Type.Id.Universe;
+        = builder.Archetype.Id.Universe;
 
       return this;
     }
@@ -51,7 +51,7 @@ namespace Meep.Tech.Data {
 
     internal override Model _initialize(IBuilder builder) {
       Model model = base._initialize(builder);
-      Factory = (IModel.IBuilderFactory)builder.Type;
+      Factory = (IModel.IBuilderFactory)builder.Archetype;
       model = (model as Model<TModelBase>)
         .Initialize((IBuilder<TModelBase>)builder);
 
@@ -94,7 +94,7 @@ namespace Meep.Tech.Data {
 
     internal override Model _initialize(IBuilder builder) {
       Model model = base._initialize(builder);
-      Archetype = builder?.Type as TArchetypeBase;
+      Archetype = builder?.Archetype as TArchetypeBase;
 
       return model;
     } 

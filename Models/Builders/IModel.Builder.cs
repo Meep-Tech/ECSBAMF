@@ -15,7 +15,14 @@ namespace Meep.Tech.Data {
       /// <summary>
       /// The archetype/factory using this builder.
       /// </summary>
-      public Archetype Type {
+      public Archetype Archetype {
+        get;
+      }
+
+      /// <summary>
+      /// The universe this builder is building in
+      /// </summary>
+      public Universe Universe {
         get;
       }
 
@@ -27,28 +34,30 @@ namespace Meep.Tech.Data {
       /// <summary>
       /// Empty new builder
       /// </summary>
-      protected Builder(Archetype type, bool Immutable = false) 
+      protected Builder(Archetype type, bool Immutable, Universe universe = null) 
         : base() {
-        Type = type;
+        Archetype = type;
+        Universe = universe ?? type.Id.Universe;
         _isImmutable = Immutable;
       }
 
       /// <summary>
       /// New builder from a collection of param names
       /// </summary>
-      protected Builder(Archetype type, Dictionary<string, object> @params) 
+      protected Builder(Archetype type, Dictionary<string, object> @params, Universe universe = null) 
         : base(@params) {
-        Type = type;
+        Universe = universe;
+        Archetype = type;
       }
 
       /// <summary>
       /// New builder from a collection of params
       /// </summary>
-      protected Builder(Archetype type, Dictionary<Param, object> @params) 
+      protected Builder(Archetype type, Dictionary<Param, object> @params, Universe universe = null) 
         : this(type, @params.ToDictionary(
           param => param.Key.Key,
           param => param.Value
-        )) { }
+        ), universe) { }
 
       /// <summary>
       /// Copy a builder for a new target type
@@ -139,31 +148,32 @@ namespace Meep.Tech.Data {
       /// <summary>
       /// Empty new builder
       /// </summary>
-      public Builder(Archetype forArchetype)
-        : base(forArchetype) {}
+      public Builder(Archetype forArchetype, Universe universe = null)
+        : base(forArchetype, false, universe) {}
 
       /// <summary>
       /// Empty new builder, immutable, for internal use only
       /// </summary>
-      public Builder(Archetype forArchetype, bool Immutable)
-        : base(forArchetype, Immutable) {}
+      public Builder(Archetype forArchetype, bool immutable, Universe universe = null)
+        : base(forArchetype, immutable, universe) {}
 
       /// <summary>
       /// New builder from a collection of param names
       /// </summary>
-      public Builder(Archetype forArchetype, Dictionary<string, object> @params)
-        : base(forArchetype, @params) {}
+      public Builder(Archetype forArchetype, Dictionary<string, object> @params, Universe universe = null)
+        : base(forArchetype, @params, universe) {}
 
       /// <summary>
       /// New builder from a collection of params
       /// </summary>
       public Builder(
         Archetype forArchetype,
-        Dictionary<Param, object> @params
+        Dictionary<Param, object> @params,
+        Universe universe = null
       ) : base(forArchetype, @params.ToDictionary(
         param => param.Key.Key,
         param => param.Value
-      )) { }
+      ), universe) { }
 
       /// <summary>
       /// Produce a new instance of the model type.
@@ -172,7 +182,7 @@ namespace Meep.Tech.Data {
       public virtual Func<Builder, TModelBase> InitializeModel {
         get;
         set;
-      } = builder => (TModelBase)((IFactory)builder.Type).ModelConstructor(builder);
+      } = builder => (TModelBase)((IFactory)builder.Archetype).ModelConstructor(builder);
 
       /// <summary>
       /// Configure and set param on the empty new model from InitializeModel.
@@ -204,12 +214,12 @@ namespace Meep.Tech.Data {
             unique.Id = providedId;
           }
           else if(unique.Id == null) {
-            unique.Id = RNG.GetNextUniqueId();
+            unique._resetUniqueId();
           }
         }
 
         model = ConfigureModel(this, model);
-        model = (TModelBase)Type.ConfigureModel(this, model);
+        model = (TModelBase)Archetype.ConfigureModel(this, model);
 
         IReadableComponentStorage componentStorage = model as IReadableComponentStorage;
         if(componentStorage != null) {
@@ -218,7 +228,7 @@ namespace Meep.Tech.Data {
 
         // finalize the parent model
         model = FinalizeModel(this, model);
-        model = (TModelBase)Type.FinalizeModel(this, model);
+        model = (TModelBase)Archetype.FinalizeModel(this, model);
 
         // finalize the child components:
         if(componentStorage != null) {
@@ -238,7 +248,7 @@ namespace Meep.Tech.Data {
       /// This also adds all model data componnets linked to an archetype component first.
       /// </summary>
       protected TModelBase _initializeModelComponents(IReadableComponentStorage model) {
-        foreach(Type componentType in Type.DefaultUnlinkedModelComponentTypes) {
+        foreach(Type componentType in Archetype.InitialUnlinkedModelComponentTypes) {
           // Make a builder to match this component with the params from the parent:
           IBuilder componentBuilder
           = MakeNewBuilderAndCopyParams(this, componentType);
@@ -251,13 +261,13 @@ namespace Meep.Tech.Data {
         }
 
         // add components built from a given ctor
-        foreach(Func<IBuilder, IModel.IComponent> ctor in Type.DefaultUnlinkedModelComponentCtors) {
+        foreach(Func<IBuilder, IModel.IComponent> ctor in Archetype.InitialUnlinkedModelComponentCtors) {
           model.AddComponent(ctor(this)); 
         }
 
         /// add link components from the archetype
-        foreach(Archetype.ILinkedComponent linkComponent in Type.ModelLinkedComponents) {
-          model.AddComponent(linkComponent.BuildDefaultModelComponent(this, Type.Id.Universe));
+        foreach(Archetype.ILinkedComponent linkComponent in Archetype.ModelLinkedComponents) {
+          model.AddComponent(linkComponent.BuildDefaultModelComponent(this, Archetype.Id.Universe));
         }
 
         return (TModelBase)model;

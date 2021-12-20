@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -32,14 +31,14 @@ namespace Meep.Tech.Data {
     /// </summary>
     public new class Builder : IModel<TComponentBase>.Builder {
 
-      public Builder(Archetype forArchetype) 
-        : base(forArchetype) {}
+      public Builder(Archetype forArchetype, Universe universe = null) 
+        : base(forArchetype, universe) {}
 
-      public Builder(Archetype forArchetype, Dictionary<string, object> @params) 
-        : base(forArchetype, @params) {}
+      public Builder(Archetype forArchetype, Dictionary<string, object> @params, Universe universe = null) 
+        : base(forArchetype, @params, universe) {}
 
-      public Builder(Archetype forArchetype, Dictionary<Param, object> @params) 
-        : base(forArchetype, @params) {}
+      public Builder(Archetype forArchetype, Dictionary<Param, object> @params, Universe universe = null) 
+        : base(forArchetype, @params, universe) {}
 
       public Builder(Archetype forArchetype, bool Immutable) 
         : base(forArchetype, Immutable) {}
@@ -53,7 +52,7 @@ namespace Meep.Tech.Data {
       /// <summary>
       /// The factory this is for.
       /// </summary>
-      public Archetype Type {
+      public Archetype Archetype {
         get;
       }
 
@@ -90,13 +89,23 @@ namespace Meep.Tech.Data {
         private set;
       }
 
-      public LiteBuilder(Archetype forArchetype) {
-        Type = forArchetype;
+      public Universe Universe {
+        get;
+      }
+
+      public LiteBuilder(Archetype forArchetype, Universe universe = null) {
+        Archetype = forArchetype;
         InitializeModel =
           builder => (TComponentBase)((IFactory)forArchetype).ModelConstructor(builder);
         ConfigureModel = null;
         FinalizeModel = null;
         @params = null;
+        Universe = universe ?? Components.DefaultUniverse;
+      }
+
+      public LiteBuilder(Archetype forArchetype, Universe universe, params KeyValuePair<string, object>[] @params)
+        : this(forArchetype, universe) {
+        this.@params = @params;
       }
 
       public LiteBuilder(Archetype forArchetype, params KeyValuePair<string, object>[] @params)
@@ -104,8 +113,8 @@ namespace Meep.Tech.Data {
         this.@params = @params;
       }
 
-      public LiteBuilder(Archetype forArchetype, IEnumerable<KeyValuePair<string, object>> @params)
-        : this(forArchetype) {
+      public LiteBuilder(Archetype forArchetype, IEnumerable<KeyValuePair<string, object>> @params, Universe universe = null)
+        : this(forArchetype, universe) {
         this.@params = @params;
       }
 
@@ -128,12 +137,12 @@ namespace Meep.Tech.Data {
         if(ConfigureModel != null) {
           model = ConfigureModel.Invoke(this, model) ?? model;
         }
-        model = (TComponentBase)Type.ConfigureModel(this, model);
+        model = (TComponentBase)Archetype.ConfigureModel(this, model);
 
         if(FinalizeModel != null) {
           model = FinalizeModel(this, model);
         }
-        model = (TComponentBase)Type.FinalizeModel(this, model);
+        model = (TComponentBase)Archetype.FinalizeModel(this, model);
 
         return model;
       }

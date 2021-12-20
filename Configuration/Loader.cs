@@ -249,7 +249,7 @@ namespace Meep.Tech.Data.Configuration {
         Options._assemblyLoadOrder
           = _unorderedAssembliesToLoad.OrderBy(
             assembly => _orderedAssemblyFiles.Reverse
-              .TryToGet(assembly.FullName.Split(",")[0], out ushort foundPriority)
+              .TryToGet(assembly.FullName.Split(',')[0], out ushort foundPriority)
               ? foundPriority
               : ushort.MaxValue
         ).ToList();

@@ -6,57 +6,73 @@ using System.Collections;
 
 
 namespace Meep.Tech.Data.Utility {
-  public class OrderdDictionary<K, V> : IEnumerable<KeyValuePair<K, V>> {
-    public OrderedDictionary UnderlyingCollection { get; } = new OrderedDictionary();
+  public class OrderdDictionary<TKey, TValue> 
+    : IEnumerable<KeyValuePair<TKey, TValue>> 
+  {
 
-    public V this[K key] {
-      get {
-        return (V)UnderlyingCollection[key];
-      }
-      set {
-        UnderlyingCollection[key] = value;
-      }
+    public OrderedDictionary _collection { 
+      get;
+    } = new OrderedDictionary();
+
+    public TValue this[TKey key] {
+      get => (TValue)_collection[key];
+      set => _collection[key] = value;
     }
 
-    public V this[int index] {
-      get {
-        return (V)UnderlyingCollection[index];
-      }
-      set {
-        UnderlyingCollection[index] = value;
-      }
+    public TValue this[int index] {
+      get => (TValue)_collection[index];
+      set => _collection[index] = value;
     }
-    public ICollection<K> Keys => UnderlyingCollection.Keys.OfType<K>().ToList();
-    public ICollection<V> Values => UnderlyingCollection.Values.OfType<V>().ToList();
-    public bool IsReadOnly => UnderlyingCollection.IsReadOnly;
-    public int Count => UnderlyingCollection.Count;
-    public void Insert(int index, K key, V value) => UnderlyingCollection.Insert(index, key, value);
-    public void RemoveAt(int index) => UnderlyingCollection.RemoveAt(index);
-    public bool Contains(K key) => UnderlyingCollection.Contains(key);
-    public void Add(K key, V value) => UnderlyingCollection.Add(key, value);
-    public void Clear() => UnderlyingCollection.Clear();
-    public void Remove(K key) => UnderlyingCollection.Remove(key);
-    public void CopyTo(Array array, int index) => UnderlyingCollection.CopyTo(array, index);
 
-    /// <summary>
-    /// Try get for ordered dic
-    /// </summary>
-    public bool TryGetValue(K key, out V value)
+    public ICollection<TKey> Keys 
+      => _collection.Keys.OfType<TKey>().ToList();
+
+    public ICollection<TValue> Values 
+      => _collection.Values.OfType<TValue>().ToList();
+
+    public bool IsReadOnly 
+      => _collection.IsReadOnly;
+
+    public int Count 
+      => _collection.Count;
+
+    public void Insert(int index, TKey key, TValue value) 
+      => _collection.Insert(index, key, value);
+
+    public void RemoveAt(int index) 
+      => _collection.RemoveAt(index);
+
+    public bool Contains(TKey key) 
+      => _collection.Contains(key);
+
+    public void Add(TKey key, TValue value) 
+      => _collection.Add(key, value);
+
+    public void Clear() 
+      => _collection.Clear();
+
+    public void Remove(TKey key) 
+      => _collection.Remove(key);
+
+    public void CopyTo(Array array, int index) 
+      => _collection.CopyTo(array, index);
+
+    public bool TryGetValue(TKey key, out TValue value)
       => (value = Contains(key)
         ? this[key]
         : default
       ) != null;
 
-    IEnumerator<KeyValuePair<K, V>> IEnumerable<KeyValuePair<K, V>>.GetEnumerator()
-      => UnderlyingCollection.Cast<DictionaryEntry>().Select(obj => new KeyValuePair<K, V>(
-        (K)(obj).Key,
-        (V)(obj).Value
+    IEnumerator<KeyValuePair<TKey, TValue>> IEnumerable<KeyValuePair<TKey, TValue>>.GetEnumerator()
+      => _collection.Cast<DictionaryEntry>().Select(obj => new KeyValuePair<TKey, TValue>(
+        (TKey)(obj).Key,
+        (TValue)(obj).Value
       )).GetEnumerator();
 
     IEnumerator IEnumerable.GetEnumerator()
-      => UnderlyingCollection.Cast<DictionaryEntry>().Select(obj => new KeyValuePair<K, V>(
-        (K)(obj).Key,
-        (V)(obj).Value
+      => _collection.Cast<DictionaryEntry>().Select(obj => new KeyValuePair<TKey, TValue>(
+        (TKey)(obj).Key,
+        (TValue)(obj).Value
       )).GetEnumerator();
   }
 }

@@ -1,0 +1,5 @@
+C:\Users\super\Projects\meep-tech\libraries\c-sharp\Meep.Tech.ECSBAMF\obj\Debug\netframework4.7.2\Meep.Tech.ECSBAM.csproj.AssemblyReference.cache
+C:\Users\super\Projects\meep-tech\libraries\c-sharp\Meep.Tech.ECSBAMF\obj\Debug\netframework4.7.2\Meep.Tech.ECSBAM.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\super\Projects\meep-tech\libraries\c-sharp\Meep.Tech.ECSBAMF\obj\Debug\netframework4.7.2\Meep.Tech.ECSBAM.AssemblyInfoInputs.cache
+C:\Users\super\Projects\meep-tech\libraries\c-sharp\Meep.Tech.ECSBAMF\obj\Debug\netframework4.7.2\Meep.Tech.ECSBAM.AssemblyInfo.cs
+C:\Users\super\Projects\meep-tech\libraries\c-sharp\Meep.Tech.ECSBAMF\obj\Debug\netframework4.7.2\Meep.Tech.ECSBAM.csproj.CoreCompileInputs.cache

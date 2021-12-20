@@ -4,7 +4,12 @@ using static Meep.Tech.Data.IModel.Builder;
 namespace Meep.Tech.Data {
 
   public interface IBuilder {
-    Archetype Type {
+
+    Universe Universe {
+      get;
+    }
+    
+    Archetype Archetype {
       get;
     }
 
@@ -21,7 +26,7 @@ namespace Meep.Tech.Data {
   {
 
     Func<IModel<TModelBase>.Builder, TModelBase> InitializeModel
-      => builder => (TModelBase)((IFactory)builder.Type).ModelConstructor(builder);
+      => builder => (TModelBase)((IFactory)builder.Archetype).ModelConstructor(builder);
 
     Func<IModel<TModelBase>.Builder, TModelBase, TModelBase> ConfigureModel
       => null;

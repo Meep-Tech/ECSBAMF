@@ -44,8 +44,16 @@ namespace Meep.Tech.Data {
     public class BuilderFactory
       : BuilderFactory<BuilderFactory> {
 
-      public BuilderFactory(Archetype.Identity id, Universe universe = null) 
-        : base(id, universe) {}
+      public BuilderFactory(
+        Archetype.Identity id,
+        Universe universe,
+        HashSet<Archetype.IComponent> archetypeComponents,
+        IEnumerable<Func<IBuilder, IModel.IComponent>> modelComponentCtors 
+      )  : base(id, universe, archetypeComponents, modelComponentCtors) { }
+      public BuilderFactory(
+        Archetype.Identity id,
+        Universe universe = null
+      )  : base(id, universe) { }
     }
 
     /// <summary>
@@ -82,13 +90,17 @@ namespace Meep.Tech.Data {
       /// The default way a new builder is created.
       /// This can be used to set this for a Model<> without archetypes.
       /// </summary>
-      public new virtual Func<Archetype, Dictionary<string, object>, IBuilder<TModelBase>> BuilderConstructor {
-        get => _defaultBuilderCtor ??= (archetype, @params) => base.BuilderConstructor(archetype, @params) as Builder;
+      public new virtual Func<Archetype, Dictionary<string, object>, Universe, IBuilder<TModelBase>> BuilderConstructor {
+        get => _defaultBuilderCtor ??= (archetype, @params, universe) => base.BuilderConstructor(archetype, @params, universe) as Builder;
         set => _defaultBuilderCtor = value;
       }
 
-      internal protected BuilderFactory(Archetype.Identity id, Universe universe = null)
-        : base(
+      internal protected BuilderFactory(
+        Archetype.Identity id,
+        Universe universe = null,
+        HashSet<Archetype.IComponent> archetypeComponents = null,
+        IEnumerable<Func<IBuilder, IModel.IComponent>> modelComponentCtors = null
+      ) : base(
             id,
             (ArchetypeCollection)((universe ?? Models.DefaultUniverse).Models._factoriesByModelBases
               .TryGetValue(typeof(TModelBase), out var collection)
