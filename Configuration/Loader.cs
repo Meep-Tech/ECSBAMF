@@ -48,20 +48,26 @@ namespace Meep.Tech.Data.Configuration {
     /// <summary>
     /// The types we need to construct and map data to
     /// </summary>
-    List<System.Type> _uninitializedArchetypes
-        = new List<System.Type>();
+    Dictionary<System.Type, Exception> _uninitializedArchetypes
+        = new Dictionary<System.Type, Exception>();
+    
+    /// <summary>
+    /// The types that failed entirely
+    /// </summary>
+    Dictionary<System.Type, Exception> _failedArchetypes
+        = new Dictionary<System.Type, Exception>();
 
     /// <summary>
     /// The types we need to construct and map data to
     /// </summary>
-    List<System.Type> _uninitializedModels
-        = new List<System.Type>();
+    Dictionary<System.Type, Exception> _uninitializedModels
+        = new Dictionary<System.Type, Exception>();
 
     /// <summary>
     /// The types we need to construct and map data to
     /// </summary>
-    List<System.Type> _uninitializedComponents
-        = new List<System.Type>();
+    Dictionary<System.Type, Exception> _uninitializedComponents
+        = new Dictionary<System.Type, Exception>();
 
     /// <summary>
     /// The types we need to construct and map data to
@@ -112,7 +118,7 @@ namespace Meep.Tech.Data.Configuration {
       _initializeModelsAndArchetypesByAssembly();
 
       while(_remainingInitializationAttempts-- > 0 && _uninitializedArchetypes.Count > 0) {
-        _tryToCompleteArchetypeInitialization();
+        _tryToCompleteAllArchetypesInitialization();
       }
 
       _applyModificationsToAllTypesByAssemblyLoadOrder();
@@ -265,19 +271,39 @@ namespace Meep.Tech.Data.Configuration {
 
         // components first
         foreach(Type systemType in typesToBuild.Components) {
-          _registerComponentType(systemType);
+          try {
+            _registerComponentType(systemType);
+          }
+          /*catch(MissingComponentDependencyException de) {
+            _uninitializedComponents.Add(systemType, de);
+          }
+          catch(Exception ex) {
+            throw new CannotInitializeModelException($"Could not initialize Component of type {systemType} due to Unknown Inner Exception.", ex);
+          }*/
+          catch(Exception de) {
+            _uninitializedComponents.Add(systemType, de);
+          }
         }
 
         // then initialize archetypes:
         foreach(Type systemType in typesToBuild.Archetypes) {
-          if(!_tryToInitialzeArchetype(systemType)) {
-            _uninitializedArchetypes.Add(systemType);
-          }
+          _tryToInitializeArchetype(systemType);
         }
 
         // then register models
         foreach(Type systemType in typesToBuild.Models) {
-          _registerModelType(systemType);
+          try {
+            _registerModelType(systemType);
+          }
+          /*catch(MissingComponentDependencyException de) {
+            _uninitializedModels.Add(systemType, de);
+          }
+          catch(Exception ex) {
+            throw new CannotInitializeModelException($"Could not initialize Model of type {systemType} due to Unknown Inner Exception.", ex);
+          }*/
+          catch(Exception de) {
+            _uninitializedModels.Add(systemType, de);
+          }
         }
       }
     }
@@ -309,6 +335,15 @@ namespace Meep.Tech.Data.Configuration {
       }
 
       _testBuildDefaultModel(systemType);
+      try {
+        Universe.Models._baseTypes.Add(
+          systemType.FullName,
+          systemType.GetInheritedGenericTypes(typeof(IModel<>)).FirstOrDefault()
+            ?? systemType.GetInheritedGenericTypes(typeof(IModel<,>)).First()
+        );
+      } catch(Exception e) {
+        throw new NotImplementedException($"Could not find IModel<> Base Type for {systemType}, does it inherit from IModel instead of IModel<T> by mistake?", e);
+      }
       if(!Universe.ModelSerializer.Options.TypesToMapToDbContext.ContainsKey(systemType)) {
         Universe.ModelSerializer.Options.TypesToMapToDbContext[systemType] = null;
       }
@@ -332,6 +367,14 @@ namespace Meep.Tech.Data.Configuration {
       )?.Invoke(null, new object[] { Universe });
 
       _testBuildDefaultComponent(systemType);
+      try {
+        Universe.Components._baseTypes.Add(
+          systemType.FullName,
+          systemType.GetInheritedGenericTypes(typeof(IComponent<>)).First()
+        );
+      } catch (Exception e) {
+        throw new NotImplementedException($"Could not find IComponent<> Base Type for {systemType}, does it inherit from IComponent instead of IComponent<T> by mistake?", e);
+      }
     }
 
     /// <summary>
@@ -361,8 +404,8 @@ namespace Meep.Tech.Data.Configuration {
         IModel defaultModel = defaultFactory.MakeDefaultWith(builder);
         Universe.Models._modelTypesProducedByArchetypes[defaultFactory] = defaultModel.GetType();
       }
-      catch {
-        throw new Exception($"Could not make a default model for model of type: {systemType.FullName}, using default archeytpe of type: {defaultFactory}.");
+      catch (Exception e) {
+        throw new Exception($"Could not make a default model for model of type: {systemType.FullName}, using default archeytpe of type: {defaultFactory}.", e);
       }
     }
 
@@ -568,29 +611,27 @@ namespace Meep.Tech.Data.Configuration {
     /// <summary>
     /// Try to initialize any archetypes that failed:
     /// </summary>
-    void _tryToCompleteArchetypeInitialization() {
-      _uninitializedArchetypes.RemoveAll(archetypeSystemType => {
-        return _tryToInitialzeArchetype(archetypeSystemType);
+    void _tryToCompleteAllArchetypesInitialization() {
+      _uninitializedArchetypes.Keys.ToList().ForEach(archetypeSystemType => {
+        _tryToInitializeArchetype(archetypeSystemType);
       });
     }
 
-    /// <summary>
-    /// Try to initialize this archetype:
-    /// </summary>
-    bool _tryToInitialzeArchetype(Type archetypeSystemType) {
+    void _tryToInitializeArchetype(Type archetypeSystemType) {
       try {
         _constructArchetypeFromSystemType(archetypeSystemType);
-        return true;
+        _uninitializedArchetypes.Remove(archetypeSystemType);
       }
-      catch(FailedToConfigureNewArchetypeException) {
-        return false;
+      catch(FailedToConfigureNewArchetypeException fe) {
+        _uninitializedArchetypes.Add(archetypeSystemType, fe);
       }
       catch(CannotInitializeArchetypeException ce) {
-        if(Options.FatalOnCannotInitializeArchetype) {
+        if(Options.FatalOnCannotInitializeType) {
           throw ce;
         }
 
-        return true;
+        _failedArchetypes.Add(archetypeSystemType, ce);
+        _uninitializedArchetypes.Remove(archetypeSystemType);
       }
     }
 
@@ -627,7 +668,7 @@ namespace Meep.Tech.Data.Configuration {
         }
         catch(CannotInitializeArchetypeException) {
           //Debugger.LogError($"Cannot finish archetype of type: {archetype} due to CannotInitializeArchetypeException. \n ---------- \n Will Not Retry \n ---------- \n INNER EXCEPTION:\n {e}" + $"\n{e}");
-          if(Options.FatalOnCannotInitializeArchetype) {
+          if(Options.FatalOnCannotInitializeType) {
             throw;
           }
 
@@ -635,7 +676,7 @@ namespace Meep.Tech.Data.Configuration {
         }
         catch(Exception) {
           //Debugger.LogError($"Cannot finish archetype of type: {archetype} Due to unknown inner exception. \n ---------- \n Will Not Retry \n ---------- \n." + $"\n{e}");
-          if(Options.FatalOnCannotInitializeArchetype) {
+          if(Options.FatalOnCannotInitializeType) {
             throw;
           }
 
@@ -648,6 +689,7 @@ namespace Meep.Tech.Data.Configuration {
     /// Finish initialization
     /// </summary>
     void _finalize() {
+      _reportOnFailedTypeInitializations();
       _finalizeModelSerializerSettings();
       Universe.ModelSerializer.Options.DbContext.SaveChanges();
 
@@ -662,6 +704,26 @@ namespace Meep.Tech.Data.Configuration {
       _remainingInitializationAttempts = Options.InitializationAttempts;
 
       IsFinished = true;
+    }
+
+    void _reportOnFailedTypeInitializations() {
+      bool failureDetected = false;
+      foreach((System.Type componentType, Exception ex) in _uninitializedModels) {
+        Console.Error.WriteLine($"Could not initialize Model Type: {componentType}, due to Internal Exception:\n\n{ex}");
+        failureDetected = true;
+      }
+      foreach((System.Type modelType, Exception ex) in _uninitializedComponents) {
+        Console.Error.WriteLine($"Could not initialize Component Type: {modelType}, due to Internal Exception:\n\n{ex}");
+        failureDetected = true;
+      }
+      foreach((System.Type archetypeType, Exception ex) in _uninitializedArchetypes.Merge(_failedArchetypes)) {
+        Console.Error.WriteLine($"Could not initialize Archetype Type: {archetypeType}, due to Internal Exception:\n\n{ex}");
+        failureDetected = true;
+      }
+
+      if(Options.FatalOnCannotInitializeType && failureDetected) {
+        throw new InvalidOperationException("Failed to initialize several types in the Archetype Loader. See full Error Stream Logs for details.");
+      }
     }
   }
 }

@@ -648,12 +648,12 @@ namespace Meep.Tech.Data {
             return activator;
           }
         } catch (Exception e) {
-          throw new NotImplementedException($"No Ctor that takes a single argument of IModel.Builder, or 0 arguments found for Model type: {modelType.FullName}. An activator could also not be built for the type.", e);
+          throw new NotImplementedException($"No Ctor that takes a single argument thet inherits from IBuilder<TModelBase>, or 0 arguments found for Model type: {modelType.FullName}. An activator could also not be built for the type.", e);
         }
       }
 
       if(ctor is null) {
-        throw new NotImplementedException($"No Ctor that takes a single argument of IModel.Builder, or 0 arguments found for Model type: {modelType.FullName}.");
+        throw new NotImplementedException($"No Ctor that takes a single argument thet inherits from IBuilder<TModelBase>, or 0 arguments found for Model type: {modelType.FullName}.");
       }
 
       //TODO: is there a faster way to cache this?

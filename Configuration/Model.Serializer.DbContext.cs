@@ -22,10 +22,10 @@ namespace Meep.Tech.Data {
         Universe _universe {
           get;
         }
-        public DbContext(Action<DbContextOptionsBuilder> onConfiguring, DbContextOptions<DbContext> options, Universe universe)
+        public DbContext(DbContextOptions<DbContext> options, Universe universe = null, Action<DbContextOptionsBuilder> onConfiguring = null)
             : base(options) {
           _onConfiguring = onConfiguring;
-          _universe = universe;
+          _universe = universe ?? Models.DefaultUniverse;
         }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder) {
@@ -35,7 +35,7 @@ namespace Meep.Tech.Data {
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder) {
           base.OnConfiguring(optionsBuilder);
-          _onConfiguring(optionsBuilder);
+          _onConfiguring?.Invoke(optionsBuilder);
         }
       }
     }

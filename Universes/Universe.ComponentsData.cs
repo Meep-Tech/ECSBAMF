@@ -9,7 +9,7 @@ namespace Meep.Tech.Data {
       /// <summary>
       /// Cached model base types
       /// </summary>
-      Dictionary<string, System.Type> _baseTypes
+      internal Dictionary<string, System.Type> _baseTypes
         = new Dictionary<string, Type>();
 
       /// <summary>

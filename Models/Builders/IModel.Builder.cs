@@ -62,19 +62,18 @@ namespace Meep.Tech.Data {
       /// <summary>
       /// Copy a builder for a new target type
       /// </summary>
-      public static IBuilder MakeNewBuilderAndCopyParams(IBuilder original, Type targetBuilderFactoryType) {
+      public static IBuilder MakeNewBuilderAndCopyParams(IBuilder original, Archetype targetFactory) {
         if(original == null) {
           return null;
         }
 
-        Archetype targetFactory = targetBuilderFactoryType.AsArchetype();
         return targetFactory.GetGenericBuilderConstructor()(
           targetFactory,
           original is Dictionary<string, object> dictionary 
             ? dictionary 
             : original is Data.IComponent.ILiteBuilder liteBuilder
               ? liteBuilder.@params.ToDictionary(e => e.Key, e => e.Value)
-              : throw new ArgumentException()
+              : throw new NotSupportedException()
         );
       } 
 
@@ -226,6 +225,14 @@ namespace Meep.Tech.Data {
           model = _initializeModelComponents(componentStorage);
         }
 
+#if DEBUG
+        // Warns you if you've got Model Component settings in the Archetype but no Component Storage on the Model.
+        else if(Archetype.InitialUnlinkedModelComponentCtors.Any() || Archetype.InitialUnlinkedModelComponentTypes.Any() || Archetype.ModelLinkedComponents.Any()) {
+          Console.WriteLine($"The Archetype of Type: {Archetype}, provides components to set up on the produced model of type :{model.GetType()}, but this model does not inherit from the interface {nameof(IReadableComponentStorage)}. Maybe consider adding .WithComponents to the Model<[,]> base class you are inheriting from, or removing model components added to any of the Initial[Component...] properties of the Archetype");
+#warning An archetype with a Model Base Type that does not inherit from IReadableComponentStorage has been provided with InitialUnlinkedModelComponentCtors values. These components may never be applied to the desired model if it does not inhert from IReadableComponentStorage
+        }
+#endif
+
         // finalize the parent model
         model = FinalizeModel(this, model);
         model = (TModelBase)Archetype.FinalizeModel(this, model);
@@ -251,7 +258,10 @@ namespace Meep.Tech.Data {
         foreach(Type componentType in Archetype.InitialUnlinkedModelComponentTypes) {
           // Make a builder to match this component with the params from the parent:
           IBuilder componentBuilder
-          = MakeNewBuilderAndCopyParams(this, componentType);
+            = MakeNewBuilderAndCopyParams(
+                this,
+                (Archetype)Components.GetBuilderFactoryFor(componentType)
+            );
 
           // build the component:
           IModel.IComponent component = (Data.Components.GetBuilderFactoryFor(componentType) as Archetype)

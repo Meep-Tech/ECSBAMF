@@ -26,7 +26,7 @@ namespace Meep.Tech.Data.Configuration {
       /// <summary>
       /// If a single archetype not being initialized should throw a fatal.
       /// </summary>
-      public bool FatalOnCannotInitializeArchetype {
+      public bool FatalOnCannotInitializeType {
         get;
         set;
       } = false;
@@ -124,7 +124,6 @@ namespace Meep.Tech.Data.Configuration {
         set;
       } = (options, universe) 
         => new Model.Serializer.DbContext(
-          (optionBuilder) => { },
           options,
           universe
         );

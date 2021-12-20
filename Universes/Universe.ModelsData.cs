@@ -12,7 +12,7 @@ namespace Meep.Tech.Data {
       /// <summary>
       /// Cached model base types
       /// </summary>
-      Dictionary<string, System.Type> _modelBaseTypes
+      internal Dictionary<string, System.Type> _baseTypes
         = new Dictionary<string, Type>();
 
       /// <summary>
@@ -100,9 +100,9 @@ namespace Meep.Tech.Data {
       /// Get the base model type of this model type.
       /// </summary>
       public System.Type GetModelBaseType(System.Type type)
-        => _modelBaseTypes.TryGetValue(type.FullName, out System.Type foundType)
+        => _baseTypes.TryGetValue(type.FullName, out System.Type foundType)
           ? foundType
-          : _modelBaseTypes[type.FullName] = _findModelBaseType(type);
+          : _baseTypes[type.FullName] = _findModelBaseType(type);
 
       /// <summary>
       /// Calculate this model's base model type.
