@@ -6,6 +6,9 @@ using System.Linq;
 namespace Meep.Tech.Data {
   public static class ModelBuilderExtensions {
 
+    static readonly ValueConverter _componentConverter 
+      = new IReadableComponentStorage.ComponentsToJsonCollectionValueConverter();
+
     /// <summary>
     /// Used to set up Ecsbam settings needed for general models in your custom DbContext class.
     /// </summary>
@@ -61,6 +64,9 @@ namespace Meep.Tech.Data {
               Type converterType = typeof(Archetype.ToKeyStringConverter<>)
                 .MakeGenericType(property.PropertyType);
               customConverter = (ValueConverter)Activator.CreateInstance(converterType);
+            }
+             else if(useCustomConverterAttribute is IsModelComponentsProperty) {
+              customConverter = _componentConverter;
             } else {
              customConverter = UseCustomConverterAttribute
                 ._cachedCustomConverters[useCustomConverterAttribute.CustomConverterType];

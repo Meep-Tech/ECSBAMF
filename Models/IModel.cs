@@ -11,27 +11,33 @@ namespace Meep.Tech.Data {
   public partial interface IModel {
 
     /// <summary>
-    /// Make a component from a jobject
+    /// Deserialize a model from a json object
     /// </summary>
-    public static IModel FromJson(JObject jObject) {
+    /// <param name="deserializeToTypeOverride">You can use this to try to make JsonSerialize use 
+    ///    a different Type's info for deserialization than the default returned from GetModelTypeProducedBy</param>
+    public static IModel FromJson(
+      JObject jObject,
+      Type deserializeToTypeOverride = null,
+      Universe universeOverride = null
+    ) {
       string key;
-      Universe universe;
+      Universe universe = universeOverride;
       string compoundKey = jObject.Value<string>(nameof(Archetype).ToLower());
       string[] parts = compoundKey.Split('@');
       if(parts.Length == 1) {
         key = compoundKey;
-        universe = Models.DefaultUniverse;
+        universe ??= Models.DefaultUniverse;
       }
       else if(parts.Length == 2) {
         key = parts[0];
-        universe = Universe.Get(parts[1]);
+        universe ??= Universe.Get(parts[1]);
       }
       else
         throw new ArgumentException($"No __key_ identifier provided in component data: \n{jObject}");
 
       string json = jObject.ToString();
-      Type deserializeToType =
-        universe.Models.GetModelTypeProducedBy(
+      Type deserializeToType = deserializeToTypeOverride
+        ?? universe.Models.GetModelTypeProducedBy(
           universe.Archetypes.All.Get(key)
         );
       object model = JsonConvert.DeserializeObject(
@@ -80,7 +86,19 @@ namespace Meep.Tech.Data {
   /// </summary>
   public partial interface IModel<TModelBase>
     : IModel
-    where TModelBase : IModel<TModelBase> {
+    where TModelBase : IModel<TModelBase>
+  {
+
+    /// <summary>
+    /// Deserialize a model from json as a TModelBase
+    /// </summary>
+    /// <param name="deserializeToTypeOverride">You can use this to try to make JsonSerialize 
+    ///    use a different Type's info for deserialization than the default returned from GetModelTypeProducedBy</param>
+    public new static TModelBase FromJson(
+       JObject jObject,
+       Type deserializeToTypeOverride = null,
+       Universe universeOverride = null
+     ) => (TModelBase)IModel.FromJson(jObject, deserializeToTypeOverride, universeOverride);
   }
 
   /// <summary>
@@ -90,7 +108,19 @@ namespace Meep.Tech.Data {
     : IModel<TModelBase>
     where TModelBase : IModel<TModelBase, TArchetypeBase>
     where TArchetypeBase : Archetype<TModelBase, TArchetypeBase>
-  {}
+  {
+
+    /// <summary>
+    /// Deserialize a model from json as a TModelBase
+    /// </summary>
+    /// <param name="deserializeToTypeOverride">You can use this to try to make JsonSerialize 
+    ///    use a different Type's info for deserialization than the default returned from GetModelTypeProducedBy</param>
+    public new static TModelBase FromJson(
+       JObject jObject,
+       Type deserializeToTypeOverride = null,
+       Universe universeOverride = null
+     ) => IModel<TModelBase>.FromJson(jObject, deserializeToTypeOverride, universeOverride);
+  }
 
   public static class IModelExtensions {
 

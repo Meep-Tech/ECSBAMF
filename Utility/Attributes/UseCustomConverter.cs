@@ -20,7 +20,7 @@ namespace Meep.Tech.Data {
   public class IsModelComponentsProperty : UseCustomConverterAttribute {
     public IsModelComponentsProperty() 
       // TODO: this should be a json converter
-      : base(typeof(IReadableComponentStorage.ComponentsToJsonCollectionConverter)) {}
+      : base(typeof(IReadableComponentStorage.ComponentsToJsonCollectionValueConverter)) {}
   }
 
   /// <summary>

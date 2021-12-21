@@ -3,12 +3,13 @@ using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Linq.Expressions;
 
 namespace Meep.Tech.Data {
 
-  public interface IReadableComponentStorage<Type> : IReadableComponentStorage {
+  /*public interface IReadableComponentStorage<Type> : IReadableComponentStorage {
 
     /// <summary>
     /// Internal holder for components data
@@ -28,7 +29,7 @@ namespace Meep.Tech.Data {
     /// </summary>
     Dictionary<string, IComponent> IReadableComponentStorage._componentsByBuilderKey
       => _componentsByBuilderKey;
-  }
+  }*/
 
   /// <summary>
   /// This represents an object with some kind of component storage.
@@ -36,7 +37,7 @@ namespace Meep.Tech.Data {
   /// Overriding in the object itself without using implicits may not change the logic everywhere that's needed, 
   /// ... only do that if you want to add logic and use the base functionality too.
   /// </summary>
-  public interface IReadableComponentStorage {
+  public partial interface IReadableComponentStorage {
 
     /// <summary>
     /// Internal holder for components data
@@ -63,30 +64,6 @@ namespace Meep.Tech.Data {
       }
 
       return other is not null;
-    }
-
-    /// <summary>
-    /// Used to convert a collection of components to and from a json array
-    /// </summary>
-    public class ComponentsToJsonCollectionConverter : ValueConverter<Dictionary<string, IModel.IComponent>, string> {
-
-      public ComponentsToJsonCollectionConverter() :
-        base(convertToProviderExpression, convertFromProviderExpression) {
-      }
-
-      private static Expression<Func<string, Dictionary<string, IModel.IComponent>>> convertFromProviderExpression = x => FromJsonString(x);
-      private static Expression<Func<Dictionary<string, IModel.IComponent>, string>> convertToProviderExpression = x => ToJsonString(x);
-
-      static Dictionary<string, IModel.IComponent> FromJsonString(string componentsJson)
-        => JArray.Parse(componentsJson).Select(token =>
-          IComponent.FromJson(token as JObject)
-        ).ToDictionary(
-          component => component.Key,
-          component => component
-        );
-
-      static string ToJsonString(Dictionary<string, IModel.IComponent> components)
-        => JArray.FromObject(components.Select(componentData => componentData.Value.ToJson())).ToString();
     }
 
     #region Implicit Implementations
@@ -242,10 +219,10 @@ namespace Meep.Tech.Data {
     /// </summary>
     static void _updateComponentUniverse(IReadableComponentStorage storage, IComponent toAdd) {
       if(storage is IModel model) {
-        IComponent.SetUniverse(toAdd, model.Universe);
+        IComponent.SetUniverse(ref toAdd, model.Universe);
       }
       else if(storage is Archetype archetype) {
-        IComponent.SetUniverse(toAdd, archetype.Id.Universe);
+        IComponent.SetUniverse(ref toAdd, archetype.Id.Universe);
       }
     }
 
@@ -406,5 +383,25 @@ namespace Meep.Tech.Data {
     /// </summary>
     public static bool RemoveComponent(this IWriteableComponentStorage storage, string componentKey)
         => ReadableComponentStorageExtensions.RemoveComponent(storage, componentKey);
+
+    /// <summary>
+    /// Add a new component, throws if the component key is taken already
+    /// </summary>
+    public static void AddNewComponent<TComponent>(this IWriteableComponentStorage storage, IEnumerable<(string, object)> @params)
+      where TComponent : Data.IComponent<TComponent> {
+      IComponent toAdd = Components<TComponent>.BuilderFactory.Make(@params);
+      if(toAdd is IModel.IRestrictedComponent restrictedComponent && storage is IModel storageModel && !restrictedComponent.IsCompatableWith(storageModel)) {
+        throw new System.ArgumentException($"Component of type {toAdd.Key} is not compatable with model of type {storage.GetType()}. The model must inherit from {restrictedComponent.RestrictedTo.FullName}.");
+      }
+
+      ReadableComponentStorageExtensions.AddComponent(storage, toAdd);
+    }
+
+    /// <summary>
+    /// Add a new component, throws if the component key is taken already
+    /// </summary>
+    public static void AddNewComponent<TComponent>(this IWriteableComponentStorage storage, params (string, object)[] @params)
+      where TComponent : Data.IComponent<TComponent>
+        => AddNewComponent<TComponent>(storage, @params.Cast<(string, object)>());
   }
 }

@@ -246,7 +246,7 @@ namespace Meep.Tech.Data {
         }// just the interface:
         else if(modelType.BaseType == null) {
           if(modelType.IsAssignableToGeneric(typeof(IModel<>))) {
-            compareLogic = new CompareLogic();
+            compareLogic = _makeDefaultCompareLogic();
           }
         }// if we need to find the base type:
         else {
@@ -254,7 +254,7 @@ namespace Meep.Tech.Data {
           while(baseType != null) {
             if(typeof(IModel).IsAssignableFrom(baseType)) {
               if(baseType.BaseType?.FullName == typeof(Model).FullName) {
-                compareLogic = new CompareLogic();
+                compareLogic = _makeDefaultCompareLogic();
                 break;
               }
               if(_compareLogicByModelType.TryGetValue(baseType, out compareLogic)) {
@@ -262,7 +262,7 @@ namespace Meep.Tech.Data {
               }
             }
             else {
-              compareLogic = new CompareLogic();
+              compareLogic = _makeDefaultCompareLogic();
               break;
             }
 
@@ -274,6 +274,12 @@ namespace Meep.Tech.Data {
           ?? throw new NotImplementedException($"No CompareLogic was found or built for the model type: {modelType.FullName}");
         return compareLogic;
       }
+
+      /// <summary>
+      /// Makes the default compare logic using this universes settings
+      /// </summary>
+      CompareLogic _makeDefaultCompareLogic()
+        => new CompareLogic(_universe.ModelSerializer.Options.DefaultComparisonConfig);
 
       /// <summary>
       /// Make the default factory for a model type using reflection:

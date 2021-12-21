@@ -1,5 +1,6 @@
 ﻿using KellermanSoftware.CompareNetObjects;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using System;
 using System.ComponentModel.DataAnnotations.Schema;
 
@@ -13,6 +14,30 @@ namespace Meep.Tech.Data {
   public abstract partial class Model
     : IModel 
   {
+
+    /// <summary>
+    /// Deserialize a model from json as a Model
+    /// </summary>
+    /// <param name="deserializeToTypeOverride">You can use this to try to make JsonSerialize 
+    ///    use a different Type's info for deserialization than the default returned from GetModelTypeProducedBy</param>
+    public static Model FromJson(
+       JObject jObject,
+       Type deserializeToTypeOverride = null,
+       Universe universeOverride = null
+     ) => (Model)IModel.FromJson(jObject, deserializeToTypeOverride, universeOverride);
+
+    /// <summary>
+    /// Deserialize a model from json as a Model
+    /// </summary>
+    /// <typeparam name="TModel">The type to cast the produced model to. Not the same as deserializeToTypeOverride</typeparam>
+    /// <param name="deserializeToTypeOverride">You can use this to try to make JsonSerialize 
+    ///    use a different Type's info for deserialization than the default returned from GetModelTypeProducedBy</param>
+    public static TModel FromJsonAs<TModel>(
+       JObject jObject,
+       Type deserializeToTypeOverride = null,
+       Universe universeOverride = null
+     ) where TModel : Model
+      => (TModel)IModel.FromJson(jObject, deserializeToTypeOverride, universeOverride);
 
     /// <summary>
     /// The universe this model was made inside of
@@ -41,11 +66,20 @@ namespace Meep.Tech.Data {
     }
 
     public override bool Equals(object obj) {
-      return obj is IUnique other && this is IUnique current
-        ? other.Id == current.Id
-        : Universe.Models.GetCompareLogicFor(GetType())
-          .Compare(this, obj)
-          .AreEqual;
+      // must be this type or a child
+      if(obj is not null && !GetType().IsAssignableFrom(obj.GetType())) {
+        return false;
+      }
+
+      // unique are easy
+      if(obj is IUnique other && this is IUnique current)
+        return other.Id == current.Id;
+      else {
+        CompareLogic compareLogic = Universe.Models.GetCompareLogicFor(GetType());
+        ComparisonResult result = compareLogic.Compare(this, obj as IModel);
+
+        return result.AreEqual;
+      }
     }
   }
 
@@ -57,6 +91,30 @@ namespace Meep.Tech.Data {
     : Model, IModel<TModelBase>
     where TModelBase : Model<TModelBase>
   {
+
+    /// <summary>
+    /// Deserialize a model from json as a TModelBase
+    /// </summary>
+    /// <param name="deserializeToTypeOverride">You can use this to try to make JsonSerialize 
+    ///    use a different Type's info for deserialization than the default returned from GetModelTypeProducedBy</param>
+    public new static TModelBase FromJson(
+       JObject jObject,
+       Type deserializeToTypeOverride = null,
+       Universe universeOverride = null
+     ) => (TModelBase)IModel.FromJson(jObject, deserializeToTypeOverride, universeOverride);
+
+    /// <summary>
+    /// Deserialize a model from json as a TModelBase
+    /// </summary>
+    /// <typeparam name="TModel">The type to cast the produced model to. Not the same as deserializeToTypeOverride</typeparam>
+    /// <param name="deserializeToTypeOverride">You can use this to try to make JsonSerialize 
+    ///    use a different Type's info for deserialization than the default returned from GetModelTypeProducedBy</param>
+    public new static TModel FromJsonAs<TModel>(
+       JObject jObject,
+       Type deserializeToTypeOverride = null,
+       Universe universeOverride = null
+     ) where TModel : TModelBase
+      => (TModel)IModel.FromJson(jObject, deserializeToTypeOverride, universeOverride);
 
     internal override Model _initialize(IBuilder builder) {
       Model model = base._initialize(builder);
@@ -83,6 +141,30 @@ namespace Meep.Tech.Data {
     where TModelBase : IModel<TModelBase, TArchetypeBase> 
     where TArchetypeBase : Archetype<TModelBase, TArchetypeBase>
   {
+
+    /// <summary>
+    /// Deserialize a model from json as a TModelBase
+    /// </summary>
+    /// <param name="deserializeToTypeOverride">You can use this to try to make JsonSerialize 
+    ///    use a different Type's info for deserialization than the default returned from GetModelTypeProducedBy</param>
+    public new static TModelBase FromJson(
+       JObject jObject,
+       Type deserializeToTypeOverride = null,
+       Universe universeOverride = null
+     ) => (TModelBase)IModel.FromJson(jObject, deserializeToTypeOverride, universeOverride);
+
+    /// <summary>
+    /// Deserialize a model from json as a TModelBase
+    /// </summary>
+    /// <typeparam name="TModel">The type to cast the produced model to. Not the same as deserializeToTypeOverride</typeparam>
+    /// <param name="deserializeToTypeOverride">You can use this to try to make JsonSerialize 
+    ///    use a different Type's info for deserialization than the default returned from GetModelTypeProducedBy</param>
+    public new static TModel FromJsonAs<TModel>(
+       JObject jObject,
+       Type deserializeToTypeOverride = null,
+       Universe universeOverride = null
+     ) where TModel : TModelBase
+      => (TModel)IModel.FromJson(jObject, deserializeToTypeOverride, universeOverride);
 
     /// <summary>
     /// Default collection of archetypes for this model type based on the Default Univese

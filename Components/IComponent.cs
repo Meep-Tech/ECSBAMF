@@ -27,29 +27,33 @@ namespace Meep.Tech.Data {
     /// <summary>
     /// Make a component from a jobject
     /// </summary>
-    public new static IComponent FromJson(JObject json) {
+    public new static IComponent FromJson(
+      JObject jObject,
+      Type deserializeToTypeOverride = null,
+      Universe universeOverride = null
+    ) {
       string key;
-      Universe universe;
-      string compoundKey = json.Value<string>(Model.Serializer.ComponentKeyPropertyName);
+      Universe universe = universeOverride;
+      string compoundKey = jObject.Value<string>(Model.Serializer.ComponentKeyPropertyName);
       string[] parts = compoundKey.Split('@');
       if(parts.Length == 1) {
         key = compoundKey;
-        universe = Models.DefaultUniverse;
+        universe ??= Models.DefaultUniverse;
       }
       else if(parts.Length == 2) {
         key = parts[0];
-        universe = Universe.Get(parts[1]);
+        universe ??= Universe.Get(parts[1]);
       }
       else
-        throw new ArgumentException($"No Archetype identifier provided in component data: \n{json}");
+        throw new ArgumentException($"No Archetype identifier provided in component data: \n{jObject}");
 
-      return (IComponent)json.ToObject(
-        universe.Components.Get(key), 
+      return (IComponent)jObject.ToObject(
+        deserializeToTypeOverride ?? universe.Components.Get(key), 
         universe.ModelSerializer.Options.ComponentJsonSerializer
       );
     }
 
-    internal static void SetUniverse(Data.IComponent component, Universe universe) {
+    internal static void SetUniverse(ref Data.IComponent component, Universe universe) {
       component.Universe = universe;
     }
 

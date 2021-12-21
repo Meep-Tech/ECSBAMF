@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
+using KellermanSoftware.CompareNetObjects;
 
 namespace Meep.Tech.Data {
 
@@ -40,8 +41,7 @@ namespace Meep.Tech.Data {
             if(System.Diagnostics.Debugger.IsAttached) {
               System.Diagnostics.Debugger.Break();
             }
-          },
-          MissingMemberHandling = MissingMemberHandling.Error
+          }
 #endif
         };
 
@@ -60,8 +60,7 @@ namespace Meep.Tech.Data {
             if(System.Diagnostics.Debugger.IsAttached) {
               System.Diagnostics.Debugger.Break();
             }
-          },
-          MissingMemberHandling = MissingMemberHandling.Error
+          }
 #endif
         };
 
@@ -116,6 +115,34 @@ namespace Meep.Tech.Data {
           get;
           set;
         } = true;
+
+        /// <summary>
+        /// The default params used to compare model objects.
+        /// This calls DefaultComparisonConfig on it's first get.
+        /// </summary>
+        /*public CompareParms DefaultComparisonParams {
+          get => _defaultComparisonParams
+            ??= new CompareParms {
+              Config = DefaultComparisonConfig
+            };
+          set => _defaultComparisonParams = value;
+        } CompareParms _defaultComparisonParams;*/
+
+        /// <summary>
+        /// The default config used to compare model objects
+        /// </summary>
+        public ComparisonConfig DefaultComparisonConfig {
+          get;
+          set;
+        } = new ComparisonConfig {
+          AttributesToIgnore = new List<Type> {
+            typeof(IsModelComponentsProperty)
+          },
+          IgnoreObjectTypes = true,
+          DifferenceCallback = x => {
+            Console.WriteLine("$fgsdfgsdfgsdgf");
+          }
+        };
       }
     }
   }

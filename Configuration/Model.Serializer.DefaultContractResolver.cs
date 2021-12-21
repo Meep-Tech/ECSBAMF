@@ -15,8 +15,11 @@ namespace Meep.Tech.Data {
           get;
         }
 
-        IFactory.JsonStringConverter _jsonStringConverter 
+        IFactory.JsonStringConverter _factoryToStringJsonConverter 
           = new IFactory.JsonStringConverter();
+
+        IReadableComponentStorage.ComponentsToJsonConverter _componentsJsonConverter 
+          = new IReadableComponentStorage.ComponentsToJsonConverter();
 
         public DefaultContractResolver(Universe universe) {
           IgnoreSerializableAttribute = false;
@@ -28,6 +31,11 @@ namespace Meep.Tech.Data {
 
         protected override IList<JsonProperty> CreateProperties(Type type, MemberSerialization memberSerialization) {
           var baseProps = base.CreateProperties(type, memberSerialization);
+          // remove the universe property if there's one. It gets assinged as part of the archetype or key value
+          baseProps.Remove(
+            baseProps.FirstOrDefault(prop
+              => prop.PropertyName == nameof(Universe).ToLower())
+          );
           // Add unique ids if there isn't one already
           if(typeof(IUnique).IsAssignableFrom(type)) {
             if(!baseProps.Any(prop => prop.PropertyName == "id")) {
@@ -39,13 +47,21 @@ namespace Meep.Tech.Data {
               baseProps.Add(CreateProperty(idProp, memberSerialization));
             }
           }
+
           return baseProps;
         }
 
         protected override JsonProperty CreateProperty(MemberInfo member, MemberSerialization memberSerialization) {
           JsonProperty baseProperty = base.CreateProperty(member, memberSerialization);
           if(!(member.GetCustomAttribute(typeof(IsArchetypePropertyAttribute)) is null)) {
-            baseProperty.Converter = _jsonStringConverter;
+            // Archetype is always first:
+            baseProperty.Order = int.MinValue;
+            baseProperty.Converter = _factoryToStringJsonConverter;
+            baseProperty.ObjectCreationHandling = ObjectCreationHandling.Replace;
+          }
+
+          if(!(member.GetCustomAttribute(typeof(IsModelComponentsProperty)) is null)) {
+            baseProperty.Converter = _componentsJsonConverter;
             baseProperty.ObjectCreationHandling = ObjectCreationHandling.Replace;
           }
 

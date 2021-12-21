@@ -18,22 +18,24 @@ namespace Meep.Tech.Data {
       /// <summary>
       /// Publicly readable components
       /// </summary>
-      public IReadOnlyDictionary<string, IModel.IComponent> components
-        => _components.ToDictionary(x => x.Key, y => y.Value as IModel.IComponent);
+      [IsModelComponentsProperty]
+      public IReadOnlyDictionary<string, IModel.IComponent> components {
+        get => _components.ToDictionary(x => x.Key, y => y.Value as IModel.IComponent);
+        // For deserialization:
+        private set => value.Values.ForEach(AddComponent);
+      }
+
+      /// <summary>
+      /// Internally stored components
+      /// </summary>
+      Dictionary<string, Data.IComponent> _components 
+        = new Dictionary<string, Data.IComponent>();
 
       /// <summary>
       /// The accessor for the default Icomponents implimentation
       /// </summary>
       Dictionary<string, Data.IComponent> IReadableComponentStorage._componentsByBuilderKey
         => _components;
-
-      /// <summary>
-      /// Internally stored components
-      /// </summary>
-      [IsModelComponentsProperty]
-      Dictionary<string, Data.IComponent> _components {
-        get;
-      } = new Dictionary<string, Data.IComponent>();
 
       public override bool Equals(object obj) {
         return base.Equals(obj) 
@@ -130,6 +132,26 @@ namespace Meep.Tech.Data {
 
         ReadableComponentStorageExtensions.AddComponent(this, toAdd);
       }
+
+      /// <summary>
+      /// Add a new component, throws if the component key is taken already
+      /// </summary>
+      protected virtual void AddNewComponent<TComponent>(IEnumerable<(string, object)> @params)
+        where TComponent : IModel.IComponent<TComponent> {
+        IComponent toAdd = Components<TComponent>.BuilderFactory.Make(@params);
+        if(toAdd is IModel.IRestrictedComponent restrictedComponent && !restrictedComponent.IsCompatableWith(this)) {
+          throw new System.ArgumentException($"Component of type {toAdd.Key} is not compatable with model of type {GetType()}. The model must inherit from {restrictedComponent.RestrictedTo.FullName}.");
+        }
+
+        ReadableComponentStorageExtensions.AddComponent(this, toAdd);
+      }
+
+      /// <summary>
+      /// Add a new component, throws if the component key is taken already
+      /// </summary>
+      protected virtual void AddNewComponent<TComponent>(params (string, object)[] @params)
+        where TComponent : IModel.IComponent<TComponent>
+          => AddNewComponent<TComponent>(@params.Cast<(string, object)>());
 
       /// <summary>
       /// replace an existing component
@@ -235,22 +257,24 @@ namespace Meep.Tech.Data {
       /// <summary>
       /// Publicly readable components
       /// </summary>
-      public IReadOnlyDictionary<string, IModel.IComponent> components
-        => _components.ToDictionary(x => x.Key, y => y.Value as IModel.IComponent);
+      [IsModelComponentsProperty]
+      public IReadOnlyDictionary<string, IModel.IComponent> components {
+        get => _components.ToDictionary(x => x.Key, y => y.Value as IModel.IComponent);
+        // For deserialization:
+        private set => value.Values.ForEach(AddComponent);
+      }
+
+      /// <summary>
+      /// Internally stored components
+      /// </summary>
+      Dictionary<string, Data.IComponent> _components
+        = new Dictionary<string, Data.IComponent>();
 
       /// <summary>
       /// The accessor for the default Icomponents implimentation
       /// </summary>
       Dictionary<string, Data.IComponent> IReadableComponentStorage._componentsByBuilderKey
         => _components;
-
-      /// <summary>
-      /// Internally stored components
-      /// </summary>
-      [IsModelComponentsProperty]
-      Dictionary<string, Data.IComponent> _components {
-        get;
-      } = new Dictionary<string, IComponent>();
 
       #region Default Component Implimentations
 
@@ -340,6 +364,27 @@ namespace Meep.Tech.Data {
 
         ReadableComponentStorageExtensions.AddComponent(this, toAdd);
       }
+
+      /// <summary>
+      /// Add a new component, throws if the component key is taken already
+      /// </summary>
+      protected virtual void AddNewComponent<TComponent>(IEnumerable<(string, object)> @params)
+        where TComponent : IModel.IComponent<TComponent> 
+      {
+        IComponent toAdd = Components<TComponent>.BuilderFactory.Make(@params);
+        if(toAdd is IModel.IRestrictedComponent restrictedComponent && !restrictedComponent.IsCompatableWith(this)) {
+          throw new System.ArgumentException($"Component of type {toAdd.Key} is not compatable with model of type {GetType()}. The model must inherit from {restrictedComponent.RestrictedTo.FullName}.");
+        }
+
+        ReadableComponentStorageExtensions.AddComponent(this, toAdd);
+      }
+
+      /// <summary>
+      /// Add a new component, throws if the component key is taken already
+      /// </summary>
+      protected virtual void AddNewComponent<TComponent>(params (string, object)[] @params)
+        where TComponent : IModel.IComponent<TComponent>
+          => AddNewComponent<TComponent>(@params.Cast<(string, object)>());
 
       /// <summary>
       /// replace an existing component
