@@ -62,7 +62,7 @@ namespace Meep.Tech.Data {
         }
       }
 
-      return true;
+      return other is not null;
     }
 
     /// <summary>

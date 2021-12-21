@@ -35,6 +35,10 @@ namespace Meep.Tech.Data {
         get;
       } = new Dictionary<string, Data.IComponent>();
 
+      public override bool Equals(object obj) {
+        return base.Equals(obj) 
+          && IReadableComponentStorage.Equals(this, obj as IReadableComponentStorage);
+      }
 
       #region Default Component Implimentations
 
