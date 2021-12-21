@@ -1,4 +1,5 @@
-﻿using System;
+﻿using KellermanSoftware.CompareNetObjects;
+using System;
 using System.Collections.Generic;
 
 namespace Meep.Tech.Data {
@@ -28,6 +29,12 @@ namespace Meep.Tech.Data {
     /// </summary>
     public static System.Type GetModelBaseType(this System.Type type)
       => DefaultUniverse.Models.GetModelBaseType(type);
+
+    /// <summary>
+    /// Get logic used to compare models of the given type
+    /// </summary>
+    public static CompareLogic GetCompareLogicFor(System.Type type)
+      => Models.DefaultUniverse.Models.GetCompareLogicFor(type);
   }
 
   /// <summary>
@@ -36,6 +43,14 @@ namespace Meep.Tech.Data {
   public static class Models<TModel> 
     where TModel : IModel<TModel> 
   {
+    /// <summary>
+    /// Overrideable Compare logic for each type of model.
+    /// This is inherited once set
+    /// </summary>
+    public static CompareLogic CompareLogic {
+      get => Models.GetCompareLogicFor(typeof(TModel));
+      set => Models.DefaultUniverse.Models._compareLogicByModelType[typeof(TModel)] = value;
+    }
 
     /// <summary>
     /// Builder instance for this type of component.

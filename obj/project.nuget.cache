@@ -1,11 +1,13 @@
 {
   "version": 2,
-  "dgSpecHash": "43lr3aVELuNM10DKAynenAt24kGZPRWZqTSSV3skp5nAxAfZMaXHURDY2PxmIKQfvBJvoNdLNDGYVTy5bAPWqw==",
+  "dgSpecHash": "xUlTRqPTHDSJq1nplTY0z/XiK/M35jnwxfet0NHdCu8142zVFlH5Hh+bib+kX91BNnWDG1VHD54nycMw+5AhGw==",
   "success": true,
   "projectFilePath": "C:\\Users\\super\\Projects\\meep-tech\\libraries\\c-sharp\\Meep.Tech.ECSBAMF\\Meep.Tech.ECSBAM.csproj",
   "expectedPackageFiles": [
+    "C:\\Users\\super\\.nuget\\packages\\comparenetobjects\\4.74.0\\comparenetobjects.4.74.0.nupkg.sha512",
     "C:\\Users\\super\\.nuget\\packages\\microsoft.bcl.asyncinterfaces\\1.1.0\\microsoft.bcl.asyncinterfaces.1.1.0.nupkg.sha512",
     "C:\\Users\\super\\.nuget\\packages\\microsoft.bcl.hashcode\\1.1.0\\microsoft.bcl.hashcode.1.1.0.nupkg.sha512",
+    "C:\\Users\\super\\.nuget\\packages\\microsoft.csharp\\4.7.0\\microsoft.csharp.4.7.0.nupkg.sha512",
     "C:\\Users\\super\\.nuget\\packages\\microsoft.entityframeworkcore\\3.1.0\\microsoft.entityframeworkcore.3.1.0.nupkg.sha512",
     "C:\\Users\\super\\.nuget\\packages\\microsoft.entityframeworkcore.abstractions\\3.1.0\\microsoft.entityframeworkcore.abstractions.3.1.0.nupkg.sha512",
     "C:\\Users\\super\\.nuget\\packages\\microsoft.entityframeworkcore.analyzers\\3.1.0\\microsoft.entityframeworkcore.analyzers.3.1.0.nupkg.sha512",

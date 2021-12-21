@@ -1,4 +1,5 @@
-﻿using Newtonsoft.Json;
+﻿using KellermanSoftware.CompareNetObjects;
+using Newtonsoft.Json;
 using System;
 using System.ComponentModel.DataAnnotations.Schema;
 
@@ -37,6 +38,14 @@ namespace Meep.Tech.Data {
         = builder.Archetype.Id.Universe;
 
       return this;
+    }
+
+    public override bool Equals(object obj) {
+      return obj is IUnique other && this is IUnique current
+        ? other.Id == current.Id
+        : Universe.Models.GetCompareLogicFor(GetType())
+          .Compare(this, obj)
+          .AreEqual;
     }
   }
 

@@ -1,4 +1,5 @@
-﻿using Microsoft.EntityFrameworkCore.Metadata.Builders;
+﻿using KellermanSoftware.CompareNetObjects;
+using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
@@ -43,6 +44,12 @@ namespace Meep.Tech.Data {
       internal Dictionary<Type, IModel.IBuilderFactory> _factoriesByModelType
         = new Dictionary<Type, IModel.IBuilderFactory>();
 
+      /// <summary>
+      /// The compare logic organized by inheritance/types
+      /// </summary>
+      internal readonly Dictionary<Type, CompareLogic> _compareLogicByModelType 
+        = new Dictionary<Type, CompareLogic>();
+
       internal ModelsData(Universe universe) {
         _factories
           = new Archetype.Collection(universe);
@@ -60,6 +67,14 @@ namespace Meep.Tech.Data {
           : _factoriesByModelType.TryGetValue(systemType, out var foundFactory)
             ? foundFactory
             : _findFirstInheritedFactory(systemType);
+
+      /// <summary>
+      /// Get the builder factory for a given type
+      /// </summary>
+      public CompareLogic GetCompareLogicFor(System.Type systemType)
+        => _compareLogicByModelType.TryGetValue(systemType, out var found)
+            ? found
+            : _findFirstInheritedCompareLogic(systemType);
 
       /// <summary>
       /// Get the builder factory for a given type
@@ -211,6 +226,53 @@ namespace Meep.Tech.Data {
         _factoriesByModelType[modelType] = factory
           ?? throw new NotImplementedException($"No BuilderFactory was found or built for the model type: {modelType.FullName}");
         return factory;
+      }
+      
+      /// <summary>
+      /// Get the first factory inherited by a given model:
+      /// </summary>
+      CompareLogic _findFirstInheritedCompareLogic(Type modelType) {
+        if(!modelType.IsAssignableToGeneric(typeof(IModel<>))) {
+          throw new NotImplementedException(
+            $"Model Type: {modelType.FullName} does not inherit from Model<TModelBase>." +
+            $" If you are using Model<TModelBase, TArchetypeBase> then the Archetype " +
+            $"Base would be the default FactoryBuilder, and this should variable not be used."
+          );
+        }
+
+        // check if we already have one set by someone:
+        if(_compareLogicByModelType.TryGetValue(modelType, out CompareLogic compareLogic)) {
+          ///// Do nothing
+        }// just the interface:
+        else if(modelType.BaseType == null) {
+          if(modelType.IsAssignableToGeneric(typeof(IModel<>))) {
+            compareLogic = new CompareLogic();
+          }
+        }// if we need to find the base type:
+        else {
+          Type baseType = modelType.BaseType;
+          while(baseType != null) {
+            if(typeof(IModel).IsAssignableFrom(baseType)) {
+              if(baseType.BaseType?.FullName == typeof(Model).FullName) {
+                compareLogic = new CompareLogic();
+                break;
+              }
+              if(_compareLogicByModelType.TryGetValue(baseType, out compareLogic)) {
+                break;
+              }
+            }
+            else {
+              compareLogic = new CompareLogic();
+              break;
+            }
+
+            baseType = baseType.BaseType;
+          }
+        }
+
+        _compareLogicByModelType[modelType] = compareLogic
+          ?? throw new NotImplementedException($"No CompareLogic was found or built for the model type: {modelType.FullName}");
+        return compareLogic;
       }
 
       /// <summary>

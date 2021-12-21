@@ -50,6 +50,10 @@
         "net5.0": {
           "targetAlias": "net5",
           "dependencies": {
+            "CompareNETObjects": {
+              "target": "Package",
+              "version": "[4.74.0, )"
+            },
             "Microsoft.EntityFrameworkCore": {
               "target": "Package",
               "version": "[3.1.0, )"
@@ -79,6 +83,10 @@
         "netstandard2.1": {
           "targetAlias": "netstandard2.1",
           "dependencies": {
+            "CompareNETObjects": {
+              "target": "Package",
+              "version": "[4.74.0, )"
+            },
             "Microsoft.EntityFrameworkCore": {
               "target": "Package",
               "version": "[3.1.0, )"
