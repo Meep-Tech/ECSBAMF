@@ -135,6 +135,14 @@ namespace Meep.Tech.Data.Configuration {
         => _assemblyLoadOrder;
       internal List<Assembly> _assemblyLoadOrder
           = new List<Assembly>();
+
+      /// <summary>
+      /// The default model serializer options
+      /// </summary>
+      public Model.Serializer.Settings ModelSerializerOptions {
+        get;
+        set;
+      } = new Model.Serializer.Settings();
     }
   }
 }

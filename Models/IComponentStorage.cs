@@ -234,6 +234,19 @@ namespace Meep.Tech.Data {
     /// </summary>
     internal static void AddComponent(this IReadableComponentStorage storage, IComponent toAdd) {
       storage._componentsByBuilderKey.Add(toAdd.Key, toAdd);
+      _updateComponentUniverse(storage, toAdd);
+    }
+
+    /// <summary>
+    /// Update a component's universe to a new owner
+    /// </summary>
+    static void _updateComponentUniverse(IReadableComponentStorage storage, IComponent toAdd) {
+      if(storage is IModel model) {
+        IComponent.SetUniverse(toAdd, model.Universe);
+      }
+      else if(storage is Archetype archetype) {
+        IComponent.SetUniverse(toAdd, archetype.Id.Universe);
+      }
     }
 
     /// <summary>
@@ -241,6 +254,7 @@ namespace Meep.Tech.Data {
     /// </summary>
     internal static void AddOrUpdateComponent(this IReadableComponentStorage storage, IComponent toSet) {
       storage._componentsByBuilderKey[toSet.Key] = toSet;
+      _updateComponentUniverse(storage, toSet);
     }
 
     /// <summary>
@@ -249,6 +263,7 @@ namespace Meep.Tech.Data {
     internal static void UpdateComponent(this IReadableComponentStorage storage, IComponent toUpdate) {
       if(storage.HasComponent(toUpdate.Key)) {
         storage._componentsByBuilderKey[toUpdate.Key] = toUpdate;
+        _updateComponentUniverse(storage, toUpdate);
       }
       else
         throw new KeyNotFoundException($"Could not find compoennt of type {toUpdate.Key} to update.");
@@ -261,6 +276,7 @@ namespace Meep.Tech.Data {
       where TComponentType : IComponent {
       if(storage.HasComponent(typeof(TComponentType), out IComponent current)) {
         storage._componentsByBuilderKey[current.Key] = UpdateComponent((TComponentType)current);
+        _updateComponentUniverse(storage, storage._componentsByBuilderKey[current.Key]);
       }
       else
         throw new KeyNotFoundException($"Could not find compoennt with the key of type {typeof(TComponentType).FullName} to update.");

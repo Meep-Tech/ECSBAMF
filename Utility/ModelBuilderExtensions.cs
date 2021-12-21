@@ -55,13 +55,18 @@ namespace Meep.Tech.Data {
               as UseCustomConverterAttribute;
           if(!(useCustomConverterAttribute is null)) {
             // if we have a cached converter of this type, use that.
-            ValueConverter customConverter
-              = (ValueConverter)(useCustomConverterAttribute is IsArchetypePropertyAttribute
-                ? Activator.CreateInstance(typeof(Archetype<,>.ToKeyStringConverter)
-                  .MakeGenericType(entityType.ClrType.GetModelBaseType(), property.PropertyType))
-                : UseCustomConverterAttribute._cachedCustomConverters[useCustomConverterAttribute.CustomConverterType]);
+            ValueConverter customConverter;
+            if(useCustomConverterAttribute is IsArchetypePropertyAttribute) {
+              //Type modelBaseType = entityType.ClrType.GetModelBaseType();
+              Type converterType = typeof(Archetype.ToKeyStringConverter<>)
+                .MakeGenericType(property.PropertyType);
+              customConverter = (ValueConverter)Activator.CreateInstance(converterType);
+            } else {
+             customConverter = UseCustomConverterAttribute
+                ._cachedCustomConverters[useCustomConverterAttribute.CustomConverterType];
+            }
             modelBuilder.Entity(entityType.Name).Property(property.Name)
-                .HasConversion(customConverter);
+              .HasConversion(customConverter);
           }
         }
       }

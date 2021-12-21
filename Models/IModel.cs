@@ -13,10 +13,10 @@ namespace Meep.Tech.Data {
     /// <summary>
     /// Make a component from a jobject
     /// </summary>
-    public static IModel FromJson(JObject json) {
+    public static IModel FromJson(JObject jObject) {
       string key;
       Universe universe;
-      string compoundKey = json.Value<string>(nameof(Archetype));
+      string compoundKey = jObject.Value<string>(nameof(Archetype).ToLower());
       string[] parts = compoundKey.Split('@');
       if(parts.Length == 1) {
         key = compoundKey;
@@ -27,13 +27,20 @@ namespace Meep.Tech.Data {
         universe = Universe.Get(parts[1]);
       }
       else
-        throw new ArgumentException($"No __key_ identifier provided in component data: \n{json}");
+        throw new ArgumentException($"No __key_ identifier provided in component data: \n{jObject}");
 
-      return (IModel)json.ToObject(
+      string json = jObject.ToString();
+      Type deserializeToType =
         universe.Models.GetModelTypeProducedBy(
           universe.Archetypes.All.Get(key)
-        )
+        );
+      object model = JsonConvert.DeserializeObject(
+        json,
+        deserializeToType,
+        universe.ModelSerializer.Options.ModelJsonSerializerSettings
       );
+
+      return (IModel)model;
     }
 
     /// <summary>
@@ -102,8 +109,15 @@ namespace Meep.Tech.Data {
     /// <summary>
     /// Turn the model into a serialized data object.
     /// </summary>
-    public static JObject ToJson(this IModel model)
-      => JObject.FromObject(model);
+    public static JObject ToJson(this IModel model, Universe universe = null) {
+      var json = JObject.FromObject(
+        model, 
+        (universe ?? model.Universe)
+          .ModelSerializer.Options.ModelJsonSerializer
+      );
+
+      return json;
+    }
 
     /// <summary>
     /// Copy the model by serializing and deserializing it.

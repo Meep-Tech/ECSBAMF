@@ -20,7 +20,7 @@ namespace Meep.Tech.Data {
     [JsonIgnore]
     public Universe Universe {
       get;
-      private set;
+      internal set;
     }
 
     /// <summary>
@@ -86,11 +86,13 @@ namespace Meep.Tech.Data {
     /// The model's archetype:
     /// </summary>
     [IsArchetypeProperty]
-    [JsonConverter(typeof(Archetype.ToKeyStringConverter))]
     public TArchetypeBase Archetype {
-      get;
-      private set;
-    }
+      get => _archetype;
+      private set {
+        _archetype = value;
+        Universe ??= _archetype.Id.Universe;
+      }
+    } TArchetypeBase _archetype;
 
     internal override Model _initialize(IBuilder builder) {
       Model model = base._initialize(builder);

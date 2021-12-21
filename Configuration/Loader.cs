@@ -149,24 +149,7 @@ namespace Meep.Tech.Data.Configuration {
     /// Initialize the model serializer
     /// </summary>
     void _initializeModelSerializerSettings() {
-      Universe.ModelSerializer = new Model.Serializer();
-
-      // Setup newtonsoft json.net
-      /*JsonConvert.DefaultSettings = () => new JsonSerializerSettings() {
-        ContractResolver = new DefaultContractResolver() {
-          IgnoreSerializableAttribute = false
-        }
-      };*/
-
-      Universe.ModelSerializer.Options.ComponentJsonSerializerSettings
-        ??= new JsonSerializerSettings() {
-          ContractResolver = new DefaultContractResolver() {
-            IgnoreSerializableAttribute = false,
-            NamingStrategy = new CamelCaseNamingStrategy() {
-              OverrideSpecifiedNames = false
-            }
-          }
-        };
+      Universe.ModelSerializer = new Model.Serializer(Options.ModelSerializerOptions, Universe);
     }
 
     /// <summary>
@@ -187,10 +170,10 @@ namespace Meep.Tech.Data.Configuration {
       _orderedAssemblyFiles = Options.PreOrderedAssemblyFiles;
       string loadOrderFile = Path.Combine(Options.ModsRootFolderLocation, "order.json");
       if(File.Exists(loadOrderFile)) {
-        foreach(LoadOrderItem loadOrderItem in JsonConvert.DeserializeObject<List<LoadOrderItem>>(
-          File.ReadAllText(loadOrderFile),
-          Universe.ModelSerializer.Options.ComponentJsonSerializerSettings
-        )) {
+        foreach(LoadOrderItem loadOrderItem
+          in JsonConvert.DeserializeObject<List<LoadOrderItem>>(
+           File.ReadAllText(loadOrderFile))
+        ) {
           _orderedAssemblyFiles
             .Add(loadOrderItem.Priority, loadOrderItem.AssemblyFileName);
         }
@@ -202,7 +185,7 @@ namespace Meep.Tech.Data.Configuration {
     /// </summary>
     void _loadValidAssemblies() {
       // get built ins.
-      List<Assembly> externalAssemblies = new List<Assembly>();
+      List<Assembly> externalAssemblies = new();
       if(File.Exists(Options.ModsRootFolderLocation)) {
         foreach(string compatableAssemblyFileName in Directory.GetFiles(
           Options.ModsRootFolderLocation,
@@ -572,6 +555,7 @@ namespace Meep.Tech.Data.Configuration {
         if(!Universe.Archetypes._rootArchetypeTypesByBaseModelType.ContainsKey(defaultModel.GetType().FullName)) {
           Universe.Archetypes._rootArchetypeTypesByBaseModelType[defaultModel.GetType().FullName] = archetype.GetType();
         }
+        Universe.Models._modelTypesProducedByArchetypes[archetype] = defaultModel.GetType();
 
         // success:
         _initializedArchetypes.Add(archetype);

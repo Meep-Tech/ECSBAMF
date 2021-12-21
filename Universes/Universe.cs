@@ -11,6 +11,14 @@ namespace Meep.Tech.Data {
   public partial class Universe {
 
     /// <summary>
+    /// All Universes
+    /// </summary>
+    public static IEnumerable<Universe> s
+      => _all.Values;
+    static Utility.OrderdDictionary<string, Universe> _all
+      = new Utility.OrderdDictionary<string, Universe>();
+
+    /// <summary>
     /// The unique key of this universe.
     /// </summary>
     public string Key {
@@ -66,13 +74,13 @@ namespace Meep.Tech.Data {
 
       // set this as the default universe if there isn't one yet
       Data.Archetypes.DefaultUniverse ??= this;
+      _all.Add(Key, this);
     }
 
     /// <summary>
     /// Get a loaded universe by it's unique name key
     /// </summary>
-    public static Universe Get(string nameKey) {
-      throw new NotImplementedException();
-    }
+    public static Universe Get(string nameKey)
+      => _all[nameKey];
   }
 }

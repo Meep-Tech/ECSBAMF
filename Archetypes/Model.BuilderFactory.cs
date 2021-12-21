@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Newtonsoft.Json;
+using System;
 using System.Collections.Generic;
 using static Meep.Tech.Data.Configuration.Loader.Settings;
 
@@ -11,16 +12,7 @@ namespace Meep.Tech.Data {
     /// One of these is instantiated for each Model<> class and IComponent<> class by default.
     /// This is the base non-generic utility class
     /// </summary>
-    public interface IBuilderFactory {
-
-      /// <summary>
-      /// Overrideable Model Constructor
-      /// </summary>
-      Func<IBuilder, IModel> ModelConstructor {
-        get;
-        internal set;
-      }
-    }
+    public interface IBuilderFactory : IFactory {}
   }
 
   public partial class Model<TModelBase> where TModelBase : Model<TModelBase> {
@@ -28,6 +20,7 @@ namespace Meep.Tech.Data {
     /// <summary>
     /// The factory that was used to make this object
     /// </summary>
+    [IsArchetypeProperty]
     public IModel.IBuilderFactory Factory {
       get;
       private set;
@@ -68,8 +61,8 @@ namespace Meep.Tech.Data {
       where TBuilderFactoryBase : BuilderFactory<TBuilderFactoryBase>
       {
 
-      Func<IBuilder, IModel> IBuilderFactory.ModelConstructor {
-        get => builder => base.ModelConstructor((Builder)builder);
+      Func<IBuilder, IModel> IFactory.ModelConstructor {
+        get => builder => base.ModelConstructor((IBuilder<TModelBase>)builder);
         set => base.ModelConstructor = 
           builder => (TModelBase)value(builder);
       }

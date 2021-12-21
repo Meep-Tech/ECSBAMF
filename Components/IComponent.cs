@@ -10,6 +10,21 @@ namespace Meep.Tech.Data {
   public partial interface IComponent : IModel {
 
     /// <summary>
+    /// <inheritdoc/>
+    /// </summary>
+    public new Universe Universe {
+      get;
+      protected set;
+    }
+
+    /// <summary>
+    /// <inheritdoc/>
+    /// </summary>
+    Universe IModel.Universe {
+      get => Universe;
+    }
+
+    /// <summary>
     /// Make a component from a jobject
     /// </summary>
     public new static IComponent FromJson(JObject json) {
@@ -34,9 +49,14 @@ namespace Meep.Tech.Data {
       );
     }
 
+    internal static void SetUniverse(Data.IComponent component, Universe universe) {
+      component.Universe = universe;
+    }
+
     /// <summary>
     /// Access to the builder factory for this type of component
     /// </summary>
+    [IsArchetypeProperty]
     public Data.IComponent.IBuilderFactory Factory
       => Components.GetBuilderFactoryFor(GetType());
 
