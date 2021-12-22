@@ -173,7 +173,7 @@ namespace Meep.Tech.Data {
 
     /// <summary>
     /// A Collection of Archetypes.
-    /// - Can be used to make a more specific child collection than Archetype<,>.ArchetypeCollection.
+    /// - Can be used to make a more specific child collection than Archetype[,].ArchetypeCollection.
     /// </summary>
     public class Collection<TModelBase, TArchetypeBase>
       : Archetype<TModelBase, TArchetypeBase>.ArchetypeCollection

@@ -47,9 +47,17 @@ namespace Meep.Tech.Data {
       else
         throw new ArgumentException($"No Archetype identifier provided in component data: \n{jObject}");
 
+      // deserialize a collection type component
+      if(jObject.TryGetValue(Model.Serializer.ComponentValueCollectionPropertyName, out JToken valueCollection)) {
+        return (IComponent)valueCollection.ToObject(
+          deserializeToTypeOverride ?? universe.Components.Get(key),
+          universe.ModelSerializer.ComponentJsonSerializer
+        );
+      }
+
       return (IComponent)jObject.ToObject(
         deserializeToTypeOverride ?? universe.Components.Get(key), 
-        universe.ModelSerializer.Options.ComponentJsonSerializer
+        universe.ModelSerializer.ComponentJsonSerializer
       );
     }
 
@@ -62,7 +70,7 @@ namespace Meep.Tech.Data {
     /// </summary>
     [IsArchetypeProperty]
     public Data.IComponent.IBuilderFactory Factory
-      => Components.GetBuilderFactoryFor(GetType());
+      => (Universe ?? Components.DefaultUniverse).Components.GetBuilderFactoryFor(GetType());
 
     /// <summary>
     /// A key used to index this type of component. There can only be one componet per key on a model or archetype
@@ -92,16 +100,27 @@ namespace Meep.Tech.Data {
   {
   }
 
+  /// <summary>
+  /// Serialization Related Component Extensions
+  /// </summary>
   public static class ComponentExtensions {
 
     /// <summary>
     /// Turn the model into a serialized data object.
     /// </summary>
     public static JObject ToJson(this IComponent component, Universe universe = null) {
-      var json = JObject.FromObject(component, (universe ?? component.Universe).ModelSerializer.Options.ComponentJsonSerializer);
-      json.Add(Model.Serializer.ComponentKeyPropertyName, component.Key);
-
-      return json;
+      var json = JToken.FromObject(component, (universe ?? component.Universe).ModelSerializer.ComponentJsonSerializer);
+      if(json is JObject jsonObject) {
+        jsonObject.Add(Model.Serializer.ComponentKeyPropertyName, component.Key);
+        return jsonObject;
+      } else
+        if(json is JArray jsonArray) 
+          return new JObject {
+            {Model.Serializer.ComponentValueCollectionPropertyName, jsonArray },
+            {Model.Serializer.ComponentKeyPropertyName, component.Key }
+          };
+      else
+        throw new NotImplementedException($"Component of type {component.Key} must be serializable to a JObject or JArray by default using it's Universe.ModelSerializer.ComponentJsonSerializer.");
     }
 
     /// <summary>

@@ -212,6 +212,11 @@ namespace Meep.Tech.Data {
               if(_factoriesByModelType.TryGetValue(baseType, out factory)) {
                 break;
               }
+              if(baseType.Name == typeof(Model<>.WithComponents).Name
+                  && baseType.Module.ToString() == "Meep.Tech.ECSBAM.dll") {
+                factory = _makeDefaultFactoryFor(originalType);
+                break;
+              }
             }
             else {
               factory = _makeDefaultFactoryFor(originalType);

@@ -23,11 +23,11 @@ namespace Meep.Tech.Data {
         /// </summary>
         public DbContext DbContext {
           get;
-          set;
+          internal set;
         }
 
         /// <summary>
-        /// Json serializer settings for easy Component serialization
+        /// Helper function to set the default json serializer settings for components.
         /// </summary>
         public Func<DefaultContractResolver, JsonSerializerSettings> ConfigureComponentJsonSerializerSettings {
           get;
@@ -46,7 +46,7 @@ namespace Meep.Tech.Data {
         };
 
         /// <summary>
-        /// Json serializer settings for easy Component serialization
+        /// Helper function to set the default json serializer settings for models.
         /// </summary>
         public Func<DefaultContractResolver, JsonSerializerSettings> ConfigureModelJsonSerializerSettings {
           get;
@@ -65,7 +65,7 @@ namespace Meep.Tech.Data {
         };
 
         /// <summary>
-        /// Compiled component serializer from the above settings
+        /// Compiled component serializer settings from the settings config function
         /// </summary>
         public JsonSerializerSettings ComponentJsonSerializerSettings {
           get => _componentJsonSerializerSettings 
@@ -74,31 +74,13 @@ namespace Meep.Tech.Data {
         } JsonSerializerSettings _componentJsonSerializerSettings;
 
         /// <summary>
-        /// Compiled component serializer from the above settings
+        /// Compiled model serializer from the settings config function
         /// </summary>
         public JsonSerializerSettings ModelJsonSerializerSettings {
           get => _modelJsonSerializerSettings 
             ??= ConfigureModelJsonSerializerSettings(
               new DefaultContractResolver(_universe));
         } JsonSerializerSettings _modelJsonSerializerSettings;
-
-        /// <summary>
-        /// Compiled component serializer from the above settings
-        /// </summary>
-        public JsonSerializer ComponentJsonSerializer {
-          get => _componentJsonSerializer ??= JsonSerializer
-            .Create(ConfigureComponentJsonSerializerSettings(
-              new DefaultContractResolver(_universe)));
-        } JsonSerializer _componentJsonSerializer;
-
-        /// <summary>
-        /// Compiled component serializer from the above settings
-        /// </summary>
-        public JsonSerializer ModelJsonSerializer {
-          get => _modelJsonSerializer ??= JsonSerializer
-            .Create(ConfigureModelJsonSerializerSettings(
-              new DefaultContractResolver(_universe)));
-        } JsonSerializer _modelJsonSerializer;
 
         /// <summary>
         /// The types to map to the db context.
@@ -115,18 +97,6 @@ namespace Meep.Tech.Data {
           get;
           set;
         } = true;
-
-        /// <summary>
-        /// The default params used to compare model objects.
-        /// This calls DefaultComparisonConfig on it's first get.
-        /// </summary>
-        /*public CompareParms DefaultComparisonParams {
-          get => _defaultComparisonParams
-            ??= new CompareParms {
-              Config = DefaultComparisonConfig
-            };
-          set => _defaultComparisonParams = value;
-        } CompareParms _defaultComparisonParams;*/
 
         /// <summary>
         /// The default config used to compare model objects

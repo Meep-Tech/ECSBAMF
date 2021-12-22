@@ -6,7 +6,7 @@ namespace Meep.Tech.Data {
 
   /// <summary>
   /// The base interface for a mutable data model that can be produced by an Archetype.
-  /// This is the non generic for Utility only
+  /// This is the non generic for Utility only, extend IModel[], or IModel[,] instead.
   /// </summary>
   public partial interface IModel {
 
@@ -122,13 +122,10 @@ namespace Meep.Tech.Data {
      ) => IModel<TModelBase>.FromJson(jObject, deserializeToTypeOverride, universeOverride);
   }
 
+  /// <summary>
+  /// Extension methods for models
+  /// </summary>
   public static class IModelExtensions {
-
-    /// <summary>
-    /// Turn the model into a serialized data object.
-    /// </summary>
-    /*public static Model.SerializedData Serialize(this IModel model)
-      => throw new System.NotImplementedException();*/
 
     /// <summary>
     /// Turn the model into a serialized data object.
@@ -143,7 +140,7 @@ namespace Meep.Tech.Data {
       var json = JObject.FromObject(
         model, 
         (universe ?? model.Universe)
-          .ModelSerializer.Options.ModelJsonSerializer
+          .ModelSerializer.ModelJsonSerializer
       );
 
       return json;

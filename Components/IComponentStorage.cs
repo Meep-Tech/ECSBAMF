@@ -210,8 +210,8 @@ namespace Meep.Tech.Data {
     /// This is for internal use only
     /// </summary>
     internal static void AddComponent(this IReadableComponentStorage storage, IComponent toAdd) {
-      storage._componentsByBuilderKey.Add(toAdd.Key, toAdd);
       _updateComponentUniverse(storage, toAdd);
+      storage._componentsByBuilderKey.Add(toAdd.Key, toAdd);
     }
 
     /// <summary>
@@ -230,17 +230,17 @@ namespace Meep.Tech.Data {
     /// Add a component, updating the existing value if a component of this type already exists.
     /// </summary>
     internal static void AddOrUpdateComponent(this IReadableComponentStorage storage, IComponent toSet) {
-      storage._componentsByBuilderKey[toSet.Key] = toSet;
       _updateComponentUniverse(storage, toSet);
+      storage._componentsByBuilderKey[toSet.Key] = toSet;
     }
 
     /// <summary>
     /// Add a component, if it doesn't exist. Otherwise this throws.
     /// </summary>
     internal static void UpdateComponent(this IReadableComponentStorage storage, IComponent toUpdate) {
+      _updateComponentUniverse(storage, toUpdate);
       if(storage.HasComponent(toUpdate.Key)) {
         storage._componentsByBuilderKey[toUpdate.Key] = toUpdate;
-        _updateComponentUniverse(storage, toUpdate);
       }
       else
         throw new KeyNotFoundException($"Could not find compoennt of type {toUpdate.Key} to update.");
@@ -253,7 +253,6 @@ namespace Meep.Tech.Data {
       where TComponentType : IComponent {
       if(storage.HasComponent(typeof(TComponentType), out IComponent current)) {
         storage._componentsByBuilderKey[current.Key] = UpdateComponent((TComponentType)current);
-        _updateComponentUniverse(storage, storage._componentsByBuilderKey[current.Key]);
       }
       else
         throw new KeyNotFoundException($"Could not find compoennt with the key of type {typeof(TComponentType).FullName} to update.");

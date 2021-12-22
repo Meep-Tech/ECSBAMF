@@ -403,7 +403,12 @@
             Try to get an archetype from this collection by it's externalId.
             </summary>
         </member>
-        <!-- Badly formed XML comment ignored for member "T:Meep.Tech.Data.Archetype.Collection`2" -->
+        <member name="T:Meep.Tech.Data.Archetype.Collection`2">
+            <summary>
+            A Collection of Archetypes.
+            - Can be used to make a more specific child collection than Archetype[,].ArchetypeCollection.
+            </summary>
+        </member>
         <member name="T:Meep.Tech.Data.Archetype.Identity">
             <summary>
             An Id unique to each Archetype.
@@ -694,18 +699,6 @@
         <member name="M:Meep.Tech.Data.Archetype`2.BuildModel(Meep.Tech.Data.IBuilder{`0})">
             <summary>
             Build the model with the builder.
-            </summary>
-        </member>
-        <member name="T:Meep.Tech.Data.Archetype`2.IBranch">
-            <summary>
-            Not Implimented
-            </summary>
-        </member>
-        <member name="T:Meep.Tech.Data.Archetype`2.IBranch`1">
-            <summary>
-            Not Implimented !!!
-            Used as shorthand for a type that produces a different model via the Model constructor
-            This will just set the model constructor of the archetype to the basic activator for the parameterless ctor of TNewBaseModel
             </summary>
         </member>
         <member name="P:Meep.Tech.Data.Archetype`2.DefaultCollection">
@@ -1333,7 +1326,7 @@
         <member name="T:Meep.Tech.Data.IModel">
             <summary>
             The base interface for a mutable data model that can be produced by an Archetype.
-            This is the non generic for Utility only
+            This is the non generic for Utility only, extend IModel[], or IModel[,] instead.
             </summary>
         </member>
         <!-- Badly formed XML comment ignored for member "T:Meep.Tech.Data.IModel.IBuilderFactory" -->
@@ -1777,6 +1770,11 @@
             <param name="deserializeToTypeOverride">You can use this to try to make JsonSerialize 
                use a different Type's info for deserialization than the default returned from GetModelTypeProducedBy</param>
         </member>
+        <member name="T:Meep.Tech.Data.ComponentExtensions">
+            <summary>
+            Serialization Related Component Extensions
+            </summary>
+        </member>
         <member name="M:Meep.Tech.Data.ComponentExtensions.ToJson(Meep.Tech.Data.IComponent,Meep.Tech.Data.Universe)">
             <summary>
             Turn the model into a serialized data object.
@@ -2077,16 +2075,35 @@
             This is the non-generic base class for Utility
             </summary>
         </member>
+        <member name="F:Meep.Tech.Data.Model.Serializer.ComponentKeyPropertyName">
+            <summary>
+            The key used for the field containing the data for the type of component
+            </summary>
+        </member>
+        <member name="F:Meep.Tech.Data.Model.Serializer.ComponentValueCollectionPropertyName">
+            <summary>
+            The key used for the field containing the value collection for a component if it serializes to a colleciton by default
+            </summary>
+        </member>
         <member name="P:Meep.Tech.Data.Model.Serializer.Options">
             <summary>
             The serializer options
+            </summary>
+        </member>
+        <member name="P:Meep.Tech.Data.Model.Serializer.ComponentJsonSerializer">
+            <summary>
+            Compiled component serializer from the settings
+            </summary>
+        </member>
+        <member name="P:Meep.Tech.Data.Model.Serializer.ModelJsonSerializer">
+            <summary>
+            Compiled model serializer from the settings
             </summary>
         </member>
         <member name="M:Meep.Tech.Data.Model.Serializer.#ctor(Meep.Tech.Data.Model.Serializer.Settings,Meep.Tech.Data.Universe)">
             <summary>
             Make a new serializer for a universe
             </summary>
-            <param name="options"></param>
         </member>
         <member name="T:Meep.Tech.Data.Model.Serializer.DbContext">
             <summary>
@@ -2111,32 +2128,22 @@
         </member>
         <member name="P:Meep.Tech.Data.Model.Serializer.Settings.ConfigureComponentJsonSerializerSettings">
             <summary>
-            Json serializer settings for easy Component serialization
+            Helper function to set the default json serializer settings for components.
             </summary>
         </member>
         <member name="P:Meep.Tech.Data.Model.Serializer.Settings.ConfigureModelJsonSerializerSettings">
             <summary>
-            Json serializer settings for easy Component serialization
+            Helper function to set the default json serializer settings for models.
             </summary>
         </member>
         <member name="P:Meep.Tech.Data.Model.Serializer.Settings.ComponentJsonSerializerSettings">
             <summary>
-            Compiled component serializer from the above settings
+            Compiled component serializer settings from the settings config function
             </summary>
         </member>
         <member name="P:Meep.Tech.Data.Model.Serializer.Settings.ModelJsonSerializerSettings">
             <summary>
-            Compiled component serializer from the above settings
-            </summary>
-        </member>
-        <member name="P:Meep.Tech.Data.Model.Serializer.Settings.ComponentJsonSerializer">
-            <summary>
-            Compiled component serializer from the above settings
-            </summary>
-        </member>
-        <member name="P:Meep.Tech.Data.Model.Serializer.Settings.ModelJsonSerializer">
-            <summary>
-            Compiled component serializer from the above settings
+            Compiled model serializer from the settings config function
             </summary>
         </member>
         <member name="P:Meep.Tech.Data.Model.Serializer.Settings.TypesToMapToDbContext">
@@ -2328,6 +2335,11 @@
             </summary>
             <param name="deserializeToTypeOverride">You can use this to try to make JsonSerialize 
                use a different Type's info for deserialization than the default returned from GetModelTypeProducedBy</param>
+        </member>
+        <member name="T:Meep.Tech.Data.IModelExtensions">
+            <summary>
+            Extension methods for models
+            </summary>
         </member>
         <member name="M:Meep.Tech.Data.IModelExtensions.ToJson(Meep.Tech.Data.IModel,Meep.Tech.Data.Universe)">
             <summary>

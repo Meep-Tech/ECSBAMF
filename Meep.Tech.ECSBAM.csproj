@@ -8,7 +8,7 @@
 
 <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Debug|netstandard2.1|AnyCPU'">
   <DocumentationFile>C:\Users\super\Projects\meep-tech\libraries\c-sharp\Meep.Tech.ECSBAMF\Meep.Tech.ECSBAM.xml</DocumentationFile>
-  <DebugType>full</DebugType>
+  <DebugType>portable</DebugType>
   <DebugSymbols>true</DebugSymbols>
 </PropertyGroup>
 

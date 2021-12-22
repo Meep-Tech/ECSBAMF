@@ -41,16 +41,25 @@ namespace Meep.Tech.Data {
     public class ComponentsToJsonConverter : JsonConverter<IReadOnlyDictionary<string, IModel.IComponent>> {
 
       public override void WriteJson(JsonWriter writer, [AllowNull] IReadOnlyDictionary<string, IModel.IComponent> value, JsonSerializer serializer) {
-        writer.WriteValue(JArray.FromObject(value.Select(componentData => componentData.Value.ToJson())).ToString());
+        JObject[] values = value.Select(componentData => componentData.Value.ToJson()).ToArray();
+        writer.WriteStartArray();
+        values.ForEach(jObject => serializer.Serialize(writer, jObject));
+        writer.WriteEndArray();
       }
 
-      public override IReadOnlyDictionary<string, IModel.IComponent> ReadJson(JsonReader reader, Type objectType, [AllowNull] IReadOnlyDictionary<string, IModel.IComponent> existingValue, bool hasExistingValue, JsonSerializer serializer)
-        => JArray.Parse(reader.Value as string ?? "[]").Select(token =>
+      public override IReadOnlyDictionary<string, IModel.IComponent> ReadJson(JsonReader reader, Type objectType, [AllowNull] IReadOnlyDictionary<string, IModel.IComponent> existingValue, bool hasExistingValue, JsonSerializer serializer) {
+        if(reader.TokenType != JsonToken.StartArray) {
+          throw new ArgumentException($"Components Field for ECSBAM Models requires an array Jtoken to deserialize");
+        }
+        JArray components = serializer.Deserialize<JArray>(reader);
+        
+        return components.Select(token =>
           IComponent.FromJson(token as JObject)
         ).ToDictionary(
           component => component.Key,
           component => component
         );
+      }
     } 
 
   }
