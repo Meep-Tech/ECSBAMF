@@ -1,10 +1,11 @@
 C:\Users\super\Projects\meep-tech\libraries\c-sharp\Meep.Tech.ECSBAMF\bin\Debug\netstandard2.1\Meep.Tech.ECSBAM.deps.json
 C:\Users\super\Projects\meep-tech\libraries\c-sharp\Meep.Tech.ECSBAMF\bin\Debug\netstandard2.1\Meep.Tech.ECSBAM.dll
 C:\Users\super\Projects\meep-tech\libraries\c-sharp\Meep.Tech.ECSBAMF\bin\Debug\netstandard2.1\Meep.Tech.ECSBAM.pdb
+C:\Users\super\Projects\meep-tech\libraries\c-sharp\Meep.Tech.ECSBAMF\obj\Debug\netstandard2.1\Meep.Tech.ECSBAM.csproj.AssemblyReference.cache
 C:\Users\super\Projects\meep-tech\libraries\c-sharp\Meep.Tech.ECSBAMF\obj\Debug\netstandard2.1\Meep.Tech.ECSBAM.GeneratedMSBuildEditorConfig.editorconfig
 C:\Users\super\Projects\meep-tech\libraries\c-sharp\Meep.Tech.ECSBAMF\obj\Debug\netstandard2.1\Meep.Tech.ECSBAM.AssemblyInfoInputs.cache
 C:\Users\super\Projects\meep-tech\libraries\c-sharp\Meep.Tech.ECSBAMF\obj\Debug\netstandard2.1\Meep.Tech.ECSBAM.AssemblyInfo.cs
 C:\Users\super\Projects\meep-tech\libraries\c-sharp\Meep.Tech.ECSBAMF\obj\Debug\netstandard2.1\Meep.Tech.ECSBAM.csproj.CoreCompileInputs.cache
 C:\Users\super\Projects\meep-tech\libraries\c-sharp\Meep.Tech.ECSBAMF\obj\Debug\netstandard2.1\Meep.Tech.ECSBAM.dll
 C:\Users\super\Projects\meep-tech\libraries\c-sharp\Meep.Tech.ECSBAMF\obj\Debug\netstandard2.1\Meep.Tech.ECSBAM.pdb
-C:\Users\super\Projects\meep-tech\libraries\c-sharp\Meep.Tech.ECSBAMF\obj\Debug\netstandard2.1\Meep.Tech.ECSBAM.csproj.AssemblyReference.cache
+C:\Users\super\Projects\meep-tech\libraries\c-sharp\Meep.Tech.ECSBAMF\bin\Debug\netstandard2.1\Meep.Tech.ECSBAM.xml

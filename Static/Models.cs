@@ -56,7 +56,7 @@ namespace Meep.Tech.Data {
     /// Builder instance for this type of component.
     /// You can use this to set a custom builder for this type of model and it's children.
     /// </summary>
-    public static IModel<TModel>.BuilderFactory BuilderFactory {
+    public static IModel<TModel>.BuilderFactory Factory {
       get => (IModel<TModel>.BuilderFactory)
         Models.DefaultUniverse.Models
           .GetBuilderFactoryFor<TModel>();

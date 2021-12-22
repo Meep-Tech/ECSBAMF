@@ -61,6 +61,9 @@ namespace Meep.Tech.Data {
       where TBuilderFactoryBase : BuilderFactory<TBuilderFactoryBase>
       {
 
+      /// <summary>
+      /// <inheritdoc/>
+      /// </summary>
       Func<IBuilder, IModel> IFactory.ModelConstructor {
         get => builder => base.ModelConstructor((IBuilder<TModelBase>)builder);
         set => base.ModelConstructor = 
@@ -105,6 +108,5 @@ namespace Meep.Tech.Data {
         Id.Universe.Models._factories.Add(this);
       }
     }
-
   }
 }

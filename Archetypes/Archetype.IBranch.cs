@@ -1,4 +1,4 @@
-﻿using System;
+﻿/*using System;
 
 namespace Meep.Tech.Data {
 
@@ -6,15 +6,20 @@ namespace Meep.Tech.Data {
     where TArchetypeBase : Archetype<TModelBase, TArchetypeBase> 
   {
     /// <summary>
-    /// 
+    /// Not Implimented
     /// </summary>
     public interface IBranch {
 
+      /// <summary>
+      /// Not Implimented
+      /// </summary>
       Type NewBaseModelType
         => null;
     }
 
     /// <summary>
+    /// Not Implimented
+    /// Use The BranchAttribute instead.
     /// Used as shorthand for a type that produces a different model via the Model constructor
     /// This will just set the model constructor of the archetype to the basic activator for the parameterless ctor of TNewBaseModel
     /// </summary>
@@ -26,4 +31,4 @@ namespace Meep.Tech.Data {
         => typeof(TNewBaseModel);
     }
   }
-}
+}*/
