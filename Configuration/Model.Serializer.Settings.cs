@@ -3,13 +3,15 @@ using System.Collections.Generic;
 using System;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using KellermanSoftware.CompareNetObjects;
+using System.Linq;
 
 namespace Meep.Tech.Data {
 
   public partial class Model {
     public partial class Serializer {
+
       /// <summary>
-      /// Settings for the Serializer
+      /// Settings for the Model Serializer
       /// </summary>
       public class Settings {
 
@@ -29,14 +31,16 @@ namespace Meep.Tech.Data {
         /// <summary>
         /// Helper function to set the default json serializer settings for components.
         /// </summary>
-        public Func<DefaultContractResolver, JsonSerializerSettings> ConfigureComponentJsonSerializerSettings {
+        public Func<DefaultContractResolver, IEnumerable<JsonConverter>, JsonSerializerSettings> ConfigureComponentJsonSerializerSettings {
           get;
           set;
-        } = defaultResolver => new JsonSerializerSettings {
+        } = (defaultResolver, defaultConverters) => new JsonSerializerSettings {
           ContractResolver = defaultResolver,
-          Formatting = Formatting.Indented
+          Formatting = Formatting.Indented,
+          Converters = defaultConverters.ToList()
 #if DEBUG
-          ,Error = (sender, args) =>
+          ,
+          Error = (sender, args) =>
           {
             if(System.Diagnostics.Debugger.IsAttached) {
               System.Diagnostics.Debugger.Break();
@@ -48,12 +52,13 @@ namespace Meep.Tech.Data {
         /// <summary>
         /// Helper function to set the default json serializer settings for models.
         /// </summary>
-        public Func<DefaultContractResolver, JsonSerializerSettings> ConfigureModelJsonSerializerSettings {
+        public Func<DefaultContractResolver, IEnumerable<JsonConverter>, JsonSerializerSettings> ConfigureModelJsonSerializerSettings {
           get;
           set;
-        } = defaultResolver => new JsonSerializerSettings {
+        } = (defaultResolver, defaultConverters) => new JsonSerializerSettings {
           ContractResolver = defaultResolver,
-          Formatting = Formatting.Indented
+          Formatting = Formatting.Indented,
+          Converters = defaultConverters.ToList()
 #if DEBUG
           ,
           Error = (sender, args) => {
@@ -70,7 +75,11 @@ namespace Meep.Tech.Data {
         public JsonSerializerSettings ComponentJsonSerializerSettings {
           get => _componentJsonSerializerSettings 
               ??= ConfigureComponentJsonSerializerSettings(
-                new DefaultContractResolver(_universe));
+                new DefaultContractResolver(_universe),
+                new JsonConverter[] {
+                  new Enumeration.JsonConverter()
+                }
+              );
         } JsonSerializerSettings _componentJsonSerializerSettings;
 
         /// <summary>
@@ -79,7 +88,11 @@ namespace Meep.Tech.Data {
         public JsonSerializerSettings ModelJsonSerializerSettings {
           get => _modelJsonSerializerSettings 
             ??= ConfigureModelJsonSerializerSettings(
-              new DefaultContractResolver(_universe));
+              new DefaultContractResolver(_universe),
+              new JsonConverter[] {
+                new Enumeration.JsonConverter()
+              }
+            );
         } JsonSerializerSettings _modelJsonSerializerSettings;
 
         /// <summary>

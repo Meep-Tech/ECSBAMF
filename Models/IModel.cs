@@ -73,7 +73,8 @@ namespace Meep.Tech.Data {
     /// Can be used to initially configure a model in the base ctor.
     /// Account for a null builder
     /// </summary>
-    protected internal IModel Configure(IBuilder builder);
+    protected internal IModel Configure(IBuilder builder)
+      => this;
 
     /// <summary>
     /// (optional)Finish deserializing the model
@@ -109,6 +110,13 @@ namespace Meep.Tech.Data {
     where TModelBase : IModel<TModelBase, TArchetypeBase>
     where TArchetypeBase : Archetype<TModelBase, TArchetypeBase>
   {
+
+    /// <summary>
+    /// The archetype for this model
+    /// </summary>
+    public TArchetypeBase Archetype {
+      get;
+    }
 
     /// <summary>
     /// Deserialize a model from json as a TModelBase

@@ -536,19 +536,17 @@ namespace Meep.Tech.Data.Configuration {
           archetype.DefaultTestParams
         );
 
-        // load branch attribute if there is one
+        // load branch attribute and set the new model ctor if there is one
         BranchAttribute branchAttribute;
         // (first one is newest inherited)
         if((branchAttribute = archetypeSystemType.GetCustomAttributes<BranchAttribute>().FirstOrDefault()) != null) {
-          // TODO: faster cache for this?
-          (archetype as IFactory).ModelConstructor = builder
-            => (IModel)Activator.CreateInstance(
-              branchAttribute.NewBaseModelType 
-                // Defaults to decalring type (surrounding type) if one wasn't specified.
-                ??= GetFirstDeclaringParent(archetypeSystemType),
-              // nonpublic ctors allowed
-              true
-            );
+          branchAttribute.NewBaseModelType
+            // Defaults to decalring type (surrounding type) if one wasn't specified.
+            ??= GetFirstDeclaringParent(archetypeSystemType);
+          Func<IBuilder, IModel> defaultModelConstructor
+            = Universe.Models._getDefaultCtorFor(branchAttribute.NewBaseModelType);
+          (archetype as IFactory).ModelConstructor 
+            = defaultModelConstructor;
         }
 
         IModel defaultModel = archetype.MakeDefaultWith(builder);

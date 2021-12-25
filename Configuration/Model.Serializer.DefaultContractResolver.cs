@@ -9,8 +9,15 @@ namespace Meep.Tech.Data {
 
   public partial class Model {
     public partial class Serializer {
+
+      /// <summary>
+      /// The default contract resolver class used for json serialization by ECSBAM
+      /// </summary>
       public class DefaultContractResolver : Newtonsoft.Json.Serialization.DefaultContractResolver {
 
+        /// <summary>
+        /// the universe this resolver is for
+        /// </summary>
         public Universe Universe {
           get;
         }
@@ -21,6 +28,9 @@ namespace Meep.Tech.Data {
         IReadableComponentStorage.ComponentsToJsonConverter _componentsJsonConverter 
           = new IReadableComponentStorage.ComponentsToJsonConverter();
 
+        /// <summary>
+        /// <inheritdoc/>
+        /// </summary>
         public DefaultContractResolver(Universe universe) {
           IgnoreSerializableAttribute = false;
           NamingStrategy = new CamelCaseNamingStrategy() {
@@ -29,6 +39,9 @@ namespace Meep.Tech.Data {
           Universe = universe;
         }
 
+        /// <summary>
+        /// <inheritdoc/>
+        /// </summary>
         protected override IList<JsonProperty> CreateProperties(Type type, MemberSerialization memberSerialization) {
           var baseProps = base.CreateProperties(type, memberSerialization);
           // remove the universe property if there's one. It gets assinged as part of the archetype or key value
@@ -51,11 +64,15 @@ namespace Meep.Tech.Data {
           return baseProps;
         }
 
+        /// <summary>
+        /// <inheritdoc/>
+        /// </summary>
         protected override JsonProperty CreateProperty(MemberInfo member, MemberSerialization memberSerialization) {
           JsonProperty baseProperty = base.CreateProperty(member, memberSerialization);
           if(!(member.GetCustomAttribute(typeof(IsArchetypePropertyAttribute)) is null)) {
             // Archetype is always first:
             baseProperty.Order = int.MinValue;
+            baseProperty.PropertyName = nameof(Archetype).ToLower();
             baseProperty.Converter = _factoryToStringJsonConverter;
             baseProperty.ObjectCreationHandling = ObjectCreationHandling.Replace;
           }

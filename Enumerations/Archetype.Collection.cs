@@ -49,7 +49,7 @@ namespace Meep.Tech.Data {
           entry => entry.Value
         );
       } internal readonly Dictionary<string, Archetype> _byId
-        = new Dictionary<string, Archetype>();
+        = new ();
 
       /// <summary>
       /// All archetypes:
@@ -59,33 +59,14 @@ namespace Meep.Tech.Data {
       } internal readonly Dictionary<string, Archetype> _byType
       = new Dictionary<string, Archetype>();
 
-      /// <summary>
-      /// All archetypes, indexed by their base model types.
-      /// </summary>
-      /*internal readonly Dictionary<string, Archetype> _byModelBaseType
-        = new Dictionary<string, Archetype>();*/
-
       #region Initialization
 
+      /// <summary>
+      /// Make a new archetype collection within the desired universe
+      /// </summary>
       internal Collection(Universe universe) {
         Universe = universe;
-        if(!(Universe.Archetypes is null || Universe.Models is null || Universe.Components is null)) {
-          Universe.Archetypes._collectionsByRootArchetype.Add(RootArchetypeType?.FullName ?? "_all", this);
-        }
-      }
-
-      internal void _registerArchetype(Archetype @new) {
-        // Register to it's id
-        @new.Id.Universe = Universe;
-        @new.Id.Archetype = @new;
-
-        // Register to this:
-        Add(@new);
-
-        // Add to All:
-        // TODO: should collect all the registraction stuff into a register function in the Univese.XxxData types
-        Universe.Archetypes.All.Add(@new);
-        Universe.Archetypes._ids.Add(@new.Id.Key, @new.Id);
+        universe.Archetypes?._registerCollection(this, RootArchetypeType);
       }
 
       /// <summary>
@@ -96,7 +77,6 @@ namespace Meep.Tech.Data {
       public void Add(Archetype archetype) {
         _byId.Add(archetype.Id.Key, archetype);
         _byType.Add(archetype.GetType().FullName, archetype);
-        //_byModelBaseType.Add(archetype.ModelBaseType.FullName, archetype);
       }
 
       #endregion
@@ -178,7 +158,12 @@ namespace Meep.Tech.Data {
     public class Collection<TModelBase, TArchetypeBase>
       : Archetype<TModelBase, TArchetypeBase>.ArchetypeCollection
       where TModelBase : IModel<TModelBase>
-      where TArchetypeBase : Archetype<TModelBase, TArchetypeBase> {
+      where TArchetypeBase : Archetype<TModelBase, TArchetypeBase> 
+    {
+
+      /// <summary>
+      /// <inheritdoc/>
+      /// </summary>
       public Collection(Universe universe = null) 
         : base(universe) {}
     }
@@ -231,6 +216,9 @@ namespace Meep.Tech.Data {
         );
       } Dictionary<Identity, TArchetypeBase> _compiledById;
 
+      /// <summary>
+      /// <inheritdoc/>
+      /// </summary>
       public ArchetypeCollection(Universe universe = null) 
         : base(universe ?? Archetypes.DefaultUniverse) {}
 

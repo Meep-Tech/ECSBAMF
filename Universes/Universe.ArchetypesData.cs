@@ -107,6 +107,25 @@ namespace Meep.Tech.Data {
           ? _rootArchetypeTypesByBaseModelType[modelBaseType.FullName].TryToGetAsArchetype()
             ?? GetCollectionFor(_rootArchetypeTypesByBaseModelType[modelBaseType.FullName]).First()
           : _universe.Models.GetBuilderFactoryFor(modelBaseType) as Archetype;
+
+
+      internal void _registerArchetype(Archetype archetype, Archetype.Collection collection) {
+        // Register to it's id
+        archetype.Id.Archetype = archetype;
+
+        // Register to collection:
+        collection.Add(archetype);
+
+        // Add to All:
+        All.Add(archetype);
+        _ids.Add(archetype.Id.Key, archetype.Id);
+      }
+
+      internal void _registerCollection(Archetype.Collection collection, Type rootArchetypeType = null) {
+        if(!(_universe.Archetypes is null || _universe.Models is null || _universe.Components is null)) {
+          _universe.Archetypes._collectionsByRootArchetype.Add(rootArchetypeType?.FullName ?? "_all", collection);
+        }
+      }
     }
   }
 }

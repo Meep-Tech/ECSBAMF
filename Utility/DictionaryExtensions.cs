@@ -1,8 +1,67 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace Meep.Tech.Data {
   public static class DictionaryExtensions {
+
+    #region ValueCollectionManipulation
+
+    /// <summary>
+    /// Add an item to a ICollection within a dictionary at the given key
+    /// </summary>
+    public static void AddToValueCollection<TKey, TValue>(this IDictionary<TKey, ICollection<TValue>> dictionary, TKey key, TValue value) {
+      if(dictionary.TryGetValue(key, out ICollection<TValue> valueCollection)) {
+        valueCollection.Add(value);
+      }
+      else
+        dictionary.Add(key, new List<TValue> { value });
+    }
+
+    /// <summary>
+    /// Remove an item from an ICollection within a dictionary at the given key
+    /// </summary>
+    public static bool RemoveFromValueCollection<TKey, TValue>(this IDictionary<TKey, ICollection<TValue>> dictionary, TKey key, TValue value) {
+      if(dictionary.TryGetValue(key, out ICollection<TValue> valueCollection)) {
+        if(valueCollection.Remove(value)) {
+          if(!valueCollection.Any()) {
+            dictionary.Remove(key);
+          }
+          return true;
+        }
+      }
+
+      return false;
+    }
+
+    /// <summary>
+    /// Add an item to a ICollection within a dictionary at the given key
+    /// </summary>
+    public static void AddToValueCollection<TKey, TValue>(this IDictionary<TKey, IList<TValue>> dictionary, TKey key, TValue value) {
+      if(dictionary.TryGetValue(key, out IList<TValue> valueCollection)) {
+        valueCollection.Add(value);
+      }
+      else
+        dictionary.Add(key, new List<TValue> { value });
+    }
+
+    /// <summary>
+    /// Remove an item from an ICollection within a dictionary at the given key
+    /// </summary>
+    public static bool RemoveFromValueCollection<TKey, TValue>(this IDictionary<TKey, IList<TValue>> dictionary, TKey key, TValue value) {
+      if(dictionary.TryGetValue(key, out IList<TValue> valueCollection)) {
+        if(valueCollection.Remove(value)) {
+          if(!valueCollection.Any()) {
+            dictionary.Remove(key);
+          }
+          return true;
+        }
+      }
+
+      return false;
+    }
+
+    #endregion
 
     #region  Append
 

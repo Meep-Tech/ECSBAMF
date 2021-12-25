@@ -23,6 +23,11 @@
       internal protected set;
     }
 
+    /// <summary>
+    /// If the id should be automatically set by the IModel.Builder
+    /// </summary>
+    bool AutoSetIdOnBuild
+      => true;
 
     /// <summary>
     /// Copy the model by serializing and deserializing it.

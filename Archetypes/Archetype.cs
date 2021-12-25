@@ -103,6 +103,13 @@ namespace Meep.Tech.Data {
       => true;
 
     /// <summary>
+    /// If this is true, this archetype and children of it can be initialized after the loader has finished.
+    /// Be careful with these, it's up to you to maintain singleton patters.
+    /// </summary>
+    public virtual bool AllowInitializationsAfterLoaderFinalization
+      => false;
+
+    /// <summary>
     /// Default params for testing
     /// </summary>
     internal protected virtual Dictionary<string, object> DefaultTestParams {
@@ -494,33 +501,6 @@ namespace Meep.Tech.Data {
     where TArchetypeBase : Archetype<TModelBase, TArchetypeBase> 
   {
 
-    /// <summary>
-    /// Used to convert an Archetype to a general string for storage
-    /// </summary>
-    public new class ToKeyStringConverter : ValueConverter<TArchetypeBase, string> {
-      public ToKeyStringConverter() :
-        base(convertToProviderExpression, convertFromProviderExpression) {
-      }
-
-      private static Expression<Func<string, TArchetypeBase>> convertFromProviderExpression = x => ToTimeObject(x);
-      private static Expression<Func<TArchetypeBase, string>> convertToProviderExpression = x => ToTimeLong(x);
-
-      static TArchetypeBase ToTimeObject(string key) {
-        return key.Split("@") is string[] parts
-          ? parts.Length == 1
-            ? (TArchetypeBase)Archetypes.Id[key].Archetype
-            : parts.Length == 2
-              ? (TArchetypeBase)Universe.Get(parts[1]).Archetypes.Id[parts[2]].Archetype
-              : throw new ArgumentException("ArchetypeKey")
-          : throw new ArgumentNullException("ArchetypeKey");
-      }
-
-      static string ToTimeLong(TArchetypeBase archetype)
-        => archetype.Id.Key + (!string.IsNullOrEmpty(archetype.Id.Universe.Key)
-          ? "@" + archetype.Id.Universe.Key
-          : "");
-    }
-
     #region Archetype Data Members
 
     /// <summary>
@@ -545,8 +525,13 @@ namespace Meep.Tech.Data {
 
     #region Archetype Initialization
 
+    /// <summary>
+    /// The base for making a new archetype.
+    /// This should be extended into a private constructor that will only be called once by the Loader
+    /// </summary>
     protected Archetype(Archetype.Identity id, ArchetypeCollection collection = null) 
-      : base(id) {
+      : base(id) 
+    {
       if(collection is null) {
         collection = (ArchetypeCollection)
           // if the base of this is registered somewhere, get the registered one by default
@@ -560,7 +545,11 @@ namespace Meep.Tech.Data {
               = new ArchetypeCollection());
       }
 
-      collection._registerArchetype(this);
+      if(collection.Universe.Loader.IsFinished && !AllowInitializationsAfterLoaderFinalization) {
+        throw new InvalidOperationException($"Tried to initialize archetype of type {id} while the loader was sealed");
+      }
+
+      Id.Universe.Archetypes._registerArchetype(this, collection);
       _initialize();
     }
 
@@ -596,7 +585,7 @@ namespace Meep.Tech.Data {
       get {
         if(_modelConstructor == null) {
           _modelConstructor
-            = (builder) => GetDefaultCtorFor(typeof(TModelBase))
+            = (builder) => Id.Universe.Models._getDefaultCtorFor(typeof(TModelBase))
               .Invoke(builder);
         }
 
@@ -617,70 +606,6 @@ namespace Meep.Tech.Data {
     Func<IBuilder, IModel> IFactory.ModelConstructor {
       get => builder => ModelConstructor((IBuilder<TModelBase>)builder);
       set => ModelConstructor = builder => (TModelBase)value(builder);
-    }
-
-    /// <summary>
-    /// Make an object ctor from a provided default ctor.
-    /// Valid CTORS:
-    ///  - public|private|protected Model(IBuilder builder)
-    ///  - public|private|protected Model()
-    /// </summary>
-    internal static Func<IBuilder<TModelBase>, TModelBase> GetDefaultCtorFor(Type modelType) {
-      // try to get any matching builder ctor:
-      System.Reflection.ConstructorInfo ctor = modelType.GetConstructors(
-        System.Reflection.BindingFlags.Public 
-        | System.Reflection.BindingFlags.NonPublic 
-        | System.Reflection.BindingFlags.Instance
-      // TODO: add an attribute to specify highest priority
-      // sort by priority:
-      ).Select(constructor => {
-        var @params = constructor.GetParameters();
-        if (@params.Length > 0) {
-          if (@params.Length == 1) {
-            if (typeof(IBuilder<TModelBase>).IsAssignableFrom(@params[0].ParameterType)) {
-              return (constructor.IsFamily || constructor.IsPublic ? 3 : 2, constructor);
-            }
-          }
-
-          // non compatable
-          return (0, constructor);
-        } // if there's an empty ctor, return that one
-        else {
-          return (1, constructor);
-        }
-      })
-      // remove incompatable ctors before the sort and pick
-      .Where(rankedConstructor => rankedConstructor.Item1 > 0)
-      .OrderByDescending(rankedConstructor => rankedConstructor.Item1)
-      .FirstOrDefault().constructor;
-
-      // no args ctor:
-      if(!(ctor is null) && ctor.GetParameters().Length == 0) {
-        //TODO: is there a faster way to cache this?
-        return (builder)
-          => (TModelBase)ctor.Invoke(null);
-      }
-
-      // structs may use the activator
-      if(ctor is null && modelType.IsValueType) {
-        Func<IBuilder<TModelBase>, TModelBase> activator = (_)
-          => (TModelBase)Activator.CreateInstance(modelType);
-        try {
-          if(!(activator.Invoke(null) is null)) {
-            return activator;
-          }
-        } catch (Exception e) {
-          throw new NotImplementedException($"No Ctor that takes a single argument thet inherits from IBuilder<TModelBase>, or 0 arguments found for Model type: {modelType.FullName}. An activator could also not be built for the type.", e);
-        }
-      }
-
-      if(ctor is null) {
-        throw new NotImplementedException($"No Ctor that takes a single argument thet inherits from IBuilder<TModelBase>, or 0 arguments found for Model type: {modelType.FullName}.");
-      }
-
-      //TODO: is there a faster way to cache this?
-      return (builder) 
-        => (TModelBase)ctor.Invoke(new object[] {builder});
     }
 
     #endregion

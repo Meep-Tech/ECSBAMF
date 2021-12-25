@@ -63,6 +63,12 @@
             This does not affect the ability to inherit and override InitialComponents for an archetype.
             </summary>
         </member>
+        <member name="P:Meep.Tech.Data.Archetype.AllowInitializationsAfterLoaderFinalization">
+            <summary>
+            If this is true, this archetype and children of it can be initialized after the loader has finished.
+            Be careful with these, it's up to you to maintain singleton patters.
+            </summary>
+        </member>
         <member name="P:Meep.Tech.Data.Archetype.DefaultTestParams">
             <summary>
             Default params for testing
@@ -351,7 +357,7 @@
         </member>
         <member name="M:Meep.Tech.Data.Archetype.Collection.#ctor(Meep.Tech.Data.Universe)">
             <summary>
-            All archetypes, indexed by their base model types.
+            Make a new archetype collection within the desired universe
             </summary>
         </member>
         <member name="M:Meep.Tech.Data.Archetype.Collection.Add(Meep.Tech.Data.Archetype)">
@@ -409,6 +415,11 @@
             - Can be used to make a more specific child collection than Archetype[,].ArchetypeCollection.
             </summary>
         </member>
+        <member name="M:Meep.Tech.Data.Archetype.Collection`2.#ctor(Meep.Tech.Data.Universe)">
+            <summary>
+            <inheritdoc/>
+            </summary>
+        </member>
         <member name="T:Meep.Tech.Data.Archetype.Identity">
             <summary>
             An Id unique to each Archetype.
@@ -438,17 +449,10 @@
             May change between runtimes/runs of a program.
             </summary>
         </member>
-        <member name="P:Meep.Tech.Data.Archetype.Identity.Universe">
-            <summary>
-            The universe this identity is a part of
-            </summary>
-        </member>
-        <member name="M:Meep.Tech.Data.Archetype.Identity.#ctor(System.String,System.String)">
+        <member name="M:Meep.Tech.Data.Archetype.Identity.#ctor(System.String,System.String,Meep.Tech.Data.Universe)">
             <summary>
             Make a new ID.
             </summary>
-            <param name="name"></param>
-            <param name="key"></param>
         </member>
         <member name="T:Meep.Tech.Data.Archetype`2">
             <summary>
@@ -458,11 +462,6 @@
             <summary>
             An Id unique to each Archetype.
             Can be used as a static key.
-            </summary>
-        </member>
-        <member name="T:Meep.Tech.Data.Archetype`2.ToKeyStringConverter">
-            <summary>
-            Used to convert an Archetype to a general string for storage
             </summary>
         </member>
         <member name="P:Meep.Tech.Data.Archetype`2.BaseType">
@@ -478,6 +477,12 @@
         <member name="P:Meep.Tech.Data.Archetype`2.Id">
             <summary>
             The Id of this Archetype.
+            </summary>
+        </member>
+        <member name="M:Meep.Tech.Data.Archetype`2.#ctor(Meep.Tech.Data.Archetype.Identity,Meep.Tech.Data.Archetype{`0,`1}.ArchetypeCollection)">
+            <summary>
+            The base for making a new archetype.
+            This should be extended into a private constructor that will only be called once by the Loader
             </summary>
         </member>
         <member name="M:Meep.Tech.Data.Archetype`2._initialize">
@@ -498,14 +503,6 @@
         <member name="P:Meep.Tech.Data.Archetype`2.Meep#Tech#Data#IFactory#ModelConstructor">
             <summary>
             <inheritdoc/>
-            </summary>
-        </member>
-        <member name="M:Meep.Tech.Data.Archetype`2.GetDefaultCtorFor(System.Type)">
-            <summary>
-            Make an object ctor from a provided default ctor.
-            Valid CTORS:
-             - public|private|protected Model(IBuilder builder)
-             - public|private|protected Model()
             </summary>
         </member>
         <member name="F:Meep.Tech.Data.Archetype`2._defaultEmptyBuilder">
@@ -701,6 +698,16 @@
             Build the model with the builder.
             </summary>
         </member>
+        <member name="T:Meep.Tech.Data.Archetype`2.ToKeyStringConverter">
+            <summary>
+            Used to convert an Archetype to a general string for storage
+            </summary>
+        </member>
+        <member name="M:Meep.Tech.Data.Archetype`2.ToKeyStringConverter.#ctor">
+            <summary>
+            <inheritdoc/>
+            </summary>
+        </member>
         <member name="P:Meep.Tech.Data.Archetype`2.DefaultCollection">
             <summary>
             Quick link to the collection for the default universe
@@ -725,6 +732,11 @@
         <member name="P:Meep.Tech.Data.Archetype`2.ArchetypeCollection.ById">
             <summary>
             All archetypes registered to this collection by their Identity.
+            </summary>
+        </member>
+        <member name="M:Meep.Tech.Data.Archetype`2.ArchetypeCollection.#ctor(Meep.Tech.Data.Universe)">
+            <summary>
+            <inheritdoc/>
             </summary>
         </member>
         <member name="M:Meep.Tech.Data.Archetype`2.ArchetypeCollection.Get``1">
@@ -797,7 +809,7 @@
             A base key string to use instead of the model base type name
             </summary>
         </member>
-        <member name="M:Meep.Tech.Data.Archetype`2.Identity.#ctor(System.String,System.String)">
+        <member name="M:Meep.Tech.Data.Archetype`2.Identity.#ctor(System.String,System.String,Meep.Tech.Data.Universe)">
             <summary>
             Make a new identiy for this Archetype Base Type
             </summary>
@@ -1111,6 +1123,11 @@
         <member name="P:Meep.Tech.Data.Configuration.Modifications.Universe">
             <summary>
             The universe this is modifiying
+            </summary>
+        </member>
+        <member name="M:Meep.Tech.Data.Configuration.Modifications.#ctor(Meep.Tech.Data.Universe)">
+            <summary>
+            Base Ctor, override and keep hidden.
             </summary>
         </member>
         <member name="M:Meep.Tech.Data.Configuration.Modifications.Initialize">
@@ -2075,6 +2092,16 @@
             This is the non-generic base class for Utility
             </summary>
         </member>
+        <member name="T:Meep.Tech.Data.Model.Serializer">
+            <summary>
+            Logic and Settings Used To Serialize Models
+            </summary>
+        </member>
+        <member name="F:Meep.Tech.Data.Model.Serializer.EnumTypePropertyName">
+            <summary>
+            The key used for the field containing the type data for an enum
+            </summary>
+        </member>
         <member name="F:Meep.Tech.Data.Model.Serializer.ComponentKeyPropertyName">
             <summary>
             The key used for the field containing the data for the type of component
@@ -2116,9 +2143,49 @@
             The universe this is for
             </summary>
         </member>
+        <member name="M:Meep.Tech.Data.Model.Serializer.DbContext.#ctor(Microsoft.EntityFrameworkCore.DbContextOptions{Meep.Tech.Data.Model.Serializer.DbContext},Meep.Tech.Data.Universe,System.Action{Microsoft.EntityFrameworkCore.DbContextOptionsBuilder})">
+            <summary>
+            <inheritdoc/>
+            </summary>
+        </member>
+        <member name="M:Meep.Tech.Data.Model.Serializer.DbContext.OnModelCreating(Microsoft.EntityFrameworkCore.ModelBuilder)">
+            <summary>
+            <inheritdoc/>
+            </summary>
+        </member>
+        <member name="M:Meep.Tech.Data.Model.Serializer.DbContext.OnConfiguring(Microsoft.EntityFrameworkCore.DbContextOptionsBuilder)">
+            <summary>
+            <inheritdoc/>
+            </summary>
+        </member>
+        <member name="T:Meep.Tech.Data.Model.Serializer.DefaultContractResolver">
+            <summary>
+            The default contract resolver class used for json serialization by ECSBAM
+            </summary>
+        </member>
+        <member name="P:Meep.Tech.Data.Model.Serializer.DefaultContractResolver.Universe">
+            <summary>
+            the universe this resolver is for
+            </summary>
+        </member>
+        <member name="M:Meep.Tech.Data.Model.Serializer.DefaultContractResolver.#ctor(Meep.Tech.Data.Universe)">
+            <summary>
+            <inheritdoc/>
+            </summary>
+        </member>
+        <member name="M:Meep.Tech.Data.Model.Serializer.DefaultContractResolver.CreateProperties(System.Type,Newtonsoft.Json.MemberSerialization)">
+            <summary>
+            <inheritdoc/>
+            </summary>
+        </member>
+        <member name="M:Meep.Tech.Data.Model.Serializer.DefaultContractResolver.CreateProperty(System.Reflection.MemberInfo,Newtonsoft.Json.MemberSerialization)">
+            <summary>
+            <inheritdoc/>
+            </summary>
+        </member>
         <member name="T:Meep.Tech.Data.Model.Serializer.Settings">
             <summary>
-            Settings for the Serializer
+            Settings for the Model Serializer
             </summary>
         </member>
         <member name="P:Meep.Tech.Data.Model.Serializer.Settings.DbContext">
@@ -2197,6 +2264,11 @@
             Base for a simple Enumerable value
             </summary>
         </member>
+        <member name="T:Meep.Tech.Data.Enumeration.JsonConverter">
+            <summary>
+            Json Converter for Enumerations
+            </summary>
+        </member>
         <member name="F:Meep.Tech.Data.Enumeration.CurrentMaxInternalEnumId">
             <summary>
             The current number of enums. Used for internal indexing.
@@ -2212,7 +2284,17 @@
             The perminant and unique external id
             </summary>
         </member>
-        <member name="M:Meep.Tech.Data.Enumeration.#ctor(System.Object)">
+        <member name="P:Meep.Tech.Data.Enumeration.Universe">
+            <summary>
+            The universe this enum is a part of
+            </summary>
+        </member>
+        <member name="P:Meep.Tech.Data.Enumeration.EnumBaseType">
+            <summary>
+            The base type of this enumeration
+            </summary>
+        </member>
+        <member name="M:Meep.Tech.Data.Enumeration.#ctor(System.Object,Meep.Tech.Data.Universe)">
             <summary>
             Make an archetype ID
             </summary>
@@ -2236,15 +2318,15 @@
         </member>
         <member name="P:Meep.Tech.Data.Enumeration`1.All">
             <summary>
-            Readonly list of all items
+            Readonly list of all items from the default universe
             </summary>
         </member>
-        <member name="F:Meep.Tech.Data.Enumeration`1._all">
+        <member name="P:Meep.Tech.Data.Enumeration`1.EnumBaseType">
             <summary>
-            Intenral list of all items
+            The base type of this enumeration
             </summary>
         </member>
-        <member name="M:Meep.Tech.Data.Enumeration`1.#ctor(System.Object)">
+        <member name="M:Meep.Tech.Data.Enumeration`1.#ctor(System.Object,Meep.Tech.Data.Universe)">
             <summary>
             Ctor add to all.
             </summary>
@@ -2329,6 +2411,11 @@
             The base interface for a mutable data model that can be produced by an Archetype.
             </summary>
         </member>
+        <member name="P:Meep.Tech.Data.IModel`2.Archetype">
+            <summary>
+            The archetype for this model
+            </summary>
+        </member>
         <member name="M:Meep.Tech.Data.IModel`2.FromJson(Newtonsoft.Json.Linq.JObject,System.Type,Meep.Tech.Data.Universe)">
             <summary>
             Deserialize a model from json as a TModelBase
@@ -2365,6 +2452,11 @@
         <member name="P:Meep.Tech.Data.IUnique.Id">
             <summary>
             The Unique Id of this Item
+            </summary>
+        </member>
+        <member name="P:Meep.Tech.Data.IUnique.AutoSetIdOnBuild">
+            <summary>
+            If the id should be automatically set by the IModel.Builder
             </summary>
         </member>
         <member name="M:Meep.Tech.Data.IUnique.Copy(System.Boolean)">
@@ -2889,6 +2981,11 @@
             Components data
             </summary>
         </member>
+        <member name="P:Meep.Tech.Data.Universe.Enumerations">
+            <summary>
+            Enumerations Data
+            </summary>
+        </member>
         <member name="M:Meep.Tech.Data.Universe.#ctor(Meep.Tech.Data.Configuration.Loader,System.String)">
             <summary>
             Make a new universe of Archetypes
@@ -2897,6 +2994,47 @@
         <member name="M:Meep.Tech.Data.Universe.Get(System.String)">
             <summary>
             Get a loaded universe by it's unique name key
+            </summary>
+        </member>
+        <member name="T:Meep.Tech.Data.Universe.EnumerationData">
+            <summary>
+            Data pertaining to enumerations
+            </summary>
+        </member>
+        <member name="P:Meep.Tech.Data.Universe.EnumerationData.ByType">
+            <summary>
+            All enumerations indexed by type.
+            GetAllForType is faster.
+            </summary>
+        </member>
+        <member name="M:Meep.Tech.Data.Universe.EnumerationData.GetAllByType(System.Type)">
+            <summary>
+            Get all enumerations of a given type
+            </summary>
+        </member>
+        <member name="M:Meep.Tech.Data.Universe.EnumerationData.GetAllByType(System.String)">
+            <summary>
+            Get all enumerations of a given type
+            </summary>
+        </member>
+        <member name="M:Meep.Tech.Data.Universe.EnumerationData.GetAllByType``1">
+            <summary>
+            Get all enumerations of a given type
+            </summary>
+        </member>
+        <member name="M:Meep.Tech.Data.Universe.EnumerationData.Get(System.String,System.Object)">
+            <summary>
+            Get the enumerations of the given type with the given external id
+            </summary>
+        </member>
+        <member name="M:Meep.Tech.Data.Universe.EnumerationData.Get``1(System.Object)">
+            <summary>
+            Get the enumerations of the given type with the given external id
+            </summary>
+        </member>
+        <member name="M:Meep.Tech.Data.Universe.EnumerationData.Get(System.Type,System.Object)">
+            <summary>
+            Get the enumerations of the given type with the given external id
             </summary>
         </member>
         <member name="F:Meep.Tech.Data.Universe.ModelsData._baseTypes">
@@ -3000,6 +3138,22 @@
             Make the default factory for a model type using reflection:
             </summary>
         </member>
+        <member name="M:Meep.Tech.Data.Universe.ModelsData._getDefaultCtorFor``1(System.Type)">
+            <summary>
+            Make an object ctor from a provided default ctor.
+            Valid CTORS:
+             - public|private|protected Model(IBuilder builder)
+             - public|private|protected Model()
+            </summary>
+        </member>
+        <member name="M:Meep.Tech.Data.Universe.ModelsData._getDefaultCtorFor(System.Type)">
+            <summary>
+            Make an object ctor from a provided default ctor.
+            Valid CTORS:
+             - public|private|protected Model(IBuilder builder)
+             - public|private|protected Model()
+            </summary>
+        </member>
         <member name="T:Meep.Tech.Data.IsArchetypePropertyAttribute">
             <summary>
             Marks a model property field as the Archetype field.
@@ -3021,6 +3175,26 @@
         <member name="P:Meep.Tech.Data.UseCustomConverterAttribute.CustomConverterType">
             <summary>
             The custom type converter
+            </summary>
+        </member>
+        <member name="M:Meep.Tech.Data.DictionaryExtensions.AddToValueCollection``2(System.Collections.Generic.IDictionary{``0,System.Collections.Generic.ICollection{``1}},``0,``1)">
+            <summary>
+            Add an item to a ICollection within a dictionary at the given key
+            </summary>
+        </member>
+        <member name="M:Meep.Tech.Data.DictionaryExtensions.RemoveFromValueCollection``2(System.Collections.Generic.IDictionary{``0,System.Collections.Generic.ICollection{``1}},``0,``1)">
+            <summary>
+            Remove an item from an ICollection within a dictionary at the given key
+            </summary>
+        </member>
+        <member name="M:Meep.Tech.Data.DictionaryExtensions.AddToValueCollection``2(System.Collections.Generic.IDictionary{``0,System.Collections.Generic.IList{``1}},``0,``1)">
+            <summary>
+            Add an item to a ICollection within a dictionary at the given key
+            </summary>
+        </member>
+        <member name="M:Meep.Tech.Data.DictionaryExtensions.RemoveFromValueCollection``2(System.Collections.Generic.IDictionary{``0,System.Collections.Generic.IList{``1}},``0,``1)">
+            <summary>
+            Remove an item from an ICollection within a dictionary at the given key
             </summary>
         </member>
         <member name="M:Meep.Tech.Data.DictionaryExtensions.Append``1(System.Collections.Generic.HashSet{``0},``0)">

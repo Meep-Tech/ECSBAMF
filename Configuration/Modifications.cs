@@ -16,7 +16,10 @@ namespace Meep.Tech.Data.Configuration {
       get;
     }
 
-    internal Modifications(Universe universe) {
+    /// <summary>
+    /// Base Ctor, override and keep hidden.
+    /// </summary>
+    internal protected Modifications(Universe universe) {
       Universe = universe;
     }
 

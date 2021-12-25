@@ -40,22 +40,13 @@
         => InternalId;
 
       /// <summary>
-      /// The universe this identity is a part of
-      /// </summary>
-      public Universe Universe {
-        get;
-        internal set;
-      }
-
-      /// <summary>
       /// Make a new ID.
       /// </summary>
-      /// <param name="name"></param>
-      /// <param name="key"></param>
       protected Identity(
         string name,
-        string key = null
-      ) : base(key ?? name) {
+        string key = null,
+        Universe universe = null
+      ) : base(key ?? name, universe) {
         Name = name;
       }
     }
@@ -90,8 +81,8 @@
       /// </summary>
       /// <param name="name">Used to generate the final part of the key. Spaces are removed before then.</param>
       /// <param name="keyPrefixEndingAdditions">Added to the key right before the end here: Type..{keyPrefixEndingAdditions}.name</param>
-      public Identity(string name, string keyPrefixEndingAdditions = null) 
-        : base(name, $"{BaseKeyString ?? typeof(TModelBase).FullName}.{keyPrefixEndingAdditions ?? ""}{(string.IsNullOrEmpty(keyPrefixEndingAdditions) ? "" : ".")}{name}") {}
+      public Identity(string name, string keyPrefixEndingAdditions = null, Universe universe = null) 
+        : base(name, $"{BaseKeyString ?? typeof(TModelBase).FullName}.{keyPrefixEndingAdditions ?? ""}{(string.IsNullOrEmpty(keyPrefixEndingAdditions) ? "" : ".")}{name}", universe) {}
     }
   }
 }

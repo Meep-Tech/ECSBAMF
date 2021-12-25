@@ -1,5 +1,9 @@
-﻿using System;
+﻿using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
+using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
+using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading;
 
@@ -13,6 +17,40 @@ namespace Meep.Tech.Data {
   {
 
     /// <summary>
+    /// Json Converter for Enumerations
+    /// </summary>
+    public class JsonConverter : Newtonsoft.Json.JsonConverter<Enumeration> {
+      public override Enumeration ReadJson(JsonReader reader, Type objectType, [AllowNull] Enumeration existingValue, bool hasExistingValue, JsonSerializer serializer) {
+        JObject value = serializer.Deserialize<JObject>(reader);
+        string key = value.Value<string>(Model.Serializer.EnumTypePropertyName);
+        string[] parts = key.Split('@');
+        Universe universe = parts.Length == 1 
+          ? Archetypes.DefaultUniverse 
+          : Universe.Get(parts.Last());
+
+        return universe.Enumerations.Get(
+          parts.First(),
+          value.Value<object>("externalId")
+        );
+      }
+
+      public override void WriteJson(JsonWriter writer, [AllowNull] Enumeration value, JsonSerializer serializer) {
+        serializer.Converters.Remove(this);
+        JObject serialized = JObject.FromObject(value, serializer);
+        serializer.Converters.Add(this);
+        string key = value.Universe.Key.Equals(Archetypes.DefaultUniverse.Key)
+            ? $"{value.EnumBaseType.FullName}@{value.Universe.Key}"
+            : value.EnumBaseType.FullName;
+
+        serialized.Add(
+          Model.Serializer.EnumTypePropertyName,
+          key
+        );
+        serializer.Serialize(writer, serialized);
+      }
+    }
+
+    /// <summary>
     /// The current number of enums. Used for internal indexing.
     /// </summary>
     static int CurrentMaxInternalEnumId 
@@ -21,6 +59,7 @@ namespace Meep.Tech.Data {
     /// <summary>
     /// The assigned internal id of this archetype. This is only consistend within the current runtime and execution.
     /// </summary>
+    [JsonIgnore]
     public int InternalId {
       get;
     }
@@ -33,12 +72,30 @@ namespace Meep.Tech.Data {
     }
 
     /// <summary>
+    /// The universe this enum is a part of
+    /// </summary>
+    [JsonIgnore]
+    public Universe Universe {
+      get;
+    }
+
+    /// <summary>
+    /// The base type of this enumeration
+    /// </summary>
+    public abstract Type EnumBaseType {
+      get;
+    }
+
+    /// <summary>
     /// Make an archetype ID
     /// </summary>
-    protected Enumeration(object uniqueIdentifier) {
+    protected Enumeration(object uniqueIdentifier, Universe universe = null) {
       // Remove any spaces:
       ExternalId = Regex.Replace($"{uniqueIdentifier}", @"\s+", "");
       InternalId = Interlocked.Increment(ref CurrentMaxInternalEnumId) - 1;
+      Universe = universe ?? Archetypes.DefaultUniverse;
+
+      Universe.Enumerations._register(this);
     }
 
     #region Equality, Comparison, and Conversion
@@ -80,26 +137,25 @@ namespace Meep.Tech.Data {
   /// <typeparam name="TEnumBase"></typeparam>
   public abstract class Enumeration<TEnumBase>
     : Enumeration
-    where TEnumBase : Enumeration<TEnumBase> {
+    where TEnumBase : Enumeration<TEnumBase>
+  {
 
     /// <summary>
-    /// Readonly list of all items
+    /// Readonly list of all items from the default universe
     /// </summary>
-    public static IReadOnlyList<Enumeration<TEnumBase>> All
-      => _all;
+    public static IEnumerable<Enumeration<TEnumBase>> All
+      => Archetypes.DefaultUniverse.Enumerations.GetAllByType<TEnumBase>().Cast<Enumeration<TEnumBase>>();
 
     /// <summary>
-    /// Intenral list of all items
+    /// The base type of this enumeration
     /// </summary>
-    readonly static List<Enumeration<TEnumBase>> _all
-      = new List<Enumeration<TEnumBase>>();
+    public override Type EnumBaseType
+      => typeof(TEnumBase);
 
     /// <summary>
     /// Ctor add to all.
     /// </summary>
-    protected Enumeration(object uniqueIdentifier) 
-      : base(uniqueIdentifier) {
-      _all.Add(this);
-    }
+    protected Enumeration(object uniqueIdentifier, Universe universe = null) 
+      : base(uniqueIdentifier, universe) {}
   }
 }

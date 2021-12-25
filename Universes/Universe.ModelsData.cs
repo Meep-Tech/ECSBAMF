@@ -314,7 +314,8 @@ namespace Meep.Tech.Data {
             Activator.CreateInstance(
               builderIdType,
               "Default",
-              "Component.Factory"
+              "Component.Factory",
+              _universe
             ),
             _universe
           }) as IComponent.IBuilderFactory;
@@ -346,6 +347,81 @@ namespace Meep.Tech.Data {
             ),
             _universe
           }) as IModel.IBuilderFactory;
+      }
+
+
+      /// <summary>
+      /// Make an object ctor from a provided default ctor.
+      /// Valid CTORS:
+      ///  - public|private|protected Model(IBuilder builder)
+      ///  - public|private|protected Model()
+      /// </summary>
+      internal Func<IBuilder<TModel>, TModel> _getDefaultCtorFor<TModel>(Type modelType)
+        where TModel : IModel<TModel>
+          => builder => (TModel)_getDefaultCtorFor(modelType)(builder);
+
+      /// <summary>
+      /// Make an object ctor from a provided default ctor.
+      /// Valid CTORS:
+      ///  - public|private|protected Model(IBuilder builder)
+      ///  - public|private|protected Model()
+      /// </summary>
+      internal Func<IBuilder, IModel> _getDefaultCtorFor(Type modelType) {
+        // try to get any matching builder ctor:
+        System.Reflection.ConstructorInfo ctor = modelType.GetConstructors(
+          System.Reflection.BindingFlags.Public
+          | System.Reflection.BindingFlags.NonPublic
+          | System.Reflection.BindingFlags.Instance
+        // TODO: add an attribute to specify highest priority
+        // sort by priority:
+        ).Select(constructor => {
+          var @params = constructor.GetParameters();
+          if (@params.Length > 0) {
+            if (@params.Length == 1) {
+              if (@params[0].ParameterType.IsAssignableToGeneric(typeof(IBuilder<>))) {
+                return (constructor.IsFamily || constructor.IsPublic ? 3 : 2, constructor);
+              }
+            }
+
+            // non compatable
+            return (0, constructor);
+          } // if there's an empty ctor, return that one
+          else {
+            return (1, constructor);
+          }
+        })
+        // remove incompatable ctors before the sort and pick
+        .Where(rankedConstructor => rankedConstructor.Item1 > 0)
+        .OrderByDescending(rankedConstructor => rankedConstructor.Item1)
+        .FirstOrDefault().constructor;
+
+        // no args ctor:
+        if(!(ctor is null) && ctor.GetParameters().Length == 0) {
+          //TODO: is there a faster way to cache this?
+          return (builder)
+            => (IModel)ctor.Invoke(null);
+        }
+
+        // structs may use the activator
+        if(ctor is null && modelType.IsValueType) {
+          Func<IBuilder, IModel> activator = _
+            => (IModel)Activator.CreateInstance(modelType);
+          try {
+            if(!(activator.Invoke(null) is null)) {
+              return activator;
+            }
+          } catch(Exception e) {
+            throw new NotImplementedException($"No Ctor that takes a single argument thet inherits from IBuilder<TModelBase>, or 0 arguments found for Model type: {modelType.FullName}. An activator could also not be built for the type.", e);
+          }
+        }
+
+        if(ctor is null) {
+          throw new NotImplementedException($"No Ctor that takes a single argument thet inherits from IBuilder<TModelBase>, or 0 arguments found for Model type: {modelType.FullName}.");
+        }
+
+        //TODO: is there a faster way to cache this?
+        return builder
+          => (IModel)ctor.Invoke(new object[] { builder });
       }
     }
   }

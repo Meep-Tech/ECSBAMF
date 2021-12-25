@@ -9,7 +9,16 @@ using System.Linq;
 namespace Meep.Tech.Data {
 
   public partial class Model {
+
+    /// <summary>
+    /// Logic and Settings Used To Serialize Models
+    /// </summary>
     public partial class Serializer {
+
+      /// <summary>
+      /// The key used for the field containing the type data for an enum
+      /// </summary>
+      public const string EnumTypePropertyName = "__type_";
 
       /// <summary>
       /// The key used for the field containing the data for the type of component
@@ -33,8 +42,7 @@ namespace Meep.Tech.Data {
       /// </summary>
       public JsonSerializer ComponentJsonSerializer {
         get => _componentJsonSerializer ??= JsonSerializer
-          .Create(Options.ConfigureComponentJsonSerializerSettings(
-            new DefaultContractResolver(Options._universe)));
+          .Create(Options.ComponentJsonSerializerSettings);
       } JsonSerializer _componentJsonSerializer;
 
       /// <summary>
@@ -42,8 +50,7 @@ namespace Meep.Tech.Data {
       /// </summary>
       public JsonSerializer ModelJsonSerializer {
         get => _modelJsonSerializer ??= JsonSerializer
-          .Create(Options.ConfigureModelJsonSerializerSettings(
-            new DefaultContractResolver(Options._universe)));
+          .Create(Options.ModelJsonSerializerSettings);
       } JsonSerializer _modelJsonSerializer;
 
       /// <summary>

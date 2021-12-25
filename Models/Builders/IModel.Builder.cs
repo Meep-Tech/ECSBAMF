@@ -208,7 +208,7 @@ namespace Meep.Tech.Data {
 
         /// Unique ID logic:
         /// TOOD: move this to IUnique somehow
-        if(model is IUnique unique) {
+        if(model is IUnique unique && unique.AutoSetIdOnBuild && unique.Id is null) {
           if(this.TryToGetParam(IUnique.Params.UniqueId, out string providedId)) {
             unique.Id = providedId;
           }

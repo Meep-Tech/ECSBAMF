@@ -1,5 +1,4 @@
 ﻿using Meep.Tech.Data.Configuration;
-using System;
 using System.Collections.Generic;
 
 namespace Meep.Tech.Data {
@@ -63,6 +62,13 @@ namespace Meep.Tech.Data {
     }
 
     /// <summary>
+    /// Enumerations Data
+    /// </summary>
+    public EnumerationData Enumerations {
+      get;
+    }
+
+    /// <summary>
     /// Make a new universe of Archetypes
     /// </summary>
     public Universe(Loader loader, string nameKey = null) {
@@ -71,6 +77,7 @@ namespace Meep.Tech.Data {
       Archetypes = new ArchetypesData(this);
       Models = new ModelsData(this);
       Components = new ComponentsData(this);
+      Enumerations = new EnumerationData();
 
       // set this as the default universe if there isn't one yet
       Data.Archetypes.DefaultUniverse ??= this;
