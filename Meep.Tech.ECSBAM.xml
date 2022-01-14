@@ -318,111 +318,6 @@
             Check if this is compatable with an archetype
             </summary>
         </member>
-        <member name="T:Meep.Tech.Data.Archetype.Collection`2">
-            <summary>
-            A Collection of Archetypes.
-            - Can be used to make a more specific child collection than Archetype[,].ArchetypeCollection.
-            </summary>
-        </member>
-        <member name="T:Meep.Tech.Data.Archetype.Collection`2.Branch`1">
-            <summary>
-            A Branch of an Collection of Archetypes, used to catalog a branch of the archetype tree.
-            </summary>
-        </member>
-        <member name="P:Meep.Tech.Data.Archetype.Collection`2.Branch`1.RootArchetype">
-            <summary>
-            <inheritdoc/>
-            </summary>
-        </member>
-        <member name="P:Meep.Tech.Data.Archetype.Collection`2.Branch`1.RootArchetypeType">
-            <summary>
-            <inheritdoc/>
-            </summary>
-        </member>
-        <member name="P:Meep.Tech.Data.Archetype.Collection`2.Branch`1.All">
-            <summary>
-            All archetypes registered to this collection
-            </summary>
-        </member>
-        <member name="P:Meep.Tech.Data.Archetype.Collection`2.Branch`1.ById">
-            <summary>
-            All archetypes registered to this collection by their Identity.
-            </summary>
-        </member>
-        <member name="M:Meep.Tech.Data.Archetype.Collection`2.Branch`1.#ctor(Meep.Tech.Data.Universe)">
-            <summary>
-            <inheritdoc/>
-            </summary>
-        </member>
-        <member name="M:Meep.Tech.Data.Archetype.Collection`2.Branch`1.Get``1">
-            <summary>
-            Get an archetype from this collection by it's type.
-            </summary>
-        </member>
-        <member name="M:Meep.Tech.Data.Archetype.Collection`2.Branch`1.Get(System.Type)">
-            <summary>
-            Get an archetype from this collection by it's type.
-            </summary>
-        </member>
-        <member name="M:Meep.Tech.Data.Archetype.Collection`2.Branch`1.Get``1(System.Type)">
-            <summary>
-            Get an archetype from this collection by it's type.
-            </summary>
-        </member>
-        <member name="M:Meep.Tech.Data.Archetype.Collection`2.Branch`1.TryToGet(System.Type)">
-            <summary>
-            Try to get an archetype from this collection by it's type.
-            Returns null on failure instead of throwing.
-            </summary>
-        </member>
-        <member name="M:Meep.Tech.Data.Archetype.Collection`2.Branch`1.TryToGet``1(System.Type)">
-            <summary>
-            Try to get an archetype from this collection by it's type.
-            Returns null on failure instead of throwing.
-            </summary>
-        </member>
-        <member name="M:Meep.Tech.Data.Archetype.Collection`2.Branch`1.TryToGet(System.Type,`2@)">
-            <summary>
-            Try to get an archetype from this collection by it's type.
-            Returns null on failure instead of throwing.
-            </summary>
-        </member>
-        <member name="M:Meep.Tech.Data.Archetype.Collection`2.Branch`1.TryToGet``1(System.Type,``0@)">
-            <summary>
-            Try to get an archetype from this collection by it's type.
-            Returns null on failure instead of throwing.
-            </summary>
-        </member>
-        <member name="M:Meep.Tech.Data.Archetype.Collection`2.Branch`1.Get(Meep.Tech.Data.Archetype.Identity)">
-            <summary>
-            Get an archetype from it's Id.
-            </summary>
-        </member>
-        <member name="M:Meep.Tech.Data.Archetype.Collection`2.Branch`1.Get``1(Meep.Tech.Data.Archetype.Identity)">
-            <summary>
-            Get an archetype from it's Id.
-            </summary>
-        </member>
-        <member name="M:Meep.Tech.Data.Archetype.Collection`2.Branch`1.Get``1(System.String)">
-            <summary>
-            Get an archetype from it's Id.
-            </summary>
-        </member>
-        <member name="M:Meep.Tech.Data.Archetype.Collection`2.Branch`1.Get(System.String)">
-            <summary>
-            Get an archetype from it's Id.
-            </summary>
-        </member>
-        <member name="M:Meep.Tech.Data.Archetype.Collection`2.Branch`1.GetEnumerator">
-            <summary>
-            <inheritdoc/>
-            </summary>
-        </member>
-        <member name="M:Meep.Tech.Data.Archetype.Collection`2.#ctor(Meep.Tech.Data.Universe)">
-            <summary>
-            <inheritdoc/>
-            </summary>
-        </member>
         <member name="T:Meep.Tech.Data.Archetype.Collection">
             <summary>
             A Collection of Archetypes.
@@ -519,6 +414,17 @@
             <inheritdoc/>
             </summary>
         </member>
+        <member name="T:Meep.Tech.Data.Archetype.Collection`2">
+            <summary>
+            A Collection of Archetypes.
+            - Can be used to make a more specific child collection than Archetype[,].ArchetypeCollection.
+            </summary>
+        </member>
+        <member name="M:Meep.Tech.Data.Archetype.Collection`2.#ctor(Meep.Tech.Data.Universe)">
+            <summary>
+            <inheritdoc/>
+            </summary>
+        </member>
         <member name="T:Meep.Tech.Data.Archetype.Identity">
             <summary>
             An Id unique to each Archetype.
@@ -578,7 +484,7 @@
             The Id of this Archetype.
             </summary>
         </member>
-        <member name="M:Meep.Tech.Data.Archetype`2.#ctor(Meep.Tech.Data.Archetype.Identity,Meep.Tech.Data.Archetype{`0,`1}.ArchetypeCollection)">
+        <member name="M:Meep.Tech.Data.Archetype`2.#ctor(Meep.Tech.Data.Archetype.Identity,Meep.Tech.Data.Archetype{`0,`1}.Collection)">
             <summary>
             The base for making a new archetype.
             This should be extended into a private constructor that will only be called once by the Loader
@@ -807,104 +713,198 @@
             <inheritdoc/>
             </summary>
         </member>
-        <member name="P:Meep.Tech.Data.Archetype`2.DefaultCollection">
-            <summary>
-            Quick link to the collection for the default universe
-            </summary>
-        </member>
-        <member name="T:Meep.Tech.Data.Archetype`2.ArchetypeCollection">
+        <member name="T:Meep.Tech.Data.Archetype`2.Collection">
             <summary>
             A Collection of Archetypes.
             This is just an Archetype.Collection[&#44;] that is pre-built for the containing Archetype[&#44;] type.
             </summary>
         </member>
-        <member name="P:Meep.Tech.Data.Archetype`2.ArchetypeCollection.RootArchetype">
+        <member name="T:Meep.Tech.Data.Archetype`2.Collection.Branch`1">
             <summary>
-            The root archetype. This may be null if the root archetype type is abstract.
+            A Branch of an Collection of Archetypes, used to catalog a branch of the archetype tree.
             </summary>
         </member>
-        <member name="P:Meep.Tech.Data.Archetype`2.ArchetypeCollection.RootArchetypeType">
+        <member name="P:Meep.Tech.Data.Archetype`2.Collection.Branch`1.RootArchetype">
             <summary>
-             The archetype type of the root archetype of this collection (if it's not abstract).
+            <inheritdoc/>
             </summary>
         </member>
-        <member name="P:Meep.Tech.Data.Archetype`2.ArchetypeCollection.All">
+        <member name="P:Meep.Tech.Data.Archetype`2.Collection.Branch`1.RootArchetypeType">
+            <summary>
+            <inheritdoc/>
+            </summary>
+        </member>
+        <member name="P:Meep.Tech.Data.Archetype`2.Collection.Branch`1.All">
             <summary>
             All archetypes registered to this collection
             </summary>
         </member>
-        <member name="P:Meep.Tech.Data.Archetype`2.ArchetypeCollection.ById">
+        <member name="P:Meep.Tech.Data.Archetype`2.Collection.Branch`1.ById">
             <summary>
             All archetypes registered to this collection by their Identity.
             </summary>
         </member>
-        <member name="M:Meep.Tech.Data.Archetype`2.ArchetypeCollection.#ctor(Meep.Tech.Data.Universe)">
+        <member name="M:Meep.Tech.Data.Archetype`2.Collection.Branch`1.#ctor(Meep.Tech.Data.Universe)">
             <summary>
             <inheritdoc/>
             </summary>
         </member>
-        <member name="M:Meep.Tech.Data.Archetype`2.ArchetypeCollection.Get``1">
+        <member name="M:Meep.Tech.Data.Archetype`2.Collection.Branch`1.Get``1">
             <summary>
             Get an archetype from this collection by it's type.
             </summary>
         </member>
-        <member name="M:Meep.Tech.Data.Archetype`2.ArchetypeCollection.Get(System.Type)">
+        <member name="M:Meep.Tech.Data.Archetype`2.Collection.Branch`1.Get(System.Type)">
             <summary>
             Get an archetype from this collection by it's type.
             </summary>
         </member>
-        <member name="M:Meep.Tech.Data.Archetype`2.ArchetypeCollection.Get``1(System.Type)">
+        <member name="M:Meep.Tech.Data.Archetype`2.Collection.Branch`1.Get``1(System.Type)">
             <summary>
             Get an archetype from this collection by it's type.
             </summary>
         </member>
-        <member name="M:Meep.Tech.Data.Archetype`2.ArchetypeCollection.TryToGet(System.Type)">
+        <member name="M:Meep.Tech.Data.Archetype`2.Collection.Branch`1.TryToGet(System.Type)">
             <summary>
             Try to get an archetype from this collection by it's type.
             Returns null on failure instead of throwing.
             </summary>
         </member>
-        <member name="M:Meep.Tech.Data.Archetype`2.ArchetypeCollection.TryToGet``1(System.Type)">
+        <member name="M:Meep.Tech.Data.Archetype`2.Collection.Branch`1.TryToGet``1(System.Type)">
             <summary>
             Try to get an archetype from this collection by it's type.
             Returns null on failure instead of throwing.
             </summary>
         </member>
-        <member name="M:Meep.Tech.Data.Archetype`2.ArchetypeCollection.TryToGet(System.Type,`1@)">
+        <member name="M:Meep.Tech.Data.Archetype`2.Collection.Branch`1.TryToGet(System.Type,`2@)">
             <summary>
             Try to get an archetype from this collection by it's type.
             Returns null on failure instead of throwing.
             </summary>
         </member>
-        <member name="M:Meep.Tech.Data.Archetype`2.ArchetypeCollection.TryToGet``1(System.Type,``0@)">
+        <member name="M:Meep.Tech.Data.Archetype`2.Collection.Branch`1.TryToGet``1(System.Type,``0@)">
             <summary>
             Try to get an archetype from this collection by it's type.
             Returns null on failure instead of throwing.
             </summary>
         </member>
-        <member name="M:Meep.Tech.Data.Archetype`2.ArchetypeCollection.Get(Meep.Tech.Data.Archetype{`0,`1}.Identity)">
+        <member name="M:Meep.Tech.Data.Archetype`2.Collection.Branch`1.Get(Meep.Tech.Data.Archetype{`0,`1}.Identity)">
             <summary>
             Get an archetype from it's Id.
             </summary>
         </member>
-        <member name="M:Meep.Tech.Data.Archetype`2.ArchetypeCollection.Get``1(Meep.Tech.Data.Archetype{`0,`1}.Identity)">
+        <member name="M:Meep.Tech.Data.Archetype`2.Collection.Branch`1.Get``1(Meep.Tech.Data.Archetype{`0,`1}.Identity)">
             <summary>
             Get an archetype from it's Id.
             </summary>
         </member>
-        <member name="M:Meep.Tech.Data.Archetype`2.ArchetypeCollection.Get``1(System.String)">
+        <member name="M:Meep.Tech.Data.Archetype`2.Collection.Branch`1.Get``1(System.String)">
             <summary>
             Get an archetype from it's Id.
             </summary>
         </member>
-        <member name="M:Meep.Tech.Data.Archetype`2.ArchetypeCollection.Get(System.String)">
+        <member name="M:Meep.Tech.Data.Archetype`2.Collection.Branch`1.Get(System.String)">
             <summary>
             Get an archetype from it's Id.
             </summary>
         </member>
-        <member name="M:Meep.Tech.Data.Archetype`2.ArchetypeCollection.GetEnumerator">
+        <member name="M:Meep.Tech.Data.Archetype`2.Collection.Branch`1.GetEnumerator">
             <summary>
             <inheritdoc/>
+            </summary>
+        </member>
+        <member name="P:Meep.Tech.Data.Archetype`2.Collection.RootArchetype">
+            <summary>
+            The root archetype. This may be null if the root archetype type is abstract.
+            </summary>
+        </member>
+        <member name="P:Meep.Tech.Data.Archetype`2.Collection.RootArchetypeType">
+            <summary>
+             The archetype type of the root archetype of this collection (if it's not abstract).
+            </summary>
+        </member>
+        <member name="P:Meep.Tech.Data.Archetype`2.Collection.All">
+            <summary>
+            All archetypes registered to this collection
+            </summary>
+        </member>
+        <member name="P:Meep.Tech.Data.Archetype`2.Collection.ById">
+            <summary>
+            All archetypes registered to this collection by their Identity.
+            </summary>
+        </member>
+        <member name="M:Meep.Tech.Data.Archetype`2.Collection.#ctor(Meep.Tech.Data.Universe)">
+            <summary>
+            <inheritdoc/>
+            </summary>
+        </member>
+        <member name="M:Meep.Tech.Data.Archetype`2.Collection.Get``1">
+            <summary>
+            Get an archetype from this collection by it's type.
+            </summary>
+        </member>
+        <member name="M:Meep.Tech.Data.Archetype`2.Collection.Get(System.Type)">
+            <summary>
+            Get an archetype from this collection by it's type.
+            </summary>
+        </member>
+        <member name="M:Meep.Tech.Data.Archetype`2.Collection.Get``1(System.Type)">
+            <summary>
+            Get an archetype from this collection by it's type.
+            </summary>
+        </member>
+        <member name="M:Meep.Tech.Data.Archetype`2.Collection.TryToGet(System.Type)">
+            <summary>
+            Try to get an archetype from this collection by it's type.
+            Returns null on failure instead of throwing.
+            </summary>
+        </member>
+        <member name="M:Meep.Tech.Data.Archetype`2.Collection.TryToGet``1(System.Type)">
+            <summary>
+            Try to get an archetype from this collection by it's type.
+            Returns null on failure instead of throwing.
+            </summary>
+        </member>
+        <member name="M:Meep.Tech.Data.Archetype`2.Collection.TryToGet(System.Type,`1@)">
+            <summary>
+            Try to get an archetype from this collection by it's type.
+            Returns null on failure instead of throwing.
+            </summary>
+        </member>
+        <member name="M:Meep.Tech.Data.Archetype`2.Collection.TryToGet``1(System.Type,``0@)">
+            <summary>
+            Try to get an archetype from this collection by it's type.
+            Returns null on failure instead of throwing.
+            </summary>
+        </member>
+        <member name="M:Meep.Tech.Data.Archetype`2.Collection.Get(Meep.Tech.Data.Archetype{`0,`1}.Identity)">
+            <summary>
+            Get an archetype from it's Id.
+            </summary>
+        </member>
+        <member name="M:Meep.Tech.Data.Archetype`2.Collection.Get``1(Meep.Tech.Data.Archetype{`0,`1}.Identity)">
+            <summary>
+            Get an archetype from it's Id.
+            </summary>
+        </member>
+        <member name="M:Meep.Tech.Data.Archetype`2.Collection.Get``1(System.String)">
+            <summary>
+            Get an archetype from it's Id.
+            </summary>
+        </member>
+        <member name="M:Meep.Tech.Data.Archetype`2.Collection.Get(System.String)">
+            <summary>
+            Get an archetype from it's Id.
+            </summary>
+        </member>
+        <member name="M:Meep.Tech.Data.Archetype`2.Collection.GetEnumerator">
+            <summary>
+            <inheritdoc/>
+            </summary>
+        </member>
+        <member name="P:Meep.Tech.Data.Archetype`2.DefaultCollection">
+            <summary>
+            Quick link to the collection for the default universe
             </summary>
         </member>
         <member name="T:Meep.Tech.Data.Archetype`2.Identity">

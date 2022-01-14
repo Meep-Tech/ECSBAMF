@@ -535,20 +535,20 @@ namespace Meep.Tech.Data {
     /// The base for making a new archetype.
     /// This should be extended into a private constructor that will only be called once by the Loader
     /// </summary>
-    protected Archetype(Archetype.Identity id, ArchetypeCollection collection = null) 
+    protected Archetype(Archetype.Identity id, Collection collection = null) 
       : base(id) 
     {
       if(collection is null) {
-        collection = (ArchetypeCollection)
+        collection = (Collection)
           // if the base of this is registered somewhere, get the registered one by default
           (Archetypes.DefaultUniverse.Archetypes._tryToGetCollectionFor(GetType(), out var found)
-            ? found is ArchetypeCollection
+            ? found is Collection
               ? found
               : Archetypes.DefaultUniverse.Archetypes._collectionsByRootArchetype[typeof(TArchetypeBase).FullName]
-                = new ArchetypeCollection()
+                = new Collection()
             // else this is the base and we need a new one
             : Archetypes.DefaultUniverse.Archetypes._collectionsByRootArchetype[typeof(TArchetypeBase).FullName] 
-              = new ArchetypeCollection());
+              = new Collection());
       }
 
       if(collection.Universe.Loader.IsFinished && !AllowInitializationsAfterLoaderFinalization) {

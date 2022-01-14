@@ -169,8 +169,8 @@ namespace Meep.Tech.Data {
     /// <summary>
     /// Default collection of archetypes for this model type based on the Default Univese
     /// </summary>
-    public static Archetype<TModelBase, TArchetypeBase>.ArchetypeCollection Types
-      => (Archetype<TModelBase, TArchetypeBase>.ArchetypeCollection)
+    public static Archetype<TModelBase, TArchetypeBase>.Collection Types
+      => (Archetype<TModelBase, TArchetypeBase>.Collection)
         Archetypes.DefaultUniverse.Archetypes.GetCollectionFor(typeof(TArchetypeBase));
 
     /// <summary>

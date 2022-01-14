@@ -98,11 +98,11 @@ namespace Meep.Tech.Data {
         IEnumerable<Func<IBuilder, IModel.IComponent>> modelComponentCtors = null
       ) : base(
             id,
-            (ArchetypeCollection)((universe ?? Models.DefaultUniverse).Models._factoriesByModelBases
+            (Collection)((universe ?? Models.DefaultUniverse).Models._factoriesByModelBases
               .TryGetValue(typeof(TModelBase), out var collection)
                 ? collection 
                 : (universe ?? Models.DefaultUniverse).Models._factoriesByModelBases[typeof(TModelBase)] 
-                  = new ArchetypeCollection((universe ?? Models.DefaultUniverse)))
+                  = new Collection((universe ?? Models.DefaultUniverse)))
         )
       {
         Id.Universe.Models._factories.Add(this);

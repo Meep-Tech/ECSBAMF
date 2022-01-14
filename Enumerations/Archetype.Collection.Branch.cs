@@ -4,11 +4,11 @@ using System.Linq;
 
 namespace Meep.Tech.Data {
 
-  public abstract partial class Archetype {
+  public abstract partial class Archetype<TModelBase, TArchetypeBase> where TModelBase : IModel<TModelBase>
+    where TArchetypeBase : Archetype<TModelBase, TArchetypeBase> {
 
-    public partial class Collection<TModelBase, TArchetypeBase> where TModelBase : IModel<TModelBase>
-      where TArchetypeBase : Archetype<TModelBase, TArchetypeBase> 
-    {
+    public partial class Collection {
+
       /// <summary>
       /// A Branch of an Collection of Archetypes, used to catalog a branch of the archetype tree.
       /// </summary>
