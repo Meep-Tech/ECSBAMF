@@ -69,20 +69,21 @@
     public new class Identity : Archetype.Identity {
 
       /// <summary>
-      /// A base key string to use instead of the model base type name
+      /// Make a new identiy for this Archetype Base Type
       /// </summary>
-      public static string BaseKeyString {
-        get;
-        set;
-      }
+      /// <param name="name">Used to generate the final part of the key. Spaces are removed before then.</param>
+      /// <param name="keyPrefixEndingAdditions">Added to the key right before the end here: Type..{keyPrefixEndingAdditions}.name</param>
+      public Identity(string name, string keyPrefixEndingAdditions = null, Universe universe = null) 
+        : base(name, $"{typeof(TModelBase).FullName}.{keyPrefixEndingAdditions ?? ""}{(string.IsNullOrEmpty(keyPrefixEndingAdditions) ? "" : ".")}{name}", universe) {}
 
       /// <summary>
       /// Make a new identiy for this Archetype Base Type
       /// </summary>
       /// <param name="name">Used to generate the final part of the key. Spaces are removed before then.</param>
       /// <param name="keyPrefixEndingAdditions">Added to the key right before the end here: Type..{keyPrefixEndingAdditions}.name</param>
-      public Identity(string name, string keyPrefixEndingAdditions = null, Universe universe = null) 
-        : base(name, $"{BaseKeyString ?? typeof(TModelBase).FullName}.{keyPrefixEndingAdditions ?? ""}{(string.IsNullOrEmpty(keyPrefixEndingAdditions) ? "" : ".")}{name}", universe) {}
+      /// <param name="baseKeyStringOverride">Overrides the type fullname.</param>
+      protected Identity(string name, string keyPrefixEndingAdditions, string baseKeyStringOverride, Universe universe = null) 
+        : base(name, $"{baseKeyStringOverride ?? typeof(TModelBase).FullName}{(baseKeyStringOverride != "" ? "." :"")}{keyPrefixEndingAdditions ?? ""}{(string.IsNullOrEmpty(keyPrefixEndingAdditions) ? "" : ".")}{name}", universe) {}
     }
   }
 }

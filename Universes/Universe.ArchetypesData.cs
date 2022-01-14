@@ -43,12 +43,21 @@ namespace Meep.Tech.Data {
         = new Dictionary<string, System.Type>();
 
       /// <summary>
-      /// All archetypes:
+      /// All Root Archetype Collections.
+      /// Doesn't include Branch collections.
+      /// </summary>
+      public IEnumerable<Archetype.Collection> RootCollections {
+        get => _collectionsByRootArchetype.Values;
+      } internal readonly Dictionary<string, Archetype.Collection> _collectionsByRootArchetype
+        = new();
+
+      /// <summary>
+      /// All Archetype Collections:
       /// </summary>
       public IEnumerable<Archetype.Collection> Collections {
-        get => _collectionsByRootArchetype.Values.Distinct();
-      } internal readonly Dictionary<string, Archetype.Collection> _collectionsByRootArchetype
-      = new Dictionary<string, Archetype.Collection>();
+        get => RootCollections.Concat(_branchedCollectionsByBranchArchetype.Values);
+      } readonly Dictionary<string, Archetype.Collection> _branchedCollectionsByBranchArchetype
+        = new();
 
       internal ArchetypesData(Universe universe) {
         _universe = universe;
@@ -103,7 +112,7 @@ namespace Meep.Tech.Data {
       /// Get the "default" archetype or factory for a given model type.
       /// </summary>
       public Archetype GetDefaultForModelOfType(System.Type modelBaseType)
-        => modelBaseType.IsAssignableToGeneric(typeof(Model<,>))
+        => modelBaseType.IsAssignableToGeneric(typeof(IModel<,>))
           ? _rootArchetypeTypesByBaseModelType[modelBaseType.FullName].TryToGetAsArchetype()
             ?? GetCollectionFor(_rootArchetypeTypesByBaseModelType[modelBaseType.FullName]).First()
           : _universe.Models.GetBuilderFactoryFor(modelBaseType) as Archetype;
@@ -122,8 +131,11 @@ namespace Meep.Tech.Data {
       }
 
       internal void _registerCollection(Archetype.Collection collection, Type rootArchetypeType = null) {
-        if(!(_universe.Archetypes is null || _universe.Models is null || _universe.Components is null)) {
-          _universe.Archetypes._collectionsByRootArchetype.Add(rootArchetypeType?.FullName ?? "_all", collection);
+        if(!(_universe?.Archetypes is null || _universe?.Models is null || _universe?.Components is null)) {
+          if(collection is Archetype.Collection.IBranch) {
+            _branchedCollectionsByBranchArchetype.Add(rootArchetypeType.FullName, collection);
+          } else
+           _collectionsByRootArchetype.Add(rootArchetypeType?.FullName ?? "_all", collection);
         }
       }
     }

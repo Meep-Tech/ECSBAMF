@@ -114,22 +114,6 @@ namespace Meep.Tech.Data.Configuration {
       } = new Map<ushort, string>();
 
       /// <summary>
-      /// The default entity framework db serializer context
-      /// </summary>
-      public Func<
-        DbContextOptions<Model.Serializer.DbContext>, // general options obj
-        Universe,
-        Model.Serializer.DbContext // the returned options
-      > GetDefaultDbContextForModelSerialization {
-        get;
-        set;
-      } = (options, universe) 
-        => new Model.Serializer.DbContext(
-          options,
-          universe
-        );
-
-      /// <summary>
       /// Assembled mod load order.
       /// </summary>
       public IReadOnlyList<Assembly> AssemblyLoadOrder

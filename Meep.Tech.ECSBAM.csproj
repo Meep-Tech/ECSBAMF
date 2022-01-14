@@ -4,6 +4,7 @@
 	<TargetFrameworks>netstandard2.1;net5</TargetFrameworks>
 	<LangVersion>9.0</LangVersion>
 	<RootNamespace>Meep.Tech.Data</RootNamespace>
+  <GenerateDocumentationFile>true</GenerateDocumentationFile>
 </PropertyGroup>
 
 <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Debug|netstandard2.1|AnyCPU'">

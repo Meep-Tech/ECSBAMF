@@ -133,7 +133,13 @@ namespace Meep.Tech.Data {
       if(id is null) {
         throw new ArgumentNullException("id");
       }
+
       Id = id;
+
+      if(Id is null) {
+        throw new ArgumentException($"Id is null. The passed in ID May not be of the expected type. Expected:{typeof(Identity).FullName}, provided: {id.GetType().FullName}.");
+      }
+
       Type = GetType();
     }
 
@@ -549,7 +555,7 @@ namespace Meep.Tech.Data {
         throw new InvalidOperationException($"Tried to initialize archetype of type {id} while the loader was sealed");
       }
 
-      Id.Universe.Archetypes._registerArchetype(this, collection);
+      collection.Universe.Archetypes._registerArchetype(this, collection);
       _initialize();
     }
 
@@ -595,7 +601,17 @@ namespace Meep.Tech.Data {
       protected internal set {
         _modelConstructor
           = builder => value.Invoke(builder);
-        Id.Universe.Archetypes._rootArchetypeTypesByBaseModelType[_modelConstructor(null).GetType().FullName]
+
+        Func<Archetype, Dictionary<string, object>, IBuilder> builderCtor
+          = GetGenericBuilderConstructor();
+        IBuilder builder = builderCtor.Invoke(
+          this,
+          DefaultTestParams
+        );
+
+        Id.Universe.Archetypes._rootArchetypeTypesByBaseModelType[_modelConstructor(
+         (IBuilder<TModelBase>)builder
+        ).GetType().FullName]
           = GetType();
       }
     } Func<IBuilder<TModelBase>, IModel> _modelConstructor;

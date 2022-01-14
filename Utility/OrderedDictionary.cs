@@ -6,7 +6,7 @@ using System.Collections;
 
 
 namespace Meep.Tech.Data.Utility {
-  public class OrderdDictionary<TKey, TValue> 
+  public class OrderedDictionary<TKey, TValue> 
     : IEnumerable<KeyValuePair<TKey, TValue>> 
   {
 

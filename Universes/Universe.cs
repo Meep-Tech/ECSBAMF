@@ -14,8 +14,8 @@ namespace Meep.Tech.Data {
     /// </summary>
     public static IEnumerable<Universe> s
       => _all.Values;
-    static Utility.OrderdDictionary<string, Universe> _all
-      = new Utility.OrderdDictionary<string, Universe>();
+    static Utility.OrderedDictionary<string, Universe> _all
+      = new Utility.OrderedDictionary<string, Universe>();
 
     /// <summary>
     /// The unique key of this universe.

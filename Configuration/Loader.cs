@@ -43,7 +43,7 @@ namespace Meep.Tech.Data.Configuration {
     /// <summary>
     /// The assembly types that will be built in order
     /// </summary>
-    OrderdDictionary<Assembly, AssemblyBuildableTypesCollection> _assemblyTypesToBuild;
+    OrderedDictionary<Assembly, AssemblyBuildableTypesCollection> _assemblyTypesToBuild;
 
     /// <summary>
     /// The types we need to construct and map data to
@@ -156,11 +156,13 @@ namespace Meep.Tech.Data.Configuration {
     /// load the dbcontext settings from the info we've gotten from all the models
     /// </summary>
     void _finalizeModelSerializerSettings() {
-      Universe.ModelSerializer.Options.DbContext
-        ??= Options.GetDefaultDbContextForModelSerialization(
-          new DbContextOptions<Model.Serializer.DbContext>(),
-          Universe
-        );
+      if(Options.ModelSerializerOptions.TryToSetUpDbContext) {
+        Universe.ModelSerializer.Options.DbContext
+         ??= Options.ModelSerializerOptions.GetDefaultDbContextForModelSerialization(
+           new DbContextOptions<Model.Serializer.DbContext>(),
+           Universe
+         );
+      }
     }
 
     /// <summary>
@@ -327,7 +329,16 @@ namespace Meep.Tech.Data.Configuration {
       } catch(Exception e) {
         throw new NotImplementedException($"Could not find IModel<> Base Type for {systemType}, does it inherit from IModel instead of IModel<T> by mistake?", e);
       }
-      if(!Universe.ModelSerializer.Options.TypesToMapToDbContext.ContainsKey(systemType)) {
+      if(Options.ModelSerializerOptions.TryToSetUpDbContext && !Universe.ModelSerializer.Options.TypesToMapToDbContext.ContainsKey(systemType)) {
+        if(Options.ModelSerializerOptions.ModelsMustOptInToEfCoreUsingAttribute) {
+          System.ComponentModel.DataAnnotations.Schema.TableAttribute tableAttribute 
+            = systemType.GetCustomAttribute< System.ComponentModel.DataAnnotations.Schema.TableAttribute>();
+          // if we need a table attribute, and it's null, just skip this last set.
+          if(tableAttribute is null) {
+            return;
+          }
+        }
+
         Universe.ModelSerializer.Options.TypesToMapToDbContext[systemType] = null;
       }
     }
@@ -365,7 +376,7 @@ namespace Meep.Tech.Data.Configuration {
     /// </summary>
     void _testBuildDefaultModel(Type systemType) {
       Archetype defaultFactory;
-      if(systemType.IsAssignableToGeneric(typeof(Model<,>))) {
+      if(systemType.IsAssignableToGeneric(typeof(IModel<,>))) {
         defaultFactory 
           = Universe.Archetypes.GetDefaultForModelOfType(systemType);
       }
@@ -443,7 +454,7 @@ namespace Meep.Tech.Data.Configuration {
     /// </summary>
     void _loadAllBuildableTypes() {
       _assemblyTypesToBuild =
-        new OrderdDictionary<Assembly, AssemblyBuildableTypesCollection>();
+        new OrderedDictionary<Assembly, AssemblyBuildableTypesCollection>();
 
       // TODO: allow the assemblies to somehow apply a load order.
       // Maybe provide their own weight, or an ini/json file with weights/settings
@@ -487,7 +498,7 @@ namespace Meep.Tech.Data.Configuration {
     /// Make sure the assembly collection exists for the given assmebly. Add a new one if it doesnt.
     /// </summary>
     static void _validateAssemblyCollectionExists(
-      OrderdDictionary<Assembly, AssemblyBuildableTypesCollection> allCollections,
+      OrderedDictionary<Assembly, AssemblyBuildableTypesCollection> allCollections,
       Assembly assembly
     ) {
       if(!allCollections.Contains(assembly)) {
@@ -626,8 +637,13 @@ namespace Meep.Tech.Data.Configuration {
         .Where(v => !(v is null))
       ) {
         Modifications modifier
-            = Activator.CreateInstance(modifierType, this)
-              as Modifications;
+            = Activator.CreateInstance(
+              modifierType,
+              BindingFlags.NonPublic | BindingFlags.Instance,
+              null,
+              new object[] { Universe },
+              null
+            ) as Modifications;
 
         modifier.Initialize();
       }
@@ -673,7 +689,9 @@ namespace Meep.Tech.Data.Configuration {
     void _finalize() {
       _reportOnFailedTypeInitializations();
       _finalizeModelSerializerSettings();
-      Universe.ModelSerializer.Options.DbContext.SaveChanges();
+      if(Options.ModelSerializerOptions.TryToSetUpDbContext) {
+        Universe.ModelSerializer.Options.DbContext.SaveChanges();
+      }
 
       _uninitializedArchetypes = null;
       _initializedArchetypes = null;

@@ -4,6 +4,7 @@ using System;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using KellermanSoftware.CompareNetObjects;
 using System.Linq;
+using Microsoft.EntityFrameworkCore;
 
 namespace Meep.Tech.Data {
 
@@ -18,14 +19,6 @@ namespace Meep.Tech.Data {
         internal Universe _universe {
           get;
           set;
-        }
-
-        /// <summary>
-        /// The db context used by the serializer
-        /// </summary>
-        public DbContext DbContext {
-          get;
-          internal set;
         }
 
         /// <summary>
@@ -94,6 +87,46 @@ namespace Meep.Tech.Data {
               }
             );
         } JsonSerializerSettings _modelJsonSerializerSettings;
+
+        /// <summary>
+        /// The db context used by the serializer
+        /// </summary>
+        public DbContext DbContext {
+          get;
+          internal set;
+        }
+
+        /// <summary>
+        /// Whether or not ECSBAM should set up the models with a db context
+        /// </summary>
+        public bool TryToSetUpDbContext {
+          get;
+          set;
+        } = true;
+
+        /// <summary>
+        /// If this is true, models must have the [Table] attribute to be set up by ecsbam using efcore by default.
+        /// </summary>
+        public bool ModelsMustOptInToEfCoreUsingAttribute {
+          get;
+          set;
+        } = false;
+
+        /// <summary>
+        /// The default entity framework db serializer context
+        /// </summary>
+        public Func<
+          DbContextOptions<Model.Serializer.DbContext>, // general options obj
+          Universe,
+          Model.Serializer.DbContext // the returned options
+        > GetDefaultDbContextForModelSerialization {
+          get;
+          set;
+        } = (options, universe)
+          => new Model.Serializer.DbContext(
+            options,
+            universe
+          );
 
         /// <summary>
         /// The types to map to the db context.
