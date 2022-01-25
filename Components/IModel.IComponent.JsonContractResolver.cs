@@ -1,8 +1,4 @@
-﻿using Newtonsoft.Json;
-using Newtonsoft.Json.Serialization;
-using System.Reflection;
-
-namespace Meep.Tech.Data {
+﻿namespace Meep.Tech.Data {
 
   public partial interface IModel {
 

@@ -1,5 +1,4 @@
-﻿using Newtonsoft.Json;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using static Meep.Tech.Data.Configuration.Loader.Settings;
 
@@ -20,7 +19,6 @@ namespace Meep.Tech.Data {
     /// <summary>
     /// The factory that was used to make this object
     /// </summary>
-    [IsArchetypeProperty]
     public IModel.IBuilderFactory Factory {
       get;
       private set;
@@ -60,6 +58,14 @@ namespace Meep.Tech.Data {
       IBuilderFactory 
       where TBuilderFactoryBase : BuilderFactory<TBuilderFactoryBase>
       {
+
+      /// <summary>
+      /// Used for Buidler Factories to easily change the base type
+      /// </summary>
+      public new Type ModelBaseType {
+        get => base.ModelBaseType;
+        init => base.ModelBaseType = value;
+      }
 
       /// <summary>
       /// <inheritdoc/>

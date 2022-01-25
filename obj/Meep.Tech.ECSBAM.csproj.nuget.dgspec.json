@@ -1,17 +1,17 @@
 {
   "format": 1,
   "restore": {
-    "C:\\Users\\super\\Projects\\meep-tech\\libraries\\c-sharp\\Meep.Tech.ECSBAMF\\Meep.Tech.ECSBAM.csproj": {}
+    "C:\\Users\\super\\Projects\\meep-tech\\libraries\\c-sharp\\ECSBAM\\Meep.Tech.Data\\Meep.Tech.ECSBAM.csproj": {}
   },
   "projects": {
-    "C:\\Users\\super\\Projects\\meep-tech\\libraries\\c-sharp\\Meep.Tech.ECSBAMF\\Meep.Tech.ECSBAM.csproj": {
+    "C:\\Users\\super\\Projects\\meep-tech\\libraries\\c-sharp\\ECSBAM\\Meep.Tech.Data\\Meep.Tech.ECSBAM.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\Users\\super\\Projects\\meep-tech\\libraries\\c-sharp\\Meep.Tech.ECSBAMF\\Meep.Tech.ECSBAM.csproj",
+        "projectUniqueName": "C:\\Users\\super\\Projects\\meep-tech\\libraries\\c-sharp\\ECSBAM\\Meep.Tech.Data\\Meep.Tech.ECSBAM.csproj",
         "projectName": "Meep.Tech.ECSBAM",
-        "projectPath": "C:\\Users\\super\\Projects\\meep-tech\\libraries\\c-sharp\\Meep.Tech.ECSBAMF\\Meep.Tech.ECSBAM.csproj",
+        "projectPath": "C:\\Users\\super\\Projects\\meep-tech\\libraries\\c-sharp\\ECSBAM\\Meep.Tech.Data\\Meep.Tech.ECSBAM.csproj",
         "packagesPath": "C:\\Users\\super\\.nuget\\packages\\",
-        "outputPath": "C:\\Users\\super\\Projects\\meep-tech\\libraries\\c-sharp\\Meep.Tech.ECSBAMF\\obj\\",
+        "outputPath": "C:\\Users\\super\\Projects\\meep-tech\\libraries\\c-sharp\\ECSBAM\\Meep.Tech.Data\\obj\\",
         "projectStyle": "PackageReference",
         "crossTargeting": true,
         "fallbackFolders": [

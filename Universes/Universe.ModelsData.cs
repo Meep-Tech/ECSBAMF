@@ -1,6 +1,4 @@
 ﻿using KellermanSoftware.CompareNetObjects;
-using Microsoft.EntityFrameworkCore.Metadata.Builders;
-using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -30,6 +28,8 @@ namespace Meep.Tech.Data {
       /// <summary>
       /// Link to the parent universe
       /// </summary>
+      public Universe Universe
+        => _universe;
       Universe _universe;
 
       /// <summary>
@@ -91,19 +91,6 @@ namespace Meep.Tech.Data {
         where TModel : IModel<TModel>
           => _universe.Models._factoriesByModelType[typeof(TModel)]
             = factory;
-
-      /// <summary>
-      /// Update the EFCore entity builder for this model type
-      /// </summary>
-      public void ModifyEfCoreBuilderFor<TModel>(Action<EntityTypeBuilder> action)
-        where TModel : IModel<TModel> {
-        if(_universe.ModelSerializer.Options.TypesToMapToDbContext.TryGetValue(typeof(TModel), out var found)) {
-          _universe.ModelSerializer.Options.TypesToMapToDbContext[typeof(TModel)] = action + found;
-        }
-        else {
-          _universe.ModelSerializer.Options.TypesToMapToDbContext[typeof(TModel)] = action;
-        }
-      }
 
       /// <summary>
       /// Get the model type an archetype should produce by default.
@@ -398,8 +385,9 @@ namespace Meep.Tech.Data {
         // no args ctor:
         if(!(ctor is null) && ctor.GetParameters().Length == 0) {
           //TODO: is there a faster way to cache this?
-          return (builder)
-            => (IModel)ctor.Invoke(null);
+          return (builder) => {
+            return (IModel)ctor.Invoke(null);
+          };
         }
 
         // structs may use the activator

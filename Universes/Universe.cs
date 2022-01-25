@@ -1,4 +1,5 @@
 ﻿using Meep.Tech.Data.Configuration;
+using System;
 using System.Collections.Generic;
 
 namespace Meep.Tech.Data {
@@ -68,6 +69,9 @@ namespace Meep.Tech.Data {
       get;
     }
 
+    readonly Dictionary<Type, ExtraContext> _extraContexts
+      = new();
+
     /// <summary>
     /// Make a new universe of Archetypes
     /// </summary>
@@ -89,5 +93,29 @@ namespace Meep.Tech.Data {
     /// </summary>
     public static Universe Get(string nameKey)
       => _all[nameKey];
+
+    /// <summary>
+    /// Get an extra context item that was assigned to this universe.
+    /// </summary>
+    public void SetExtraContext<TExtraContext>(TExtraContext extraContext)
+      where TExtraContext : ExtraContext 
+    {
+      if(Loader.IsFinished) {
+        throw new Exception($"Must add extra context before the loader for the universe has finished.");
+      }
+      _extraContexts[typeof(TExtraContext)] = extraContext;
+    }
+
+    /// <summary>
+    /// Get an extra context item that was assigned to this universe.
+    /// </summary>
+    public TExtraContext GetExtraContext<TExtraContext>()
+      where TExtraContext : ExtraContext {
+      try {
+        return (TExtraContext)_extraContexts[typeof(TExtraContext)];
+      } catch (System.Collections.Generic.KeyNotFoundException keyNotFoundE) {
+        throw new KeyNotFoundException($"No extra context of the type {typeof(TExtraContext).FullName} added to this universe. Further ECSBAM configuration may be required.", keyNotFoundE);
+      }
+    }
   }
 }

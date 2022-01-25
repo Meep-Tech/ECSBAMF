@@ -5,6 +5,7 @@ using System.Linq;
 namespace Meep.Tech.Data {
 
   public partial class Universe {
+
     /// <summary>
     /// Used to hold the data for all archetypes
     /// </summary>

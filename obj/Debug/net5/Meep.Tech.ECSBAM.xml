@@ -476,7 +476,8 @@
         </member>
         <member name="P:Meep.Tech.Data.Archetype`2.ModelBaseType">
             <summary>
-            The most basic model that this archetype family tree can produce
+            The most basic model that this archetype can produce.d
+            This is used to generat the default model constructor.
             </summary>
         </member>
         <member name="P:Meep.Tech.Data.Archetype`2.Id">
@@ -1135,7 +1136,7 @@
             </summary>
         </member>
         <member name="M:Meep.Tech.Data.Configuration.Loader._registerModelType(System.Type)">
-            <summary>
+            <summary>sd
             Register a new type of model.
             </summary>
         </member>
@@ -1373,7 +1374,7 @@
             The base class for modular data holders for models and archetypes
             </summary>
             <summary>
-            The base class for modular data holders for models and archetypes
+            The base interface for components without branching archet
             </summary>
             <summary>
             The base class for modular data holders for models and archetypes
@@ -1787,6 +1788,11 @@
             The base of all BuilderFactories.
             Custom factories aren't built initially, you should maintain the singleton pattern yourself by setting it
             in the static constructor, or the Setup(Universe) override
+            </summary>
+        </member>
+        <member name="P:Meep.Tech.Data.IModel`1.BuilderFactory`1.ModelBaseType">
+            <summary>
+            Used for Buidler Factories to easily change the base type
             </summary>
         </member>
         <member name="P:Meep.Tech.Data.IModel`1.BuilderFactory`1.Meep#Tech#Data#IFactory#ModelConstructor">
@@ -3326,6 +3332,11 @@
             </summary>
         </member>
         <member name="M:Meep.Tech.Data.DictionaryExtensions.Append``1(System.Collections.Generic.HashSet{``0},``0)">
+            <summary>
+            Append a value to a dictionary and return the collection
+            </summary>
+        </member>
+        <member name="M:Meep.Tech.Data.DictionaryExtensions.Append(System.Collections.Generic.HashSet{System.Func{Meep.Tech.Data.IBuilder,Meep.Tech.Data.IModel.IComponent}},System.Func{Meep.Tech.Data.IBuilder,Meep.Tech.Data.IModel.IComponent})">
             <summary>
             Append a value to a dictionary and return the collection
             </summary>

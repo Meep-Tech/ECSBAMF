@@ -1,10 +1,4 @@
 ﻿using Newtonsoft.Json;
-using Microsoft.EntityFrameworkCore;
-using System.Collections.Generic;
-using System;
-using Microsoft.EntityFrameworkCore.Metadata.Builders;
-using Newtonsoft.Json.Serialization;
-using System.Linq;
 
 namespace Meep.Tech.Data {
 

@@ -1,10 +1,7 @@
-﻿using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using Newtonsoft.Json;
 using System.Linq.Expressions;
-using System.Diagnostics.CodeAnalysis;
 
 namespace Meep.Tech.Data {
 
@@ -34,6 +31,7 @@ namespace Meep.Tech.Data {
     /// </summary>
     public abstract Type ModelBaseType {
       get;
+      internal set;
     }
 
     /// <summary>
@@ -153,64 +151,6 @@ namespace Meep.Tech.Data {
 
     #region Hash and Equality
 
-    /// <summary>
-    /// Used to convert an Archetype to a general string for storage
-    /// </summary>
-    public class ToKeyStringConverter<TFactory> : ValueConverter<TFactory, string> where TFactory : IFactory {
-      public ToKeyStringConverter() :
-        base(convertToProviderExpression, convertFromProviderExpression) {
-      }
-
-      private static Expression<Func<string, TFactory>>
-        convertFromProviderExpression = x => ToArchetype(x);
-      private static Expression<Func<TFactory, string>>
-        convertToProviderExpression = x => ToString(x);
-
-      static TFactory ToArchetype(string key) {
-        return (TFactory)(IFactory)(key.Split("@") is string[] parts
-          ? parts.Length == 1
-            ? Archetypes.Id[key].Archetype
-            : parts.Length == 2
-              ? Universe.Get(parts[1]).Archetypes.Id[parts[2]].Archetype
-              : throw new ArgumentException("ArchetypeKey")
-          : throw new ArgumentNullException("ArchetypeKey"));
-      }
-
-      static string ToString(TFactory archetype)
-        => archetype.Id.Key + (!string.IsNullOrEmpty(archetype.Id.Universe.Key)
-          ? "@" + archetype.Id.Universe.Key
-          : "");
-    }
-
-    /// <summary>
-    /// Used to convert an Archetype to a general string for storage
-    /// </summary>
-    public class ToKeyStringConverter : ValueConverter<IFactory, string> {
-      public ToKeyStringConverter() :
-        base(convertToProviderExpression, convertFromProviderExpression) {
-      }
-
-      private static Expression<Func<string, IFactory>>
-        convertFromProviderExpression = x => ToArchetype(x);
-      private static Expression<Func<IFactory, string>>
-        convertToProviderExpression = x => ToString(x);
-
-      static IFactory ToArchetype(string key) {
-        return key.Split("@") is string[] parts
-          ? parts.Length == 1
-            ? Archetypes.Id[key].Archetype
-            : parts.Length == 2
-              ? Universe.Get(parts[1]).Archetypes.Id[parts[2]].Archetype
-              : throw new ArgumentException("ArchetypeKey")
-          : throw new ArgumentNullException("ArchetypeKey");
-      }
-
-      static string ToString(IFactory archetype)
-        => archetype.Id.Key + (!string.IsNullOrEmpty(archetype.Id.Universe.Key)
-          ? "@" + archetype.Id.Universe.Key
-          : "");
-    }
-
     public override int GetHashCode() 
       => Id.GetHashCode();
 
@@ -314,7 +254,6 @@ namespace Meep.Tech.Data {
     /// <summary>
     /// Internally stored components
     /// </summary>
-    [IsModelComponentsProperty]
     Dictionary<string, Data.IComponent> _components {
       get;
     } = new Dictionary<string, Data.IComponent>();
@@ -516,10 +455,14 @@ namespace Meep.Tech.Data {
       => typeof(TArchetypeBase);
 
     /// <summary>
-    /// The most basic model that this archetype family tree can produce
+    /// The most basic model that this archetype can produce.d
+    /// This is used to generat the default model constructor.
     /// </summary>
-    public override System.Type ModelBaseType
-      => typeof(TModelBase);
+    public override System.Type ModelBaseType {
+      get => _ModelBaseType;
+      internal set => _ModelBaseType = value;
+    } System.Type _ModelBaseType
+      = typeof(TModelBase);
 
     /// <summary>
     /// The Id of this Archetype.
@@ -591,7 +534,7 @@ namespace Meep.Tech.Data {
       get {
         if(_modelConstructor == null) {
           _modelConstructor
-            = (builder) => Id.Universe.Models._getDefaultCtorFor(typeof(TModelBase))
+            = (builder) => Id.Universe.Models._getDefaultCtorFor(ModelBaseType)
               .Invoke(builder);
         }
 

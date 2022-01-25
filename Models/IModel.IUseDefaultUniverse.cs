@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace Meep.Tech.Data {
+﻿namespace Meep.Tech.Data {
 
   public partial interface IModel {
 

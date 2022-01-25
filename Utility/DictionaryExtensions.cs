@@ -1,4 +1,5 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -69,6 +70,14 @@ namespace Meep.Tech.Data {
     /// Append a value to a dictionary and return the collection
     /// </summary>
     public static HashSet<TValue> Append<TValue>(this HashSet<TValue> current, TValue value) {
+      current.Add(value);
+      return current;
+    }
+
+    /// <summary>
+    /// Append a value to a dictionary and return the collection
+    /// </summary>
+    public static HashSet<Func<IBuilder, IModel.IComponent>> Append(this HashSet<Func<IBuilder, IModel.IComponent>> current, Func<IBuilder, IModel.IComponent> value) {
       current.Add(value);
       return current;
     }

@@ -68,7 +68,6 @@ namespace Meep.Tech.Data {
     /// <summary>
     /// Access to the builder factory for this type of component
     /// </summary>
-    [IsArchetypeProperty]
     public Data.IComponent.IBuilderFactory Factory
       => (Universe ?? Components.DefaultUniverse).Components.GetBuilderFactoryFor(GetType());
 
@@ -93,7 +92,7 @@ namespace Meep.Tech.Data {
   }
 
   /// <summary>
-  /// The base class for modular data holders for models and archetypes
+  /// The base interface for components without branching archet
   /// </summary>
   public partial interface IComponent<TComponentBase> : IModel<TComponentBase>, IComponent 
     where TComponentBase : IComponent<TComponentBase> 

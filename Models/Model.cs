@@ -2,7 +2,6 @@
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System;
-using System.ComponentModel.DataAnnotations.Schema;
 
 namespace Meep.Tech.Data {
 
@@ -42,7 +41,6 @@ namespace Meep.Tech.Data {
     /// <summary>
     /// The universe this model was made inside of
     /// </summary>
-    [NotMapped]
     [JsonIgnore]
     public Universe Universe {
       get;
@@ -176,7 +174,7 @@ namespace Meep.Tech.Data {
     /// <summary>
     /// The model's archetype:
     /// </summary>
-    [IsArchetypeProperty]
+    [ArchetypeProperty]
     public TArchetypeBase Archetype {
       get => _archetype;
       private set {

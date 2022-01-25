@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Text;
+using System.Linq;
+using System.Reflection;
 
 namespace Meep.Tech.Data.Configuration {
 
@@ -24,13 +25,20 @@ namespace Meep.Tech.Data.Configuration {
     }
 
     /// <summary>
+    /// (Optional) ECSBAM Assemblies this one depends on.
+    /// TOOD: impliment for this, and for archetypes.
+    /// </summary>
+    protected virtual IEnumerable<Assembly> Dependencies {
+      get;
+    } = Enumerable.Empty<Assembly>();
+
+    /// <summary>
     /// This is called after all Archetypes are loaded in their base form from their libaries initially; in mod load order.
     /// These modifications will then run afterwards. also in mod load order.
     /// This is called before finalize is called on all archetypes.
     /// You can access universe data though this.Universe
     /// </summary>
     protected internal abstract void Initialize();
-
 
     #region Configuration
 

@@ -36,22 +36,22 @@ namespace Meep.Tech.Data.Utility {
     public int Count 
       => _collection.Count;
 
-    public void Insert(int index, TKey key, TValue value) 
+    public virtual void Insert(int index, TKey key, TValue value) 
       => _collection.Insert(index, key, value);
 
-    public void RemoveAt(int index) 
+    public virtual void RemoveAt(int index) 
       => _collection.RemoveAt(index);
 
     public bool Contains(TKey key) 
       => _collection.Contains(key);
 
-    public void Add(TKey key, TValue value) 
+    public virtual void Add(TKey key, TValue value) 
       => _collection.Add(key, value);
 
-    public void Clear() 
+    public virtual void Clear() 
       => _collection.Clear();
 
-    public void Remove(TKey key) 
+    public virtual void Remove(TKey key) 
       => _collection.Remove(key);
 
     public void CopyTo(Array array, int index) 

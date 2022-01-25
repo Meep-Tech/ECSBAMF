@@ -1,7 +1,5 @@
 ﻿using Meep.Tech.Data.Utility;
-using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json;
-using Newtonsoft.Json.Serialization;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -49,31 +47,31 @@ namespace Meep.Tech.Data.Configuration {
     /// The types we need to construct and map data to
     /// </summary>
     Dictionary<System.Type, Exception> _uninitializedArchetypes
-        = new Dictionary<System.Type, Exception>();
+        = new();
     
     /// <summary>
     /// The types that failed entirely
     /// </summary>
     Dictionary<System.Type, Exception> _failedArchetypes
-        = new Dictionary<System.Type, Exception>();
+        = new();
 
     /// <summary>
     /// The types we need to construct and map data to
     /// </summary>
     Dictionary<System.Type, Exception> _uninitializedModels
-        = new Dictionary<System.Type, Exception>();
+        = new();
 
     /// <summary>
     /// The types we need to construct and map data to
     /// </summary>
     Dictionary<System.Type, Exception> _uninitializedComponents
-        = new Dictionary<System.Type, Exception>();
+        = new();
 
     /// <summary>
     /// The types we need to construct and map data to
     /// </summary>
     List<Archetype> _initializedArchetypes
-        = new List<Archetype>();
+        = new();
 
     /// <summary>
     /// How many initalization attempts are remaining
@@ -93,10 +91,8 @@ namespace Meep.Tech.Data.Configuration {
     /// <summary>
     /// The assemblies from Options.PreOrderedAssemblyFiles along with order.json combined and ready to use
     /// </summary>
-    public Map<ushort, string> _orderedAssemblyFiles {
-      get;
-      set;
-    } = new Map<ushort, string>();
+    Map<ushort, string> _orderedAssemblyFiles
+      = new();
 
     /// <summary>
     /// Make a new Archetype Loader.
@@ -150,19 +146,6 @@ namespace Meep.Tech.Data.Configuration {
     /// </summary>
     void _initializeModelSerializerSettings() {
       Universe.ModelSerializer = new Model.Serializer(Options.ModelSerializerOptions, Universe);
-    }
-
-    /// <summary>
-    /// load the dbcontext settings from the info we've gotten from all the models
-    /// </summary>
-    void _finalizeModelSerializerSettings() {
-      if(Options.ModelSerializerOptions.TryToSetUpDbContext) {
-        Universe.ModelSerializer.Options.DbContext
-         ??= Options.ModelSerializerOptions.GetDefaultDbContextForModelSerialization(
-           new DbContextOptions<Model.Serializer.DbContext>(),
-           Universe
-         );
-      }
     }
 
     /// <summary>
@@ -293,15 +276,13 @@ namespace Meep.Tech.Data.Configuration {
       }
     }
 
-    /// <summary>
+    /// <summary>sd
     /// Register a new type of model.
     /// </summary>
     void _registerModelType(Type systemType) {
 
       // invoke static ctor
-      System.Runtime.CompilerServices
-        .RuntimeHelpers
-        .RunClassConstructor(systemType.TypeHandle);
+      _runStaticCtorsFromBaseClassUp(systemType);
 
       systemType.GetMethod(
         nameof(IModel.Setup),
@@ -329,18 +310,6 @@ namespace Meep.Tech.Data.Configuration {
       } catch(Exception e) {
         throw new NotImplementedException($"Could not find IModel<> Base Type for {systemType}, does it inherit from IModel instead of IModel<T> by mistake?", e);
       }
-      if(Options.ModelSerializerOptions.TryToSetUpDbContext && !Universe.ModelSerializer.Options.TypesToMapToDbContext.ContainsKey(systemType)) {
-        if(Options.ModelSerializerOptions.ModelsMustOptInToEfCoreUsingAttribute) {
-          System.ComponentModel.DataAnnotations.Schema.TableAttribute tableAttribute 
-            = systemType.GetCustomAttribute< System.ComponentModel.DataAnnotations.Schema.TableAttribute>();
-          // if we need a table attribute, and it's null, just skip this last set.
-          if(tableAttribute is null) {
-            return;
-          }
-        }
-
-        Universe.ModelSerializer.Options.TypesToMapToDbContext[systemType] = null;
-      }
     }
 
     /// <summary>
@@ -349,9 +318,7 @@ namespace Meep.Tech.Data.Configuration {
     void _registerComponentType(Type systemType) {
 
       // invoke static ctor
-      System.Runtime.CompilerServices
-        .RuntimeHelpers
-        .RunClassConstructor(systemType.TypeHandle);
+      _runStaticCtorsFromBaseClassUp(systemType);
 
       systemType.GetMethod(
         nameof(IModel.Setup),
@@ -368,6 +335,31 @@ namespace Meep.Tech.Data.Configuration {
         );
       } catch (Exception e) {
         throw new NotImplementedException($"Could not find IComponent<> Base Type for {systemType}, does it inherit from IComponent instead of IComponent<T> by mistake?", e);
+      }
+    }
+
+    HashSet<System.Type> _initializedTypes
+      = new ();
+
+    void _runStaticCtorsFromBaseClassUp(System.Type @class) {
+      List<System.Type> newAncestors = new() {
+        @class
+      };
+      while((@class = @class.BaseType) != null) {
+        if(_initializedTypes.Contains(@class)) {
+          break;
+        } else {
+          _initializedTypes.Add(@class);
+          newAncestors.Add(@class);
+        }
+      }
+
+      newAncestors.Reverse();
+      foreach(System.Type type in newAncestors) {
+        // invoke static ctor
+        System.Runtime.CompilerServices
+          .RuntimeHelpers
+          .RunClassConstructor(type.TypeHandle);
       }
     }
 
@@ -433,11 +425,11 @@ namespace Meep.Tech.Data.Configuration {
     class AssemblyBuildableTypesCollection {
 
       internal List<Type> Archetypes
-          = new List<Type>();
+          = new();
       internal List<Type> Models
-          = new List<Type>();
+          = new();
       internal List<Type> Components
-          = new List<Type>();
+          = new();
       internal Type Modifications;
       internal Assembly Assembly {
         get;
@@ -688,10 +680,6 @@ namespace Meep.Tech.Data.Configuration {
     /// </summary>
     void _finalize() {
       _reportOnFailedTypeInitializations();
-      _finalizeModelSerializerSettings();
-      if(Options.ModelSerializerOptions.TryToSetUpDbContext) {
-        Universe.ModelSerializer.Options.DbContext.SaveChanges();
-      }
 
       _uninitializedArchetypes = null;
       _initializedArchetypes = null;

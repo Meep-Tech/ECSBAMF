@@ -69,7 +69,7 @@ namespace Meep.Tech.Data {
         /// </summary>
         protected override JsonProperty CreateProperty(MemberInfo member, MemberSerialization memberSerialization) {
           JsonProperty baseProperty = base.CreateProperty(member, memberSerialization);
-          if(!(member.GetCustomAttribute(typeof(IsArchetypePropertyAttribute)) is null)) {
+          if(!(member.GetCustomAttribute(typeof(ArchetypePropertyAttribute)) is null)) {
             // Archetype is always first:
             baseProperty.Order = int.MinValue;
             baseProperty.PropertyName = nameof(Archetype).ToLower();
@@ -77,7 +77,7 @@ namespace Meep.Tech.Data {
             baseProperty.ObjectCreationHandling = ObjectCreationHandling.Replace;
           }
 
-          if(!(member.GetCustomAttribute(typeof(IsModelComponentsProperty)) is null)) {
+          if(!(member.GetCustomAttribute(typeof(ModelComponentsProperty)) is null)) {
             baseProperty.Converter = _componentsJsonConverter;
             baseProperty.ObjectCreationHandling = ObjectCreationHandling.Replace;
           }

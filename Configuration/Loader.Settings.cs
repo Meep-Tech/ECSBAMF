@@ -1,10 +1,8 @@
 ﻿using Meep.Tech.Data.Utility;
-using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Reflection;
-using KellermanSoftware.CompareNetObjects;
 
 namespace Meep.Tech.Data.Configuration {
 
