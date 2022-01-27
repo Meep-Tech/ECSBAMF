@@ -32,17 +32,18 @@ namespace Meep.Tech.Data {
     /// One of these is instantiated for each Model<> class and IComponent<> class by default.
     /// They can be overriden.
     /// </summary>
+    [Configuration.Loader.Settings.DoNotBuildInInitialLoad]
     public class BuilderFactory
       : BuilderFactory<BuilderFactory> {
 
       public BuilderFactory(
-        Archetype.Identity id,
+        Identity id,
         Universe universe,
         HashSet<Archetype.IComponent> archetypeComponents,
         IEnumerable<Func<IBuilder, IModel.IComponent>> modelComponentCtors 
       )  : base(id, universe, archetypeComponents, modelComponentCtors) { }
       public BuilderFactory(
-        Archetype.Identity id,
+        Identity id,
         Universe universe = null
       )  : base(id, universe) { }
     }

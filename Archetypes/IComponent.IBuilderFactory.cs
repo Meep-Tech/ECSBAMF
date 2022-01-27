@@ -35,6 +35,10 @@ namespace Meep.Tech.Data {
   public partial interface IComponent<TComponentBase> : IModel<TComponentBase>, IComponent
     where TComponentBase : IComponent<TComponentBase> {
 
+    /// <summary>
+    /// General Base Builder Factory for Components.
+    /// </summary>
+    [Configuration.Loader.Settings.DoNotBuildInInitialLoad]
     public new class BuilderFactory
       : BuilderFactory<BuilderFactory>,
       IComponent.IBuilderFactory {
@@ -56,12 +60,12 @@ namespace Meep.Tech.Data {
       }
 
       public BuilderFactory(
-        Archetype.Identity id,
+        Identity id,
         Universe universe = null
       )  : base(id, universe) {}
 
       public BuilderFactory(
-        Archetype.Identity id,
+        Identity id,
         Universe universe,
         HashSet<IComponent> archetypeComponents,
         IEnumerable<Func<IBuilder, IModel.IComponent>> modelComponentCtors

@@ -39,6 +39,14 @@ namespace Meep.Tech.Data.Configuration {
     } = false;
 
     /// <summary>
+    /// Types that failed to initialize and their exceptions.
+    /// </summary>
+    public IReadOnlyList<(string xbamType, System.Type systemType, Exception exception)> Failures {
+      get;
+      private set;
+    }
+
+    /// <summary>
     /// The assembly types that will be built in order
     /// </summary>
     OrderedDictionary<Assembly, AssemblyBuildableTypesCollection> _assemblyTypesToBuild;
@@ -695,22 +703,35 @@ namespace Meep.Tech.Data.Configuration {
     }
 
     void _reportOnFailedTypeInitializations() {
-      bool failureDetected = false;
+      List<(string xbamType, System.Type systemType, Exception exception)> failures = new();
       foreach((System.Type componentType, Exception ex) in _uninitializedModels) {
         Console.Error.WriteLine($"Could not initialize Model Type: {componentType}, due to Internal Exception:\n\n{ex}");
-        failureDetected = true;
+        failures.Add(("Component", componentType, ex));
       }
       foreach((System.Type modelType, Exception ex) in _uninitializedComponents) {
         Console.Error.WriteLine($"Could not initialize Component Type: {modelType}, due to Internal Exception:\n\n{ex}");
-        failureDetected = true;
+        failures.Add(("Model", modelType, ex));
       }
       foreach((System.Type archetypeType, Exception ex) in _uninitializedArchetypes.Merge(_failedArchetypes)) {
         Console.Error.WriteLine($"Could not initialize Archetype Type: {archetypeType}, due to Internal Exception:\n\n{ex}");
-        failureDetected = true;
+        failures.Add(("Archetype", archetypeType, ex));
       }
 
-      if(Options.FatalOnCannotInitializeType && failureDetected) {
-        throw new InvalidOperationException("Failed to initialize several types in the Archetype Loader. See full Error Stream Logs for details.");
+      Failures = failures;
+      if(Options.FatalOnCannotInitializeType && Failures.Any()) {
+        throw new InvalidOperationException("Failed to initialize several types in the ECSBAM Loader:\n" 
+          +  string.Join('\n', failures.Select(
+            failure => 
+                $"\n====:{failure.xbamType}::{failure.systemType.FullName}:===="
+              + $"\n\t==Exception:=="
+              + $"\n\t{failure.exception.Message.Replace(Environment.NewLine,"\n").Replace("\n","\n\t\t")}"
+              + $"\n\t====\n"
+              + $"\n\t==Stack Trace:=="
+              + $"\n\t\t{failure.exception.StackTrace.Replace(Environment.NewLine, "\n").Replace("\n", "\n\t\t")}"
+              + $"\n\t===="
+              + $"\n========"
+          ))
+        );
       }
     }
   }

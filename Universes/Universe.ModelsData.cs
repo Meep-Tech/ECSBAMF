@@ -309,9 +309,13 @@ namespace Meep.Tech.Data {
         }
 
         // model
-        builderType = typeof(IModel<>.BuilderFactory).MakeGenericType(modelType);
-        builderIdType = typeof(IModel<>.BuilderFactory.Identity)
-          .MakeGenericType(modelType, builderType);
+        try {
+          builderType = typeof(IModel<>.BuilderFactory).MakeGenericType(modelType);
+          builderIdType = typeof(IModel<>.BuilderFactory.Identity)
+            .MakeGenericType(modelType, builderType);
+        } catch (Exception e) {
+          throw new ArgumentException($"Could not apply generics to builder and Id for model: {modelType.FullName}.\n Inner Exception: {e} \n ===============");
+        }
 
         ctor = builderType
             .GetConstructor(
