@@ -3316,6 +3316,11 @@
             </summary>
             <typeparam name="TAction"></typeparam>
         </member>
+        <member name="M:Meep.Tech.Collections.Generic.DelegateCollection`1.ReDelegate``1(System.Func{`0,``0})">
+            <summary>
+            Change all the delegates and return a new collection
+            </summary>
+        </member>
         <member name="M:Meep.Tech.Collections.Generic.DictionaryExtensions.AddToValueCollection``2(System.Collections.Generic.IDictionary{``0,System.Collections.Generic.ICollection{``1}},``0,``1)">
             <summary>
             Add an item to a ICollection within a dictionary at the given key
