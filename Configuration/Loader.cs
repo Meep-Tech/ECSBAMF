@@ -1,4 +1,4 @@
-﻿using Meep.Tech.Data.Utility;
+﻿using Meep.Tech.Collections.Generic;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
@@ -227,13 +227,13 @@ namespace Meep.Tech.Data.Configuration {
     }
 
     void _orderAssembliesByModLoadOrder() {
-      if(_orderedAssemblyFiles.Any()) {
+      if(_orderedAssemblyFiles.Forward.Any()) {
         Options._assemblyLoadOrder
           = _unorderedAssembliesToLoad.OrderBy(
             assembly => _orderedAssemblyFiles.Reverse
-              .TryToGet(assembly.FullName.Split(',')[0], out ushort foundPriority)
-              ? foundPriority
-              : ushort.MaxValue
+              .TryGetValue(assembly.FullName.Split(',')[0], out ushort foundPriority)
+                ? foundPriority
+                : ushort.MaxValue
         ).ToList();
       } // Random order by default:
       else {
@@ -364,10 +364,14 @@ namespace Meep.Tech.Data.Configuration {
 
       newAncestors.Reverse();
       foreach(System.Type type in newAncestors) {
-        // invoke static ctor
-        System.Runtime.CompilerServices
-          .RuntimeHelpers
-          .RunClassConstructor(type.TypeHandle);
+        try {
+          // invoke static ctor
+          System.Runtime.CompilerServices
+            .RuntimeHelpers
+            .RunClassConstructor(type.TypeHandle);
+        } catch(Exception e) {
+          throw new Exception($"Failed to run static constructor for ancestor: {type?.FullName ?? "null"}, of type: {@class.FullName}.\n=Exception:{e}\n\n=Inner Exception\n{e.InnerException}");
+        }
       }
     }
 
@@ -501,7 +505,7 @@ namespace Meep.Tech.Data.Configuration {
       OrderedDictionary<Assembly, AssemblyBuildableTypesCollection> allCollections,
       Assembly assembly
     ) {
-      if(!allCollections.Contains(assembly)) {
+      if(!allCollections.ContainsKey(assembly)) {
         allCollections.Add(assembly, new AssemblyBuildableTypesCollection(assembly));
       }
     }

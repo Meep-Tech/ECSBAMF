@@ -1,4 +1,5 @@
-﻿using Meep.Tech.Data.Configuration;
+﻿using Meep.Tech.Collections.Generic;
+using Meep.Tech.Data.Configuration;
 using System;
 using System.Collections.Generic;
 
@@ -15,8 +16,8 @@ namespace Meep.Tech.Data {
     /// </summary>
     public static IEnumerable<Universe> s
       => _all.Values;
-    static Utility.OrderedDictionary<string, Universe> _all
-      = new Utility.OrderedDictionary<string, Universe>();
+    static OrderedDictionary<string, Universe> _all
+      = new OrderedDictionary<string, Universe>();
 
     /// <summary>
     /// The unique key of this universe.
