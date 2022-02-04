@@ -1,4 +1,4 @@
-﻿using Meep.Tech.Collections;
+﻿using Meep.Tech.Collections.Generic;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -269,7 +269,7 @@ namespace Meep.Tech.Data {
       /// Internally stored components
       /// </summary>
       Dictionary<string, Data.IComponent> _components
-        = new Dictionary<string, Data.IComponent>();
+        = new();
 
       /// <summary>
       /// The accessor for the default Icomponents implimentation

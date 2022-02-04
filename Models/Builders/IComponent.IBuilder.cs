@@ -1,4 +1,4 @@
-﻿using Meep.Tech.Collections;
+﻿using Meep.Tech.Collections.Generic;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -90,6 +90,9 @@ namespace Meep.Tech.Data {
         private set;
       }
 
+      /// <summary>
+      /// The universe this builder is part of
+      /// </summary>
       public Universe Universe {
         get;
       }
@@ -148,6 +151,9 @@ namespace Meep.Tech.Data {
         return model;
       }
 
+      /// <summary>
+      /// Do something with each paramter in the builder.
+      /// </summary>
       public void ForEachParam(Action<(string key, object value)> @do)
         => @params.ForEach(entry => @do((entry.Key, entry.Value)));
     }

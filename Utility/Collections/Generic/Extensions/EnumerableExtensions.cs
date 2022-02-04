@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 
-namespace Meep.Tech.Collections {
+namespace Meep.Tech.Collections.Generic {
   public static class EnumerableExtensions {
 
     /// <summary>
