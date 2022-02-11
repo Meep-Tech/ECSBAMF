@@ -248,7 +248,7 @@ namespace Meep.Tech.Data {
 
         // cache the model if it's cacheable
         if(model is ICached modelToCache) {
-          ICached.Cache(modelToCache);
+          ICached._cacheItem(modelToCache);
         }
 
         return model;

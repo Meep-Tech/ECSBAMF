@@ -1,5 +1,8 @@
 ﻿namespace Meep.Tech.Data {
 
+  /// <summary>
+  /// An unique object with a unique id.
+  /// </summary>
   public interface IUnique : IModel {
 
     /// <summary>
@@ -42,8 +45,16 @@
     }
   }
 
-
+  /// <summary>
+  /// Extensions and helpers for IUnique
+  /// </summary>
   public static class IUniqueExtensions {
+
+    /// <summary>
+    /// Get the unique id
+    /// </summary>
+    public static string GetUniqueId(this IUnique unique)
+      => unique.Id;
 
     /// <summary>
     /// Changes the unique id of this model.

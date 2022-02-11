@@ -8,12 +8,11 @@ namespace Meep.Tech.Data {
   /// </summary>
   public interface ICached : IUnique {
 
-    internal static void Cache(ICached thingToCache) {
-      _cache.Add(thingToCache.Id, thingToCache);
-    }
-
     internal static Dictionary<string, IUnique> _cache
-      = new Dictionary<string, IUnique>();
+      = new();
+
+    internal static void _cacheItem(ICached thingToCache) 
+      => _cache.Add(thingToCache.Id, thingToCache);
 
     /// <summary>
     /// Try to load an item fro mthe cache by id.
@@ -43,6 +42,9 @@ namespace Meep.Tech.Data {
       };
     }
 
+    /// <summary>
+    /// Cache an item of the given type.
+    /// </summary>
     public static void Cache(T thingToCache) {
       _cache[thingToCache.Id] = thingToCache;
     }

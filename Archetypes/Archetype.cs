@@ -196,33 +196,33 @@ namespace Meep.Tech.Data {
     /// Base make helper
     /// </summary>
     /// <returns></returns>
-    public abstract IModel MakeDefault();
-    
-    /// <summary>
-    /// Base make helper
-    /// </summary>
-    /// <returns></returns>
-    public abstract IModel MakeDefaultWith(IBuilder builder);
-    
-    /// <summary>
-    /// Base make helper
-    /// </summary>
-    /// <returns></returns>
-    public abstract IModel MakeDefaultWith(Func<IBuilder, IBuilder> builderConfiguration);
+    protected internal abstract IModel MakeDefault();
 
     /// <summary>
     /// Base make helper
     /// </summary>
     /// <returns></returns>
-    public TDesiredModel Make<TDesiredModel>()
-      where TDesiredModel : IModel
-        => (TDesiredModel)MakeDefault();
-    
+    protected internal abstract IModel MakeDefaultWith(IBuilder builder);
+
     /// <summary>
     /// Base make helper
     /// </summary>
     /// <returns></returns>
-    public TDesiredModel Make<TDesiredModel>(IBuilder builder)
+    protected internal abstract IModel MakeDefaultWith(Func<IBuilder, IBuilder> builderConfiguration);
+
+    /// <summary>
+    /// Base make helper
+    /// </summary>
+    /// <returns></returns>
+    protected internal TDesiredModel Make<TDesiredModel>()
+      where TDesiredModel : IModel
+        => (TDesiredModel)MakeDefault();
+
+    /// <summary>
+    /// Base make helper
+    /// </summary>
+    /// <returns></returns>
+    protected internal TDesiredModel Make<TDesiredModel>(IBuilder builder)
       where TDesiredModel : IModel
         => (TDesiredModel)MakeDefaultWith(builder);
 
@@ -230,7 +230,7 @@ namespace Meep.Tech.Data {
     /// Base make helper
     /// </summary>
     /// <returns></returns>
-    public TDesiredModel Make<TDesiredModel>(Func<IBuilder, IBuilder> builderConfiguration)
+    protected internal TDesiredModel Make<TDesiredModel>(Func<IBuilder, IBuilder> builderConfiguration)
       where TDesiredModel : IModel
         => (TDesiredModel)MakeDefaultWith(builderConfiguration);
 
@@ -664,7 +664,7 @@ namespace Meep.Tech.Data {
     /// This does by default for models.
     /// </summary>
     /// <returns></returns>
-    public virtual TModelBase Make(IEnumerable<KeyValuePair<string, object>> @params)
+    protected internal virtual TModelBase Make(IEnumerable<KeyValuePair<string, object>> @params)
       => BuildModel(MakeBuilder(@params.ToDictionary(
         param => param.Key,
         param => param.Value
@@ -673,59 +673,59 @@ namespace Meep.Tech.Data {
     /// <summary>
     /// Helper for potentially making an item without initializing a Builder object.
     /// </summary>
-    public TModelBase Make(IEnumerable<(string key, object value)> @params)
+    protected internal TModelBase Make(IEnumerable<(string key, object value)> @params)
       => Make(@params.Select(entry => new KeyValuePair<string,object>(entry.key, entry.value)));
 
     /// <summary>
     /// Helper for potentially making an item without initializing a Builder object.
     /// </summary>
-    public TModelBase Make(params (string key, object value)[] @params)
+    protected internal TModelBase Make(params (string key, object value)[] @params)
       => Make((IEnumerable<(string key, object value)>)@params);
-
-    /// <summary>
-    /// Helper for potentially making an item without initializing a dictionary object
-    /// </summary>
-    /// <returns></returns>
-    public TDesiredModel Make<TDesiredModel>(params (string key, object value)[] @params)
-      where TDesiredModel : TModelBase
-        => (TDesiredModel)Make((IEnumerable<(string key, object value)>)@params);
 
     /// <summary>
     /// Helper for potentially making an item without initializing a Builder object.
     /// </summary>
-    public TModelBase Make(IEnumerable<(IModel.Builder.Param key, object value)> @params)
+    protected internal TModelBase Make(IEnumerable<(IModel.Builder.Param key, object value)> @params)
       => Make(@params.Select(entry => new KeyValuePair<IModel.Builder.Param, object>(entry.key, entry.value)));
 
     /// <summary>
     /// Helper for potentially making an item without initializing a Builder object.
     /// </summary>
-    public TModelBase Make(params (IModel.Builder.Param key, object value)[] @params)
+    protected internal TModelBase Make(params (IModel.Builder.Param key, object value)[] @params)
       => Make((IEnumerable<(IModel.Builder.Param key, object value)>)@params);
 
     /// <summary>
     /// Helper for potentially making an item without initializing a Builder object.
     /// </summary>
-    public TModelBase Make(IEnumerable<KeyValuePair<IModel.Builder.Param, object>> @params)
+    protected internal TModelBase Make(IEnumerable<KeyValuePair<IModel.Builder.Param, object>> @params)
       => Make(@params.Select(entry => new KeyValuePair<string,object>(entry.Key.Key, entry.Value)));
 
     /// <summary>
     /// Helper for potentially making an item without initializing a Builder object.
     /// </summary>
-    public TModelBase Make(params KeyValuePair<IModel.Builder.Param, object>[] @params)
+    protected internal TModelBase Make(params KeyValuePair<IModel.Builder.Param, object>[] @params)
       => Make((IEnumerable<KeyValuePair<IModel.Builder.Param, object>>)@params);
 
     /// <summary>
     /// Helper for potentially making an item without initializing a dictionary object
     /// </summary>
     /// <returns></returns>
-    public TModelBase Make(params KeyValuePair<string, object>[] @params)
+    protected internal TModelBase Make(params KeyValuePair<string, object>[] @params)
       => Make(@params.AsEnumerable());
 
     /// <summary>
     /// Helper for potentially making an item without initializing a dictionary object
     /// </summary>
     /// <returns></returns>
-    public TDesiredModel Make<TDesiredModel>(IEnumerable<KeyValuePair<string, object>> @params)
+    protected internal TDesiredModel Make<TDesiredModel>(params (string key, object value)[] @params)
+      where TDesiredModel : TModelBase
+        => (TDesiredModel)Make((IEnumerable<(string key, object value)>)@params);
+
+    /// <summary>
+    /// Helper for potentially making an item without initializing a dictionary object
+    /// </summary>
+    /// <returns></returns>
+    protected internal TDesiredModel Make<TDesiredModel>(IEnumerable<KeyValuePair<string, object>> @params)
       where TDesiredModel : TModelBase
         => (TDesiredModel)Make(@params);
 
@@ -733,122 +733,42 @@ namespace Meep.Tech.Data {
     /// Helper for potentially making an item without initializing a dictionary object
     /// </summary>
     /// <returns></returns>
-    public TDesiredModel Make<TDesiredModel>(params KeyValuePair<string, object>[] @params)
+    protected internal TDesiredModel Make<TDesiredModel>(params KeyValuePair<string, object>[] @params)
       where TDesiredModel : TModelBase
         => (TDesiredModel)Make(@params);
+
+    /// <summary>
+    /// Helper for potentially making an item without initializing a dictionary object
+    /// </summary>
+    /// <returns></returns>
+    protected internal TDesiredModel MakeAs<TDesiredModel>(IEnumerable<KeyValuePair<string, object>> @params, out TDesiredModel model)
+      where TDesiredModel : TModelBase
+        => model = (TDesiredModel)Make(@params);
+
+    /// <summary>
+    /// Helper for potentially making an item without initializing a dictionary object
+    /// </summary>
+    /// <returns></returns>
+    protected internal TDesiredModel MakeAs<TDesiredModel>(IEnumerable<(string, object)> @params, out TDesiredModel model)
+      where TDesiredModel : class, TModelBase
+        => model = (TDesiredModel)Make(@params);
+
+    /// <summary>
+    /// Helper for potentially making an item without initializing a dictionary object
+    /// </summary>
+    /// <returns></returns>
+    protected internal TDesiredModel MakeAs<TDesiredModel>(out TDesiredModel model, params KeyValuePair<string, object>[] @params)
+      where TDesiredModel : class, TModelBase
+        => model = (TDesiredModel)Make(@params);
 
     #endregion
 
     #region Builder Based
 
     /// <summary>
-    /// Make a default model from this Archetype
-    /// </summary>
-    /// <returns></returns>
-    public sealed override IModel MakeDefault()
-      => BuildModel(null);
-
-    /// <summary>
-    /// Make a default model from this Archetype with the builder
-    /// </summary>
-    /// <returns></returns>
-    public sealed override IModel MakeDefaultWith(Func<IBuilder, IBuilder> builderConfiguration)
-      => Make(builderConfiguration);
-    /// <summary>
-    /// Make a default model from this Archetype with the builder
-    /// </summary>
-    /// <returns></returns>
-    public sealed override IModel MakeDefaultWith(IBuilder builder)
-      => Make(builder as IBuilder<TModelBase>);
-
-    /// <summary>
-    /// Make a default model from this Archetype
-    /// </summary>
-    /// <returns></returns>
-    public TModelBase Make()
-      => BuildModel(null);
-
-    public TModelBase Make(Func<IBuilder<TModelBase>, IBuilder<TModelBase>> configureBuilder)
-      => BuildModel(configureBuilder(MakeDefaultBuilder()));
-
-    public TModelBase Make(IModel<TModelBase>.Builder builder)
-      => BuildModel(builder);
-
-    public TModelBase Make(IBuilder<TModelBase> builder)
-      => BuildModel(builder);
-
-    /// <summary>
-    /// Make a default model from this Archetype of the desired sub-type
-    /// </summary>
-    public new TDesiredModel Make<TDesiredModel>()
-      where TDesiredModel : TModelBase
-        => (TDesiredModel)BuildModel(null);
-
-    /// <summary>
-    /// Make a model from this archetype using a fully qualified builder.
-    /// </summary>
-    public TDesiredModel Make<TDesiredModel>(IModel<TModelBase>.Builder builder)
-      where TDesiredModel : TModelBase
-        => (TDesiredModel)BuildModel(builder);
-
-    /// <summary>
-    /// Make a model from this archetype using a fully qualified builder.
-    /// </summary>
-    public TDesiredModel Make<TDesiredModel>(IBuilder<TModelBase> builder)
-      where TDesiredModel : TModelBase
-        => (TDesiredModel)BuildModel(builder);
-
-    /// <summary>
-    /// Make a model from this archetype by passing down and updating a default builder.
-    /// </summary>
-    public TDesiredModel Make<TDesiredModel>(Func<IModel<TModelBase>.Builder, IModel<TModelBase>.Builder> configureBuilder)
-      where TDesiredModel : TModelBase
-        => (TDesiredModel)BuildModel(configureBuilder((IModel<TModelBase>.Builder)MakeDefaultBuilder()));
-
-    /// <summary>
-    /// Make a model that requires a struct based builder:
-    /// </summary>
-    public TModelBase Make(Action<IModel<TModelBase>.Builder> configureBuilder) {
-      IModel<TModelBase>.Builder builder = (IModel<TModelBase>.Builder)MakeDefaultBuilder();
-      configureBuilder(builder);
-
-      return BuildModel(builder);
-    }
-
-    /// <summary>
-    /// Make a model that requires a struct based builder:
-    /// </summary>
-    public TModelBase Make(Func<IBuilder, IBuilder> configureBuilder)
-      => Make(builder => (configureBuilder(MakeDefaultBuilder()) as IBuilder<TModelBase>));
-
-    /// <summary>
-    /// Make a model that requires an object based builder:
-    /// </summary>
-    public TDesiredModel Make<TDesiredModel>(Action<IModel.Builder> configureBuilder)
-     where TDesiredModel: TModelBase
-        => (TDesiredModel)Make(configureBuilder);
-
-    /// <summary>
-    /// Make a model that requires an object based builder:
-    /// </summary>
-    public TModelBase Make(Action<IModel.Builder> configureBuilder)
-      => Make(builder => {
-        configureBuilder((IModel.Builder)builder);
-
-        return builder;
-      });
-
-    /// <summary>
-    /// Make a model that requires a struct based builder"
-    /// </summary>
-    public TDesiredModel Make<TDesiredModel>(Func<IBuilder<TModelBase>, IBuilder<TModelBase>> configureBuilder)
-      where TDesiredModel : TModelBase
-        => (TDesiredModel)BuildModel(configureBuilder(MakeDefaultBuilder()));
-
-    /// <summary>
     /// Build the model with the builder.
     /// </summary>
-    protected internal virtual  TModelBase BuildModel(IBuilder<TModelBase> builder = null) {
+    protected internal virtual TModelBase BuildModel(IBuilder<TModelBase> builder = null) {
       var builderToUse = builder;
       if(builder is null) {
         builderToUse = _defaultEmptyBuilder ??= MakeDefaultEmptyBuilder();
@@ -858,6 +778,169 @@ namespace Meep.Tech.Data {
 
       return model;
     }
+
+    /// <summary>
+    /// Make a default model from this Archetype
+    /// </summary>
+    /// <returns></returns>
+    protected internal sealed override IModel MakeDefault()
+      => Make();
+
+    /// <summary>
+    /// Make a default model from this Archetype with the builder
+    /// </summary>
+    /// <returns></returns>
+    protected internal sealed override IModel MakeDefaultWith(Func<IBuilder, IBuilder> builderConfiguration)
+      => Make(builderConfiguration);
+
+    /// <summary>
+    /// Make a default model from this Archetype with the builder
+    /// </summary>
+    /// <returns></returns>
+    protected internal sealed override IModel MakeDefaultWith(IBuilder builder)
+      => Make(builder as IBuilder<TModelBase>);
+
+    /// <summary>
+    /// Make a default model from this Archetype
+    /// </summary>
+    /// <returns></returns>
+    protected internal TModelBase Make()
+      => BuildModel(null);
+
+    /// <summary>
+    /// Make a default model from this Archetype of the desired sub-type
+    /// </summary>
+    protected internal new TDesiredModel Make<TDesiredModel>()
+      where TDesiredModel : TModelBase
+        => (TDesiredModel)BuildModel(null);
+
+    /// <summary>
+    /// Make a model by and configuring the default builder.
+    /// </summary>
+    protected internal TModelBase Make(Func<IBuilder<TModelBase>, IBuilder<TModelBase>> configureBuilder)
+      => BuildModel(configureBuilder(MakeDefaultBuilder()));
+
+    /// <summary>
+    /// Make a model by passing in an builder.
+    /// </summary>
+    protected internal TModelBase Make(IModel<TModelBase>.Builder builder)
+      => BuildModel(builder);
+
+    /// <summary>
+    /// Make a model by and configuring the default builder.
+    /// </summary>
+    protected internal TModelBase Make(IBuilder<TModelBase> builder)
+      => BuildModel(builder);
+
+    /// <summary>
+    /// Make a model that requires a struct based builder:
+    /// </summary>
+    protected internal TModelBase Make(Action<IModel<TModelBase>.Builder> configureBuilder) {
+      IModel<TModelBase>.Builder builder = (IModel<TModelBase>.Builder)MakeDefaultBuilder();
+      configureBuilder(builder);
+
+      return BuildModel(builder);
+    }
+
+    /// <summary>
+    /// Make a model that requires a struct based builder:
+    /// </summary>
+    protected internal TDesiredModel Make<TDesiredModel>(Action<IModel<TModelBase>.Builder> configureBuilder)
+      where TDesiredModel : TModelBase
+        => (TDesiredModel)Make(configureBuilder);
+
+    /// <summary>
+    /// Make a model that requires a struct based builder:
+    /// </summary>
+    protected internal TModelBase Make(Func<IBuilder, IBuilder> configureBuilder)
+      => Make(builder => (configureBuilder(MakeDefaultBuilder()) as IBuilder<TModelBase>));
+
+
+    /// <summary>
+    /// Make a model that requires an object based builder:
+    /// </summary>
+    protected internal TModelBase Make(Action<IModel.Builder> configureBuilder)
+      => Make(builder => {
+        configureBuilder((IModel.Builder)builder);
+
+        return builder;
+      });
+
+    /// <summary>
+    /// Make a model that requires an object based builder:
+    /// </summary>
+    protected internal TDesiredModel Make<TDesiredModel>(Action<IModel.Builder> configureBuilder)
+     where TDesiredModel : TModelBase
+        => (TDesiredModel)Make(configureBuilder);
+
+    /// <summary>
+    /// Make a model from this archetype using a fully qualified builder.
+    /// </summary>
+    protected internal TDesiredModel Make<TDesiredModel>(IModel<TModelBase>.Builder builder)
+      where TDesiredModel : TModelBase
+        => (TDesiredModel)BuildModel(builder);
+
+    /// <summary>
+    /// Make a model from this archetype using a fully qualified builder.
+    /// </summary>
+    protected internal TDesiredModel Make<TDesiredModel>(IBuilder<TModelBase> builder)
+      where TDesiredModel : TModelBase
+        => (TDesiredModel)BuildModel(builder);
+
+    /// <summary>
+    /// Make a model from this archetype by passing down and updating a default builder.
+    /// </summary>
+    protected internal TDesiredModel Make<TDesiredModel>(Func<IModel<TModelBase>.Builder, IModel<TModelBase>.Builder> configureBuilder)
+      where TDesiredModel : TModelBase
+        => (TDesiredModel)BuildModel(configureBuilder((IModel<TModelBase>.Builder)MakeDefaultBuilder()));
+
+    /// <summary>
+    /// Make a model from this archetype by passing down and updating a default builder.
+    /// </summary>
+    protected internal TModelBase Make(Func<IModel<TModelBase>.Builder, IModel<TModelBase>.Builder> configureBuilder)
+      => BuildModel(configureBuilder((IModel<TModelBase>.Builder)MakeDefaultBuilder()));
+
+    /// <summary>
+    /// Make a model that requires a struct based builder"
+    /// </summary>
+    protected internal TDesiredModel Make<TDesiredModel>(Func<IBuilder<TModelBase>, IBuilder<TModelBase>> configureBuilder)
+      where TDesiredModel : TModelBase
+        => (TDesiredModel)BuildModel(configureBuilder(MakeDefaultBuilder()));
+
+    /// <summary>
+    /// Make a model that requires an object based builder:
+    /// </summary>
+    protected internal TDesiredModel MakeAs<TDesiredModel>(Action<IModel.Builder> configureBuilder, out TDesiredModel model)
+     where TDesiredModel : TModelBase
+        => model = (TDesiredModel)Make(configureBuilder);
+
+    /// <summary>
+    /// Make a model from this archetype using a fully qualified builder.
+    /// </summary>
+    protected internal TDesiredModel MakeAs<TDesiredModel>(IModel<TModelBase>.Builder builder, out TDesiredModel model)
+      where TDesiredModel : TModelBase
+        => model = (TDesiredModel)BuildModel(builder);
+
+    /// <summary>
+    /// Make a model from this archetype using a fully qualified builder.
+    /// </summary>
+    protected internal TDesiredModel MakeAs<TDesiredModel>(IBuilder<TModelBase> builder, out TDesiredModel model)
+      where TDesiredModel : TModelBase
+        => model = (TDesiredModel)BuildModel(builder);
+
+    /// <summary>
+    /// Make a model from this archetype by passing down and updating a default builder.
+    /// </summary>
+    protected internal TDesiredModel MakeAs<TDesiredModel>(Func<IModel<TModelBase>.Builder, IModel<TModelBase>.Builder> configureBuilder, out TDesiredModel model)
+      where TDesiredModel : TModelBase
+        => model = (TDesiredModel)BuildModel(configureBuilder((IModel<TModelBase>.Builder)MakeDefaultBuilder()));
+
+    /// <summary>
+    /// Make a model that requires a struct based builder"
+    /// </summary>
+    protected internal TDesiredModel MakeAs<TDesiredModel>(Func<IBuilder<TModelBase>, IBuilder<TModelBase>> configureBuilder, out TDesiredModel model)
+      where TDesiredModel : TModelBase
+        => model = (TDesiredModel)BuildModel(configureBuilder(MakeDefaultBuilder()));
 
     #endregion
 
