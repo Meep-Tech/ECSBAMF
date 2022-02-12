@@ -56,7 +56,8 @@ namespace Meep.Tech.Data {
     [DoNotBuildThisOrChildrenInInitialLoad]
     public abstract class BuilderFactory<TBuilderFactoryBase>
       : Archetype<TModelBase, TBuilderFactoryBase>,
-      IBuilderFactory 
+        Archetype<TModelBase, TBuilderFactoryBase>.IExposeDefaultModelBuilderMakeMethods.Fully,
+        IBuilderFactory 
       where TBuilderFactoryBase : BuilderFactory<TBuilderFactoryBase>
       {
 

@@ -679,6 +679,13 @@ namespace Meep.Tech.Data {
     /// <summary>
     /// Helper for potentially making an item without initializing a Builder object.
     /// </summary>
+    protected internal TDesiredModel Make<TDesiredModel>(IEnumerable<(string key, object value)> @params)
+      where TDesiredModel : TModelBase
+      => (TDesiredModel)Make(@params.Select(entry => new KeyValuePair<string,object>(entry.key, entry.value)));
+
+    /// <summary>
+    /// Helper for potentially making an item without initializing a Builder object.
+    /// </summary>
     protected internal TModelBase Make(params (string key, object value)[] @params)
       => Make((IEnumerable<(string key, object value)>)@params);
 
@@ -691,6 +698,13 @@ namespace Meep.Tech.Data {
     /// <summary>
     /// Helper for potentially making an item without initializing a Builder object.
     /// </summary>
+    protected internal TDesiredModel Make<TDesiredModel>(IEnumerable<(IModel.Builder.Param key, object value)> @params)
+      where TDesiredModel : TModelBase
+      => (TDesiredModel)Make(@params.Select(entry => new KeyValuePair<IModel.Builder.Param, object>(entry.key, entry.value)));
+
+    /// <summary>
+    /// Helper for potentially making an item without initializing a Builder object.
+    /// </summary>
     protected internal TModelBase Make(params (IModel.Builder.Param key, object value)[] @params)
       => Make((IEnumerable<(IModel.Builder.Param key, object value)>)@params);
 
@@ -699,6 +713,13 @@ namespace Meep.Tech.Data {
     /// </summary>
     protected internal TModelBase Make(IEnumerable<KeyValuePair<IModel.Builder.Param, object>> @params)
       => Make(@params.Select(entry => new KeyValuePair<string,object>(entry.Key.Key, entry.Value)));
+
+    /// <summary>
+    /// Helper for potentially making an item without initializing a Builder object.
+    /// </summary>
+    protected internal TDesiredModel Make<TDesiredModel>(IEnumerable<KeyValuePair<IModel.Builder.Param, object>> @params)
+      where TDesiredModel : TModelBase
+        => (TDesiredModel)Make(@params.Select(entry => new KeyValuePair<string,object>(entry.Key.Key, entry.Value)));
 
     /// <summary>
     /// Helper for potentially making an item without initializing a Builder object.
@@ -910,7 +931,7 @@ namespace Meep.Tech.Data {
     /// <summary>
     /// Make a model that requires an object based builder:
     /// </summary>
-    protected internal TDesiredModel MakeAs<TDesiredModel>(Action<IModel.Builder> configureBuilder, out TDesiredModel model)
+    /*protected internal TDesiredModel MakeAs<TDesiredModel>(Action<IModel.Builder> configureBuilder, out TDesiredModel model)
      where TDesiredModel : TModelBase
         => model = (TDesiredModel)Make(configureBuilder);
 
@@ -940,7 +961,7 @@ namespace Meep.Tech.Data {
     /// </summary>
     protected internal TDesiredModel MakeAs<TDesiredModel>(Func<IBuilder<TModelBase>, IBuilder<TModelBase>> configureBuilder, out TDesiredModel model)
       where TDesiredModel : TModelBase
-        => model = (TDesiredModel)BuildModel(configureBuilder(MakeDefaultBuilder()));
+        => model = (TDesiredModel)BuildModel(configureBuilder(MakeDefaultBuilder()));*/
 
     #endregion
 
