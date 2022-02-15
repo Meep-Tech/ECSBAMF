@@ -90,7 +90,7 @@ namespace Meep.Tech.Data {
     }
 
     /// <summary>
-    /// A root archetype with IExposeDefaultModelBuilderMakeMethods.Fully implemented from the start.
+    /// A root archetype with IExposeDefaultModelBuilderMakeMethods.WithBuilderParameters implemented from the start.
     /// </summary>
     public abstract partial class WithDefaultParamBasedModelBuilders
       : Archetype<TModelBase, TArchetypeBase>,
@@ -157,7 +157,7 @@ namespace Meep.Tech.Data {
     }
 
     /// <summary>
-    /// A root archetype with IExposeDefaultModelBuilderMakeMethods.Fully implemented from the start.
+    /// A root archetype with IExposeDefaultModelBuilderMakeMethods.WithParamListParameters implemented from the start.
     /// </summary>
     public abstract partial class WithDefaultBuilderBasedModelBuilders
       : Archetype<TModelBase, TArchetypeBase>,

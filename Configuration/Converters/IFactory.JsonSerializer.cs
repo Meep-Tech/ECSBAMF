@@ -4,6 +4,10 @@ using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 
 namespace Meep.Tech.Data {
+  public partial class Archetype {
+  }
+
+
   public partial interface IFactory {
 
     /// <summary>

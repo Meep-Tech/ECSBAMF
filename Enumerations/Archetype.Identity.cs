@@ -1,4 +1,6 @@
-﻿namespace Meep.Tech.Data {
+﻿using Newtonsoft.Json;
+
+namespace Meep.Tech.Data {
 
   public abstract partial class Archetype {
 
@@ -27,6 +29,7 @@
       /// <summary>
       /// The archetype this id is for
       /// </summary>
+      [JsonIgnore]
       public Archetype Archetype {
         get;
         internal set;
@@ -73,8 +76,9 @@
       /// </summary>
       /// <param name="name">Used to generate the final part of the key. Spaces are removed before then.</param>
       /// <param name="keyPrefixEndingAdditions">Added to the key right before the end here: Type..{keyPrefixEndingAdditions}.name</param>
-      public Identity(string name, string keyPrefixEndingAdditions = null, Universe universe = null) 
-        : base(name, $"{typeof(TModelBase).FullName}.{keyPrefixEndingAdditions ?? ""}{(string.IsNullOrEmpty(keyPrefixEndingAdditions) ? "" : ".")}{name}", universe) {}
+      /// <param name="keyOverride">can be used to fully replace the key if you want a different key and name</param>
+      public Identity(string name, string keyPrefixEndingAdditions = null, Universe universe = null, string keyOverride = null) 
+        : base(name, keyOverride ?? $"{typeof(TModelBase).FullName}.{keyPrefixEndingAdditions ?? ""}{(string.IsNullOrEmpty(keyPrefixEndingAdditions) ? "" : ".")}{name}", universe) {}
 
       /// <summary>
       /// Make a new identiy for this Archetype Base Type
@@ -82,8 +86,9 @@
       /// <param name="name">Used to generate the final part of the key. Spaces are removed before then.</param>
       /// <param name="keyPrefixEndingAdditions">Added to the key right before the end here: Type..{keyPrefixEndingAdditions}.name</param>
       /// <param name="baseKeyStringOverride">Overrides the type fullname.</param>
-      protected Identity(string name, string keyPrefixEndingAdditions, string baseKeyStringOverride, Universe universe = null) 
-        : base(name, $"{baseKeyStringOverride ?? typeof(TModelBase).FullName}{(baseKeyStringOverride != "" ? "." :"")}{keyPrefixEndingAdditions ?? ""}{(string.IsNullOrEmpty(keyPrefixEndingAdditions) ? "" : ".")}{name}", universe) {}
+      /// <param name="keyOverride">can be used to fully replace the key if you want a different key and name</param>
+      protected Identity(string name, string keyPrefixEndingAdditions, string baseKeyStringOverride, Universe universe = null, string keyOverride = null) 
+        : base(name, keyOverride ?? $"{baseKeyStringOverride ?? typeof(TModelBase).FullName}{(baseKeyStringOverride != "" ? "." :"")}{keyPrefixEndingAdditions ?? ""}{(string.IsNullOrEmpty(keyPrefixEndingAdditions) ? "" : ".")}{name}", universe) {}
     }
   }
 }

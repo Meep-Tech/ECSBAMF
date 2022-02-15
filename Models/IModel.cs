@@ -43,7 +43,7 @@ namespace Meep.Tech.Data {
       object model = JsonConvert.DeserializeObject(
         json,
         deserializeToType,
-        universe.ModelSerializer.Options.ModelJsonSerializerSettings
+        universe.ModelSerializer.Options.JsonSerializerSettings
       );
 
       return (IModel)model;
@@ -148,7 +148,7 @@ namespace Meep.Tech.Data {
       var json = JObject.FromObject(
         model, 
         (universe ?? model.Universe)
-          .ModelSerializer.ModelJsonSerializer
+          .ModelSerializer.JsonSerializer
       );
 
       return json;

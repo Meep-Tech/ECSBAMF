@@ -153,7 +153,8 @@ namespace Meep.Tech.Data.Configuration {
     /// Initialize the model serializer
     /// </summary>
     void _initializeModelSerializerSettings() {
-      Universe.ModelSerializer = new Model.Serializer(Options.ModelSerializerOptions, Universe);
+      Universe.ModelSerializer 
+        = new Model.Serializer(Options.ModelSerializerOptions, Universe);
     }
 
     /// <summary>
@@ -397,7 +398,7 @@ namespace Meep.Tech.Data.Configuration {
           = defaultFactory.GetGenericBuilderConstructor();
         IBuilder builder = builderCtor.Invoke(
           defaultFactory,
-          defaultFactory.DefaultTestParams
+          defaultFactory.DefaultTestParams ?? Archetype._emptyTestParams
         );
         IModel defaultModel = defaultFactory.MakeDefaultWith(builder);
         Universe.Models._modelTypesProducedByArchetypes[defaultFactory] = defaultModel.GetType();
@@ -420,7 +421,7 @@ namespace Meep.Tech.Data.Configuration {
           = defaultFactory.GetGenericBuilderConstructor();
         IBuilder builder = builderCtor.Invoke(
           defaultFactory,
-          defaultFactory.DefaultTestParams
+          defaultFactory.DefaultTestParams ?? Archetype._emptyTestParams
         );
         defaultFactory.MakeDefaultWith(builder);
 
@@ -548,7 +549,7 @@ namespace Meep.Tech.Data.Configuration {
 
         IBuilder builder = builderCtor.Invoke(
           archetype,
-          archetype.DefaultTestParams
+          archetype.DefaultTestParams ?? Archetype._emptyTestParams
         );
 
         // load branch attribute and set the new model ctor if there is one
@@ -692,6 +693,7 @@ namespace Meep.Tech.Data.Configuration {
     /// </summary>
     void _finalize() {
       _reportOnFailedTypeInitializations();
+      _finalizeModelSerializerSettings();
 
       _uninitializedArchetypes = null;
       _initializedArchetypes = null;
@@ -704,6 +706,24 @@ namespace Meep.Tech.Data.Configuration {
       _remainingInitializationAttempts = Options.InitializationAttempts;
 
       IsFinished = true;
+    }
+
+    void _finalizeModelSerializerSettings() {
+      // add the converters to the default json serializer settings.
+      bool defaultExists;
+      JsonSerializerSettings @default;
+      if(JsonConvert.DefaultSettings is not null) {
+        @default = JsonConvert.DefaultSettings();
+        defaultExists = true;
+      }
+      else {
+        @default = new JsonSerializerSettings();
+        defaultExists = false;
+      }
+
+      JsonConvert.DefaultSettings = () => {
+        return @default.UpdateJsonSerializationSettings(Universe, !defaultExists);
+      };
     }
 
     void _reportOnFailedTypeInitializations() {

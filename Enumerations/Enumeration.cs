@@ -81,8 +81,8 @@ namespace Meep.Tech.Data {
       => !(other is null) && other.ExternalId == ExternalId;
 
     public static bool operator ==(Enumeration a, Enumeration b)
-      => (a is null && b is null) || a.Equals(b);
-
+      => (a is null && b is null) || (a?.Equals(b) ?? false);
+     
     public static bool operator !=(Enumeration a, Enumeration b)
       => !(a == b);
 
@@ -113,8 +113,8 @@ namespace Meep.Tech.Data {
     /// <summary>
     /// Readonly list of all items from the default universe
     /// </summary>
-    public static IEnumerable<Enumeration<TEnumBase>> All
-      => Archetypes.DefaultUniverse.Enumerations.GetAllByType<TEnumBase>().Cast<Enumeration<TEnumBase>>();
+    public static IEnumerable<TEnumBase> All
+      => Archetypes.DefaultUniverse.Enumerations.GetAllByType<TEnumBase>().Cast<TEnumBase>();
 
     /// <summary>
     /// The base type of this enumeration

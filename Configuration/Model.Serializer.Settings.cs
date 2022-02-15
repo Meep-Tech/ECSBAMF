@@ -20,30 +20,9 @@ namespace Meep.Tech.Data {
         }
 
         /// <summary>
-        /// Helper function to set the default json serializer settings for components.
-        /// </summary>
-        public Func<DefaultContractResolver, IEnumerable<JsonConverter>, JsonSerializerSettings> ConfigureComponentJsonSerializerSettings {
-          get;
-          set;
-        } = (defaultResolver, defaultConverters) => new JsonSerializerSettings {
-          ContractResolver = defaultResolver,
-          Formatting = Formatting.Indented,
-          Converters = defaultConverters.ToList()
-#if DEBUG
-          ,
-          Error = (sender, args) =>
-          {
-            if(System.Diagnostics.Debugger.IsAttached) {
-              System.Diagnostics.Debugger.Break();
-            }
-          }
-#endif
-        };
-
-        /// <summary>
         /// Helper function to set the default json serializer settings for models.
         /// </summary>
-        public Func<DefaultContractResolver, IEnumerable<JsonConverter>, JsonSerializerSettings> ConfigureModelJsonSerializerSettings {
+        public Func<DefaultContractResolver, IEnumerable<Newtonsoft.Json.JsonConverter>, JsonSerializerSettings> ConfigureJsonSerializerSettings {
           get;
           set;
         } = (defaultResolver, defaultConverters) => new JsonSerializerSettings {
@@ -61,26 +40,13 @@ namespace Meep.Tech.Data {
         };
 
         /// <summary>
-        /// Compiled component serializer settings from the settings config function
-        /// </summary>
-        public JsonSerializerSettings ComponentJsonSerializerSettings {
-          get => _componentJsonSerializerSettings 
-              ??= ConfigureComponentJsonSerializerSettings(
-                new DefaultContractResolver(_universe),
-                new JsonConverter[] {
-                  new Enumeration.JsonConverter()
-                }
-              );
-        } JsonSerializerSettings _componentJsonSerializerSettings;
-
-        /// <summary>
         /// Compiled model serializer from the settings config function
         /// </summary>
-        public JsonSerializerSettings ModelJsonSerializerSettings {
+        public JsonSerializerSettings JsonSerializerSettings {
           get => _modelJsonSerializerSettings 
-            ??= ConfigureModelJsonSerializerSettings(
+            ??= ConfigureJsonSerializerSettings(
               new DefaultContractResolver(_universe),
-              new JsonConverter[] {
+              new Newtonsoft.Json.JsonConverter[] {
                 new Enumeration.JsonConverter()
               }
             );

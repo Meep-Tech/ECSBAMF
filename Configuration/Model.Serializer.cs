@@ -32,19 +32,11 @@ namespace Meep.Tech.Data {
       }
 
       /// <summary>
-      /// Compiled component serializer from the settings
-      /// </summary>
-      public JsonSerializer ComponentJsonSerializer {
-        get => _componentJsonSerializer ??= JsonSerializer
-          .Create(Options.ComponentJsonSerializerSettings);
-      } JsonSerializer _componentJsonSerializer;
-
-      /// <summary>
       /// Compiled model serializer from the settings
       /// </summary>
-      public JsonSerializer ModelJsonSerializer {
+      public JsonSerializer JsonSerializer {
         get => _modelJsonSerializer ??= JsonSerializer
-          .Create(Options.ModelJsonSerializerSettings);
+          .Create(Options.JsonSerializerSettings);
       } JsonSerializer _modelJsonSerializer;
 
       /// <summary>

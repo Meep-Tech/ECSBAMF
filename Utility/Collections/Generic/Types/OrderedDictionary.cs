@@ -261,7 +261,7 @@ namespace Meep.Tech.Collections.Generic {
 
     ///<summary><inheritdoc/></summary>
     public void CopyTo(KeyValuePair<TKey, TValue>[] array, int arrayIndex)
-      => CopyTo(array, arrayIndex);
+      => _collection.CopyTo(array, arrayIndex);
 
     #endregion
 

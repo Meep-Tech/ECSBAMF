@@ -51,13 +51,13 @@ namespace Meep.Tech.Data {
       if(jObject.TryGetValue(Model.Serializer.ComponentValueCollectionPropertyName, out JToken valueCollection)) {
         return (IComponent)valueCollection.ToObject(
           deserializeToTypeOverride ?? universe.Components.Get(key),
-          universe.ModelSerializer.ComponentJsonSerializer
+          universe.ModelSerializer.JsonSerializer
         );
       }
 
       return (IComponent)jObject.ToObject(
         deserializeToTypeOverride ?? universe.Components.Get(key), 
-        universe.ModelSerializer.ComponentJsonSerializer
+        universe.ModelSerializer.JsonSerializer
       );
     }
 
@@ -108,7 +108,7 @@ namespace Meep.Tech.Data {
     /// Turn the model into a serialized data object.
     /// </summary>
     public static JObject ToJson(this IComponent component, Universe universe = null) {
-      var json = JToken.FromObject(component, (universe ?? component.Universe).ModelSerializer.ComponentJsonSerializer);
+      var json = JToken.FromObject(component, (universe ?? component.Universe).ModelSerializer.JsonSerializer);
       if(json is JObject jsonObject) {
         jsonObject.Add(Model.Serializer.ComponentKeyPropertyName, component.Key);
         return jsonObject;

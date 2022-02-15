@@ -135,7 +135,7 @@ namespace Meep.Tech.Data {
         }
       }
 
-      throw new IModel.Builder.Param.MissingException($"Tried to construct a model without the required param: {toFetch} of type {typeof(T).FullName} being provided. If this is a test, try adding a default value for the empty model for this required param to the Archetype's DefaultEmptyParams field.");
+      throw new IModel.Builder.Param.MissingException($"Tried to construct a model without the required param: {toFetch} of type {typeof(T).FullName} being provided. If this is a test, try adding a default value for the empty model for this required param to the Archetype's DefaultTestParams field.");
     }
 
     /// <summary>
@@ -276,7 +276,7 @@ namespace Meep.Tech.Data {
         }
       }
 
-      throw new IModel.Builder.Param.MissingException($"Tried to construct a model without the required param: {paramKey} of type {typeof(T).FullName} being provided. If this is a test, try adding a default value for the empty model for this required param to the Archetype's DefaultEmptyParams field.");
+      throw new IModel.Builder.Param.MissingException($"Tried to construct a model without the required param: {paramKey} of type {typeof(T).FullName} being provided. If this is a test, try adding a default value for the empty model for this required param to the Archetype's {nameof(Archetype.DefaultTestParams)} field.");
     }
 
     /// <summary>

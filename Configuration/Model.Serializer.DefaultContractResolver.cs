@@ -4,10 +4,13 @@ using System;
 using Newtonsoft.Json.Serialization;
 using System.Linq;
 using System.Reflection;
+using System.Diagnostics.CodeAnalysis;
+using Newtonsoft.Json.Linq;
 
 namespace Meep.Tech.Data {
 
   public partial class Model {
+
     public partial class Serializer {
 
       /// <summary>
@@ -19,6 +22,13 @@ namespace Meep.Tech.Data {
         /// the universe this resolver is for
         /// </summary>
         public Universe Universe {
+          get;
+        }
+
+        /// <summary>
+        /// the universe this resolver is for
+        /// </summary>
+        public IContractResolver _baseResolver {
           get;
         }
 
@@ -72,12 +82,12 @@ namespace Meep.Tech.Data {
           if(!(member.GetCustomAttribute(typeof(ArchetypePropertyAttribute)) is null)) {
             // Archetype is always first:
             baseProperty.Order = int.MinValue;
-            baseProperty.PropertyName = nameof(Archetype).ToLower();
             baseProperty.Converter = _factoryToStringJsonConverter;
             baseProperty.ObjectCreationHandling = ObjectCreationHandling.Replace;
           }
 
           if(!(member.GetCustomAttribute(typeof(ModelComponentsProperty)) is null)) {
+            baseProperty.Order = int.MaxValue;
             baseProperty.Converter = _componentsJsonConverter;
             baseProperty.ObjectCreationHandling = ObjectCreationHandling.Replace;
           }

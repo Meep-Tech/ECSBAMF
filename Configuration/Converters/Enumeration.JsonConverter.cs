@@ -21,7 +21,7 @@ namespace Meep.Tech.Data {
 
         return universe.Enumerations.Get(
           parts.First(),
-          value.Value<object>("externalId")
+          value.Value<string>("externalId")
         );
       }
 

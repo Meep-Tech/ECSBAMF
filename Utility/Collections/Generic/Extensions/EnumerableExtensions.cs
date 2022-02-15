@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace Meep.Tech.Collections.Generic {
   public static class EnumerableExtensions {
@@ -18,6 +19,24 @@ namespace Meep.Tech.Collections.Generic {
         @do(value);
       }
     }
+
+    /// <summary>
+    /// append a value if the condition is true
+    /// </summary>
+    public static IEnumerable<T> AppendIf<T>(this IEnumerable<T> enumeration, Func<bool> @if, T item) 
+      => @if() ? enumeration.Append(item) : enumeration;
+
+    /// <summary>
+    /// append a value if the condition is true
+    /// </summary>
+    public static IEnumerable<T> ConcatIf<T>(this IEnumerable<T> enumeration, Func<bool> @if, IEnumerable<T> other) 
+      => @if() ? enumeration.Concat(other) : enumeration;
+
+    /// <summary>
+    /// append a value if the condition is true
+    /// </summary>
+    public static IEnumerable<T> ConcatIfNotNull<T>(this IEnumerable<T> enumeration, IEnumerable<T> other) 
+      => other is not null ? enumeration.Concat(other) : enumeration;
 
     /// <summary>
     /// Reverse the list.

@@ -314,6 +314,38 @@ namespace Meep.Tech.Data {
       public new TArchetypeBase Get(string externalId)
           => (TArchetypeBase)base.Get(externalId);
 
+      /// <summary>
+      /// Try to get an archetype from this collection by it's externalId.
+      /// Returns null on failure instead of throwing.
+      /// </summary>
+      public new TArchetypeBase TryToGet(string externalId)
+          => (TArchetypeBase)base.TryToGet(externalId);
+
+      /// <summary>
+      /// Try to get an archetype from this collection by it's externalId.
+      /// </summary>
+      public bool TryToGet(string externalId, out TArchetypeBase found)
+        => base.TryToGet(externalId, out var foundItem)
+          ? (found = foundItem as TArchetypeBase) != null
+          : (found = null) != null;
+
+      /// <summary>
+      /// Try to get an archetype from this collection by it's externalId.
+      /// Returns null on failure instead of throwing.
+      /// </summary>
+      public TDesiredArchetype TryToGet<TDesiredArchetype>(string externalId)
+        where TDesiredArchetype : TArchetypeBase
+          => base.TryToGet(externalId) as TDesiredArchetype;
+
+      /// <summary>
+      /// Try to get an archetype from this collection by it's externalId.
+      /// </summary>
+      public bool TryToGet<TDesiredArchetype>(string externalId, out TDesiredArchetype found)
+        where TDesiredArchetype : TArchetypeBase
+          => base.TryToGet(externalId, out var foundItem)
+            ? (found = foundItem as TDesiredArchetype) != null
+            : (found = null) != null;
+
       #endregion
 
       #region Enumeration

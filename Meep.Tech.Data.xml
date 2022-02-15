@@ -14,7 +14,7 @@
             The Id of this Archetype.
             </summary>
         </member>
-        <member name="P:Meep.Tech.Data.Archetype.BaseType">
+        <member name="P:Meep.Tech.Data.Archetype.BaseArchetype">
             <summary>
             The Base Archetype this Archetype derives from.
             </summary>
@@ -34,7 +34,11 @@
             The System.Type of this Archetype
             </summary>
         </member>
-        <!-- Badly formed XML comment ignored for member "P:Meep.Tech.Data.Archetype.IsBase" -->
+        <member name="P:Meep.Tech.Data.Archetype.IsBaseArchetype">
+            <summary>
+            If this is an archetype that inherits from Archetype[,] directly.
+            </summary>
+        </member>
         <member name="P:Meep.Tech.Data.Archetype.InitialComponents">
             <summary>
             The initial default components to add to this archetype on it's creation.
@@ -89,6 +93,24 @@
             helper for getting the builder constructor from the non-generic base class
             </summary>
             <returns></returns>
+        </member>
+        <member name="M:Meep.Tech.Data.Archetype.GetHashCode">
+            <summary><inheritdoc/></summary>
+        </member>
+        <member name="M:Meep.Tech.Data.Archetype.Equals(System.Object)">
+            <summary><inheritdoc/></summary>
+        </member>
+        <member name="M:Meep.Tech.Data.Archetype.ToString">
+            <summary><inheritdoc/></summary>
+        </member>
+        <member name="M:Meep.Tech.Data.Archetype.Equals(Meep.Tech.Data.Archetype)">
+            <summary><inheritdoc/></summary>
+        </member>
+        <member name="M:Meep.Tech.Data.Archetype.op_Equality(Meep.Tech.Data.Archetype,Meep.Tech.Data.Archetype)">
+            <summary><inheritdoc/></summary>
+        </member>
+        <member name="M:Meep.Tech.Data.Archetype.op_Inequality(Meep.Tech.Data.Archetype,Meep.Tech.Data.Archetype)">
+            <summary><inheritdoc/></summary>
         </member>
         <member name="M:Meep.Tech.Data.Archetype.ConfigureModel(Meep.Tech.Data.IBuilder,Meep.Tech.Data.IModel)">
             <summary>
@@ -459,7 +481,7 @@
             Can be used as a static key.
             </summary>
         </member>
-        <member name="P:Meep.Tech.Data.Archetype`2.BaseType">
+        <member name="P:Meep.Tech.Data.Archetype`2.BaseArchetype">
             <summary>
             The base archetype that all of the ones like it are based on.
             </summary>
@@ -994,7 +1016,7 @@
         </member>
         <member name="T:Meep.Tech.Data.Archetype`2.WithDefaultParamBasedModelBuilders">
             <summary>
-            A root archetype with IExposeDefaultModelBuilderMakeMethods.Fully implemented from the start.
+            A root archetype with IExposeDefaultModelBuilderMakeMethods.WithBuilderParameters implemented from the start.
             </summary>
         </member>
         <member name="M:Meep.Tech.Data.Archetype`2.WithDefaultParamBasedModelBuilders.Make``1(System.Collections.Generic.KeyValuePair{System.String,System.Object}[])">
@@ -1039,7 +1061,7 @@
         </member>
         <member name="T:Meep.Tech.Data.Archetype`2.WithDefaultBuilderBasedModelBuilders">
             <summary>
-            A root archetype with IExposeDefaultModelBuilderMakeMethods.Fully implemented from the start.
+            A root archetype with IExposeDefaultModelBuilderMakeMethods.WithParamListParameters implemented from the start.
             </summary>
         </member>
         <member name="M:Meep.Tech.Data.Archetype`2.WithDefaultBuilderBasedModelBuilders.Make``1">
@@ -1266,6 +1288,28 @@
             Get an archetype from it's Id.
             </summary>
         </member>
+        <member name="M:Meep.Tech.Data.Archetype`2.Collection.TryToGet(System.String)">
+            <summary>
+            Try to get an archetype from this collection by it's externalId.
+            Returns null on failure instead of throwing.
+            </summary>
+        </member>
+        <member name="M:Meep.Tech.Data.Archetype`2.Collection.TryToGet(System.String,`1@)">
+            <summary>
+            Try to get an archetype from this collection by it's externalId.
+            </summary>
+        </member>
+        <member name="M:Meep.Tech.Data.Archetype`2.Collection.TryToGet``1(System.String)">
+            <summary>
+            Try to get an archetype from this collection by it's externalId.
+            Returns null on failure instead of throwing.
+            </summary>
+        </member>
+        <member name="M:Meep.Tech.Data.Archetype`2.Collection.TryToGet``1(System.String,``0@)">
+            <summary>
+            Try to get an archetype from this collection by it's externalId.
+            </summary>
+        </member>
         <member name="M:Meep.Tech.Data.Archetype`2.Collection.GetEnumerator">
             <summary>
             <inheritdoc/>
@@ -1282,20 +1326,22 @@
             Can be used as a static key.
             </summary>
         </member>
-        <member name="M:Meep.Tech.Data.Archetype`2.Identity.#ctor(System.String,System.String,Meep.Tech.Data.Universe)">
+        <member name="M:Meep.Tech.Data.Archetype`2.Identity.#ctor(System.String,System.String,Meep.Tech.Data.Universe,System.String)">
             <summary>
             Make a new identiy for this Archetype Base Type
             </summary>
             <param name="name">Used to generate the final part of the key. Spaces are removed before then.</param>
             <param name="keyPrefixEndingAdditions">Added to the key right before the end here: Type..{keyPrefixEndingAdditions}.name</param>
+            <param name="keyOverride">can be used to fully replace the key if you want a different key and name</param>
         </member>
-        <member name="M:Meep.Tech.Data.Archetype`2.Identity.#ctor(System.String,System.String,System.String,Meep.Tech.Data.Universe)">
+        <member name="M:Meep.Tech.Data.Archetype`2.Identity.#ctor(System.String,System.String,System.String,Meep.Tech.Data.Universe,System.String)">
             <summary>
             Make a new identiy for this Archetype Base Type
             </summary>
             <param name="name">Used to generate the final part of the key. Spaces are removed before then.</param>
             <param name="keyPrefixEndingAdditions">Added to the key right before the end here: Type..{keyPrefixEndingAdditions}.name</param>
             <param name="baseKeyStringOverride">Overrides the type fullname.</param>
+            <param name="keyOverride">can be used to fully replace the key if you want a different key and name</param>
         </member>
         <member name="T:Meep.Tech.Data.ArchetypePublicFullMakers">
             <summary>
@@ -1898,6 +1944,11 @@
         <member name="T:Meep.Tech.Data.Configuration.Loader.MissingComponentDependencyException">
             <summary>
             Exeption thrown when a component is missing, and a Model or Archetype can't be built because of it
+            </summary>
+        </member>
+        <member name="M:Meep.Tech.Data.Configuration.LoaderConfigurationExtensions.UpdateJsonSerializationSettings(Newtonsoft.Json.JsonSerializerSettings,Meep.Tech.Data.Universe,System.Boolean,System.Collections.Generic.IEnumerable{Newtonsoft.Json.JsonConverter})">
+            <summary>
+            Update json serialization settings to include xbam settings.
             </summary>
         </member>
         <member name="T:Meep.Tech.Data.Configuration.Modifications">
@@ -2954,6 +3005,18 @@
             This is the non-generic base class for Utility
             </summary>
         </member>
+        <member name="T:Meep.Tech.Data.Model.JsonConverter">
+            <summary>
+            Defalt converter for any type of model.
+            This isn't added to the settings by default because the contract resolver handles it.
+            </summary>
+        </member>
+        <member name="M:Meep.Tech.Data.Model.JsonConverter.ReadJson(Newtonsoft.Json.JsonReader,System.Type,Meep.Tech.Data.IModel,System.Boolean,Newtonsoft.Json.JsonSerializer)">
+            <summary><inheritdoc/></summary>
+        </member>
+        <member name="M:Meep.Tech.Data.Model.JsonConverter.WriteJson(Newtonsoft.Json.JsonWriter,Meep.Tech.Data.IModel,Newtonsoft.Json.JsonSerializer)">
+            <summary><inheritdoc/></summary>
+        </member>
         <member name="T:Meep.Tech.Data.Model.Serializer">
             <summary>
             Logic and Settings Used To Serialize Models
@@ -2979,12 +3042,7 @@
             The serializer options
             </summary>
         </member>
-        <member name="P:Meep.Tech.Data.Model.Serializer.ComponentJsonSerializer">
-            <summary>
-            Compiled component serializer from the settings
-            </summary>
-        </member>
-        <member name="P:Meep.Tech.Data.Model.Serializer.ModelJsonSerializer">
+        <member name="P:Meep.Tech.Data.Model.Serializer.JsonSerializer">
             <summary>
             Compiled model serializer from the settings
             </summary>
@@ -3000,6 +3058,11 @@
             </summary>
         </member>
         <member name="P:Meep.Tech.Data.Model.Serializer.DefaultContractResolver.Universe">
+            <summary>
+            the universe this resolver is for
+            </summary>
+        </member>
+        <member name="P:Meep.Tech.Data.Model.Serializer.DefaultContractResolver._baseResolver">
             <summary>
             the universe this resolver is for
             </summary>
@@ -3024,22 +3087,12 @@
             Settings for the Model Serializer
             </summary>
         </member>
-        <member name="P:Meep.Tech.Data.Model.Serializer.Settings.ConfigureComponentJsonSerializerSettings">
-            <summary>
-            Helper function to set the default json serializer settings for components.
-            </summary>
-        </member>
-        <member name="P:Meep.Tech.Data.Model.Serializer.Settings.ConfigureModelJsonSerializerSettings">
+        <member name="P:Meep.Tech.Data.Model.Serializer.Settings.ConfigureJsonSerializerSettings">
             <summary>
             Helper function to set the default json serializer settings for models.
             </summary>
         </member>
-        <member name="P:Meep.Tech.Data.Model.Serializer.Settings.ComponentJsonSerializerSettings">
-            <summary>
-            Compiled component serializer settings from the settings config function
-            </summary>
-        </member>
-        <member name="P:Meep.Tech.Data.Model.Serializer.Settings.ModelJsonSerializerSettings">
+        <member name="P:Meep.Tech.Data.Model.Serializer.Settings.JsonSerializerSettings">
             <summary>
             Compiled model serializer from the settings config function
             </summary>
@@ -4102,6 +4155,21 @@
         <member name="M:Meep.Tech.Collections.Generic.EnumerableExtensions.ForEach``1(System.Collections.Generic.IEnumerable{``0},System.Action{``0})">
             <summary>
             do on each
+            </summary>
+        </member>
+        <member name="M:Meep.Tech.Collections.Generic.EnumerableExtensions.AppendIf``1(System.Collections.Generic.IEnumerable{``0},System.Func{System.Boolean},``0)">
+            <summary>
+            append a value if the condition is true
+            </summary>
+        </member>
+        <member name="M:Meep.Tech.Collections.Generic.EnumerableExtensions.ConcatIf``1(System.Collections.Generic.IEnumerable{``0},System.Func{System.Boolean},System.Collections.Generic.IEnumerable{``0})">
+            <summary>
+            append a value if the condition is true
+            </summary>
+        </member>
+        <member name="M:Meep.Tech.Collections.Generic.EnumerableExtensions.ConcatIfNotNull``1(System.Collections.Generic.IEnumerable{``0},System.Collections.Generic.IEnumerable{``0})">
+            <summary>
+            append a value if the condition is true
             </summary>
         </member>
         <member name="M:Meep.Tech.Collections.Generic.EnumerableExtensions.Reverse``1(System.Collections.Generic.IList{``0})">

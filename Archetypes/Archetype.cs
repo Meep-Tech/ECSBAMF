@@ -8,6 +8,8 @@ namespace Meep.Tech.Data {
   /// A singleton data store and factory.
   /// </summary>
   public abstract partial class Archetype : IFactory, IReadableComponentStorage, IEquatable<Archetype> {
+    internal static readonly Dictionary<string, object> _emptyTestParams
+      = new();
 
     #region Archetype Data Members
 
@@ -21,7 +23,7 @@ namespace Meep.Tech.Data {
     /// <summary>
     /// The Base Archetype this Archetype derives from.
     /// </summary>
-    public abstract Type BaseType {
+    public abstract Type BaseArchetype {
       get;
     }
 
@@ -49,10 +51,10 @@ namespace Meep.Tech.Data {
     }
 
     /// <summary>
-    /// If this is an archetype that inherits from Archetype<> directly.
+    /// If this is an archetype that inherits from Archetype[,] directly.
     /// </summary>
-    public bool IsBase
-      => BaseType?.Equals(null) ?? true;
+    public bool IsBaseArchetype
+      => BaseArchetype?.Equals(null) ?? true;
 
     #endregion
 
@@ -61,7 +63,7 @@ namespace Meep.Tech.Data {
     /// <summary>
     /// The initial default components to add to this archetype on it's creation.
     /// </summary>
-    public virtual HashSet<Archetype.IComponent> InitialComponents {
+    protected internal virtual HashSet<Archetype.IComponent> InitialComponents {
       get;
       init;
     } = new HashSet<IComponent>();
@@ -69,7 +71,7 @@ namespace Meep.Tech.Data {
     /// <summary>
     /// The Archetype components linked to model components
     /// </summary>
-    public IEnumerable<Archetype.IComponent> ModelLinkedComponents
+    protected internal IEnumerable<Archetype.IComponent> ModelLinkedComponents
       => _modelLinkedComponents;
     internal HashSet<Archetype.IComponent> _modelLinkedComponents
       = new HashSet<IComponent>();
@@ -78,7 +80,7 @@ namespace Meep.Tech.Data {
     /// constructors to make default components on a model made by this Archetype,
     /// Usually you'll want to use an Archetype.ILinkedComponent but this is here too.
     /// </summary>
-    public virtual HashSet<Func<IBuilder, IModel.IComponent>> InitialUnlinkedModelComponentCtors {
+    protected internal virtual HashSet<Func<IBuilder, IModel.IComponent>> InitialUnlinkedModelComponentCtors {
       get;
       init;
     } = new HashSet<Func<IBuilder, IModel.IComponent>>();
@@ -87,7 +89,7 @@ namespace Meep.Tech.Data {
     /// The default component types to initialize with default values on a new model made by this archetype
     /// Usually you'll want to use an Archetype.ILinkedComponent but this is here too.
     /// </summary>
-    public virtual HashSet<System.Type> InitialUnlinkedModelComponentTypes {
+    protected internal virtual HashSet<System.Type> InitialUnlinkedModelComponentTypes {
       get;
       init;
     } = new HashSet<System.Type>();
@@ -96,14 +98,14 @@ namespace Meep.Tech.Data {
     /// If this is true, this Archetype can have it's component collection modified before load by mods and other libraries.
     /// This does not affect the ability to inherit and override InitialComponents for an archetype.
     /// </summary>
-    public virtual bool AllowExternalComponentConfiguration
+    protected internal virtual bool AllowExternalComponentConfiguration
       => true;
 
     /// <summary>
     /// If this is true, this archetype and children of it can be initialized after the loader has finished.
     /// Be careful with these, it's up to you to maintain singleton patters.
     /// </summary>
-    public virtual bool AllowInitializationsAfterLoaderFinalization
+    protected internal virtual bool AllowInitializationsAfterLoaderFinalization
       => false;
 
     /// <summary>
@@ -112,7 +114,7 @@ namespace Meep.Tech.Data {
     internal protected virtual Dictionary<string, object> DefaultTestParams {
       get;
       init;
-    } = new Dictionary<string, object>();
+    } = null;
 
     /// <summary>
     /// Finish setting this up
@@ -150,22 +152,28 @@ namespace Meep.Tech.Data {
 
     #region Hash and Equality
 
+    ///<summary><inheritdoc/></summary>
     public override int GetHashCode() 
       => Id.GetHashCode();
 
+    ///<summary><inheritdoc/></summary>
     public override bool Equals(object obj) 
       => (obj as Archetype)?.Equals(this) ?? false;
 
+    ///<summary><inheritdoc/></summary>
     public override string ToString() {
       return $"+{Id}+";
     }
 
+    ///<summary><inheritdoc/></summary>
     public bool Equals(Archetype other) 
       => Id.Key == other?.Id.Key;
 
+    ///<summary><inheritdoc/></summary>
     public static bool operator ==(Archetype a, Archetype b)
       => a?.Equals(b) ?? (b is null);
 
+    ///<summary><inheritdoc/></summary>
     public static bool operator !=(Archetype a, Archetype b)
       => !(a == b);
 
@@ -450,7 +458,7 @@ namespace Meep.Tech.Data {
     /// <summary>
     /// The base archetype that all of the ones like it are based on.
     /// </summary>
-    public override System.Type BaseType
+    public override System.Type BaseArchetype
       => typeof(TArchetypeBase);
 
     /// <summary>
@@ -548,7 +556,7 @@ namespace Meep.Tech.Data {
           = GetGenericBuilderConstructor();
         IBuilder builder = builderCtor.Invoke(
           this,
-          DefaultTestParams
+          DefaultTestParams ?? _emptyTestParams
         );
 
         Id.Universe.Archetypes._rootArchetypeTypesByBaseModelType[_modelConstructor(
