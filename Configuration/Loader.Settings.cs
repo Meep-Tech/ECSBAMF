@@ -23,6 +23,14 @@ namespace Meep.Tech.Data.Configuration {
       } = new List<Assembly>();
 
       /// <summary>
+      /// Assemblies that should be ignored in the loading 
+      /// </summary>
+      public List<Assembly> IgnoredAssemblies {
+        get;
+        set;
+      } = new List<Assembly>();
+
+      /// <summary>
       /// If a single archetype not being initialized should throw a fatal.
       /// </summary>
       public bool FatalOnCannotInitializeType {

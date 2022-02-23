@@ -1,4 +1,5 @@
 ﻿using Newtonsoft.Json;
+using System.Text.RegularExpressions;
 
 namespace Meep.Tech.Data {
 
@@ -52,6 +53,10 @@ namespace Meep.Tech.Data {
       ) : base(key ?? name, universe) {
         Name = name;
       }
+
+      ///<summary><inheritdoc/></summary>
+      protected internal override object UniqueIdCreationLogic(object uniqueIdentifier) 
+        => Regex.Replace($"{uniqueIdentifier}", @"\s+", "");
     }
   }
 

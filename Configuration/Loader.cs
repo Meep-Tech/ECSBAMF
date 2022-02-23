@@ -127,6 +127,8 @@ namespace Meep.Tech.Data.Configuration {
 
       _applyModificationsToAllTypesByAssemblyLoadOrder();
 
+      Universe._extraContexts.ForEach(context => context.Value.OnLoaderInitialize());
+
       while(_remainingFinalizationAttempts-- > 0 && _initializedArchetypes.Count > 0) {
         _tryToFinishAllInitalizedTypes();
       }
@@ -192,7 +194,8 @@ namespace Meep.Tech.Data.Configuration {
       }
 
       // load internal assemblies
-      _unorderedAssembliesToLoad = externalAssemblies.Concat(AppDomain.CurrentDomain.GetAssemblies())
+      _unorderedAssembliesToLoad = externalAssemblies.Concat(AppDomain.CurrentDomain.GetAssemblies()
+        .Except(Options.IgnoredAssemblies))
         // ... that is not dynamic, and that matches any naming requirements
         .Where(assembly => !assembly.IsDynamic
           && assembly.GetName().FullName.StartsWith(Options.ArchetypeAssembliesPrefix)
@@ -245,9 +248,13 @@ namespace Meep.Tech.Data.Configuration {
 
     void _initializeModelsAndArchetypesByAssembly() {
       foreach(AssemblyBuildableTypesCollection typesToBuild in _assemblyTypesToBuild.Values) {
+        // enums:
+        foreach (PropertyInfo prop in typesToBuild.Enumerations) {
+          _registerEnumValue(prop);
+        }
 
         // components first
-        foreach(Type systemType in typesToBuild.Components) {
+        foreach (Type systemType in typesToBuild.Components) {
           try {
             _registerComponentType(systemType);
           }
@@ -309,7 +316,7 @@ namespace Meep.Tech.Data.Configuration {
         }
       }
 
-      _testBuildDefaultModel(systemType);
+      var defaultModel = _testBuildDefaultModel(systemType);
       try {
         Universe.Models._baseTypes.Add(
           systemType.FullName,
@@ -319,6 +326,13 @@ namespace Meep.Tech.Data.Configuration {
       } catch(Exception e) {
         throw new NotImplementedException($"Could not find IModel<> Base Type for {systemType}, does it inherit from IModel instead of IModel<T> by mistake?", e);
       }
+
+      Universe._extraContexts
+        .ForEach(context => context.Value.OnModelTypeRegistered(systemType, defaultModel));
+    }
+
+    void _registerEnumValue(PropertyInfo prop) {
+      prop.GetValue(null);
     }
 
     /// <summary>
@@ -379,7 +393,7 @@ namespace Meep.Tech.Data.Configuration {
     /// <summary>
     /// Test build a model of the given type using it's default archetype or builder.
     /// </summary>
-    void _testBuildDefaultModel(Type systemType) {
+    IModel _testBuildDefaultModel(Type systemType) {
       Archetype defaultFactory;
       if(systemType.IsAssignableToGeneric(typeof(IModel<,>))) {
         defaultFactory 
@@ -393,6 +407,7 @@ namespace Meep.Tech.Data.Configuration {
         throw new Exception($"Could not make a default model for model of type: {systemType.FullName}. Could not fine a default BuilderFactory or Archetype to build it with.");
       }
 
+      IModel defaultModel = null;
       try {
         Func<Archetype, Dictionary<string, object>, IBuilder> builderCtor
           = defaultFactory.GetGenericBuilderConstructor();
@@ -400,12 +415,14 @@ namespace Meep.Tech.Data.Configuration {
           defaultFactory,
           defaultFactory.DefaultTestParams ?? Archetype._emptyTestParams
         );
-        IModel defaultModel = defaultFactory.MakeDefaultWith(builder);
+        defaultModel = defaultFactory.MakeDefaultWith(builder);
         Universe.Models._modelTypesProducedByArchetypes[defaultFactory] = defaultModel.GetType();
       }
       catch (Exception e) {
         throw new Exception($"Could not make a default model for model of type: {systemType.FullName}, using default archeytpe of type: {defaultFactory}.", e);
       }
+
+      return defaultModel;
     }
 
     /// <summary>
@@ -443,6 +460,8 @@ namespace Meep.Tech.Data.Configuration {
           = new();
       internal List<Type> Components
           = new();
+      internal List<PropertyInfo> Enumerations
+          = new();
       internal Type Modifications;
       internal Assembly Assembly {
         get;
@@ -468,30 +487,40 @@ namespace Meep.Tech.Data.Configuration {
       // For each loaded assembly
       foreach(Assembly assembly in Options.AssemblyLoadOrder) {
         // For each type in these assemblies
-        foreach(Type systemType in assembly.GetExportedTypes().Where(
+        foreach (Type systemType in assembly.GetExportedTypes().Where(
           // ... abstract types can't be built
-          systemType => !systemType.IsAbstract
+          systemType =>
             // ... if it doesn't have a disqualifying attribute
-            && !Attribute.IsDefined(systemType, typeof(Settings.DoNotBuildInInitialLoadAttribute))
-            && !Attribute.IsDefined(systemType, typeof(Settings.DoNotBuildInInitialLoadAttribute))
+            !Attribute.IsDefined(systemType, typeof(Settings.DoNotBuildInInitialLoadAttribute))
+            && !Attribute.IsDefined(systemType, typeof(Settings.DoNotBuildThisOrChildrenInInitialLoadAttribute))
         )) {
-          // ... if it extends Archetype<,> 
-          if(systemType.IsAssignableToGeneric(typeof(Archetype<,>))) {
-            _validateAssemblyCollectionExists(_assemblyTypesToBuild, assembly);
-            _assemblyTypesToBuild[assembly].Archetypes.Add(systemType);
-          } // ... or IModel<>
-          else if(systemType.IsAssignableToGeneric(typeof(IModel<>))) {
-            _validateAssemblyCollectionExists(_assemblyTypesToBuild, assembly);
-            // ... if it's an IComponent<>
-            if(systemType.IsAssignableToGeneric(typeof(IComponent<>))) {
-              _assemblyTypesToBuild[assembly].Components.Add(systemType);
+          if (!systemType.IsAbstract) {
+             // ... if it extends Archetype<,> 
+            if (systemType.IsAssignableToGeneric(typeof(Archetype<,>))) {
+              _validateAssemblyCollectionExists(_assemblyTypesToBuild, assembly);
+              _assemblyTypesToBuild[assembly].Archetypes.Add(systemType);
+            } // ... or IModel<>
+            else if (systemType.IsAssignableToGeneric(typeof(IModel<>))) {
+              _validateAssemblyCollectionExists(_assemblyTypesToBuild, assembly);
+              // ... if it's an IComponent<>
+              if (systemType.IsAssignableToGeneric(typeof(IComponent<>))) {
+                _assemblyTypesToBuild[assembly].Components.Add(systemType);
+              }
+              else
+                _assemblyTypesToBuild[assembly].Models.Add(systemType);
+            } // if it's a modifications class:
+            else if (typeof(Modifications).IsAssignableFrom(systemType)) {
+              _validateAssemblyCollectionExists(_assemblyTypesToBuild, assembly);
+              _assemblyTypesToBuild[assembly].Modifications = systemType;
             }
-            else
-              _assemblyTypesToBuild[assembly].Models.Add(systemType);
-          } // if it's a modifications class:
-          else if(typeof(Modifications).IsAssignableFrom(systemType)) {
+          } // only grab enums from abstract/static types:
+
+          // if this type's got enums we want:
+          if (systemType.GetCustomAttribute<BuildAllDeclaredEnumValuesOnInitialLoadAttribute>() != null || systemType.IsAssignableToGeneric(typeof(Enumeration<>))) {
             _validateAssemblyCollectionExists(_assemblyTypesToBuild, assembly);
-            _assemblyTypesToBuild[assembly].Modifications = systemType;
+            foreach (PropertyInfo staticEnumProperty in systemType.GetProperties(BindingFlags.Static | BindingFlags.Public).Where(p => p.PropertyType.IsAssignableToGeneric(typeof(Enumeration<>)))) {
+              _assemblyTypesToBuild[assembly].Enumerations.Add(staticEnumProperty);
+            }
           }
           else
             continue;
@@ -694,6 +723,8 @@ namespace Meep.Tech.Data.Configuration {
     void _finalize() {
       _reportOnFailedTypeInitializations();
       _finalizeModelSerializerSettings();
+      Universe._extraContexts
+        .ForEach(context => context.Value.OnLoaderFinalize());
 
       _uninitializedArchetypes = null;
       _initializedArchetypes = null;

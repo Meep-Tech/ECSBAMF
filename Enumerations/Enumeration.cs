@@ -17,7 +17,7 @@ namespace Meep.Tech.Data {
     /// <summary>
     /// The current number of enums. Used for internal indexing.
     /// </summary>
-    static int CurrentMaxInternalEnumId 
+    static int _currentMaxInternalEnumId 
       = 0;
 
     /// <summary>
@@ -32,8 +32,12 @@ namespace Meep.Tech.Data {
     /// The perminant and unique external id
     /// </summary>
     public object ExternalId {
-      get;
-    }
+      get => _externalId
+        ?? throw new InvalidOperationException($"Attempted to access uninitialized Enum of type {GetType()}");
+      private set {
+        _registerNew(value);
+      }
+    } object _externalId;
 
     /// <summary>
     /// The universe this enum is a part of
@@ -51,22 +55,40 @@ namespace Meep.Tech.Data {
     }
 
     /// <summary>
-    /// Make an archetype ID
+    /// Make a new enumeration.
     /// </summary>
     protected Enumeration(object uniqueIdentifier, Universe universe = null) {
-      // Remove any spaces:
-      ExternalId = Regex.Replace($"{uniqueIdentifier}", @"\s+", "");
-      InternalId = Interlocked.Increment(ref CurrentMaxInternalEnumId) - 1;
       Universe = universe ?? Archetypes.DefaultUniverse;
-      if(Universe is null) {
+      if (Universe is null) {
         throw new System.ArgumentNullException(nameof(Universe));
       }
-      if(Universe.Enumerations is null) {
+      if (Universe.Enumerations is null) {
         throw new System.ArgumentNullException("Universe.Enumerations");
       }
 
+      InternalId = Interlocked.Increment(ref _currentMaxInternalEnumId) - 1;
+
+      if (uniqueIdentifier is not null) {
+        _registerNew(uniqueIdentifier);
+      }
+    }
+
+    void _registerNew(object uniqueIdentifier) {
+      _externalId = UniqueIdCreationLogic(uniqueIdentifier);
       Universe.Enumerations._register(this);
     }
+
+    /// <summary>
+    /// Used to make a unique id for an enum from the provided unique value.
+    /// </summary>
+    protected internal abstract object UniqueIdCreationLogic(object uniqueIdentifier);
+
+    /// <summary>
+    /// Just removes any spaces.
+    /// </summary>
+    public static object DefaltUniqueIdCreationLogic(Type baseType, object uniqueIdentifier) =>
+      // Remove any spaces:
+      Regex.Replace($"{baseType.Name}.{uniqueIdentifier}", @"\s+", "");
 
     #region Equality, Comparison, and Conversion
 
@@ -126,6 +148,18 @@ namespace Meep.Tech.Data {
     /// Ctor add to all.
     /// </summary>
     protected Enumeration(object uniqueIdentifier, Universe universe = null) 
-      : base(uniqueIdentifier, universe) {}
+      : base(uniqueIdentifier, universe) { }
+
+    /// <summary>
+    /// Used to make a unique id for an enum from the provided unique value.
+    /// </summary>
+    protected internal override object UniqueIdCreationLogic(object uniqueIdentifier)
+      => DefaltUniqueIdCreationLogic(typeof(TEnumBase), uniqueIdentifier);
+
+    /// <summary>
+    /// Used to make a unique id for an enum from the provided unique value.
+    /// </summary>
+    public static object GetUniqueIdFromBaseObjectKey(object uniqueIdentifier)
+      => All.First().UniqueIdCreationLogic(uniqueIdentifier);
   }
 }

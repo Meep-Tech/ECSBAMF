@@ -7,6 +7,7 @@ using System.Linq;
 namespace Meep.Tech.Data {
 
   public abstract partial class Enumeration {
+
     /// <summary>
     /// Json Converter for Enumerations
     /// </summary>

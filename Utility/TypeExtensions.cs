@@ -5,7 +5,7 @@ using System.Linq.Expressions;
 namespace Meep.Tech.Data {
 
   /// <summary>
-  /// Shortcuts and caching for casting types
+  /// Shortcuts and caching for casting types for xbam
   /// </summary>
   public static class TypeExtensions {
 

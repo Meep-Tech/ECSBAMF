@@ -70,7 +70,7 @@ namespace Meep.Tech.Data {
       get;
     }
 
-    readonly Dictionary<Type, ExtraContext> _extraContexts
+    internal readonly Dictionary<Type, ExtraContext> _extraContexts
       = new();
 
     /// <summary>

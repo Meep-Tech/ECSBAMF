@@ -1,12 +1,12 @@
-﻿using Meep.Tech.Data;
-using System;
-using System.Collections;
+﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 
 namespace Meep.Tech.Data {
 
-  public static class DictionaryExtensions {
+  /// <summary>
+  /// Dictionaty extensions specific to xbam components
+  /// </summary>
+  public static class XbamSpecificDictionaryExtensions {
 
     /// <summary>
     /// Append a component to a dictionary and return the collection

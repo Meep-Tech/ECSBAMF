@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 
 namespace Meep.Tech.Collections.Generic {
+
   public static class EnumerableExtensions {
 
     /// <summary>
