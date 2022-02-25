@@ -116,7 +116,7 @@ namespace Meep.Tech.Data.Configuration {
     /// Try to load all archetypes, using the Settings
     /// </summary>
     public void Initialize(Universe universe = null) {
-      Universe = universe ?? new Universe(this, Options.UniverseName);
+      Universe = universe ?? Universe ?? new Universe(this, Options.UniverseName);
       _initializeModelSerializerSettings();
       _initalizeCompatableArchetypeData();
       _initializeModelsAndArchetypesByAssembly();

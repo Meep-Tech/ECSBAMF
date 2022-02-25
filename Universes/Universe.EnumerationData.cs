@@ -16,10 +16,10 @@ namespace Meep.Tech.Data {
       /// </summary>
       public IReadOnlyDictionary<System.Type, IReadOnlyList<Enumeration>> ByType
         => _byType.ToDictionary(
-          e => typeof(Enumeration).Assembly.GetType(e.Key),
+          e => TypeExtensions.GetTypeByFullName(e.Key),
           e => (IReadOnlyList<Enumeration>)e.Value.Values.ToList()
         ); readonly Dictionary<string, Dictionary<object, Enumeration>> _byType
-          = new Dictionary<string, Dictionary<object, Enumeration>>();
+          = new();
 
       /// <summary>
       /// Get all enumerations of a given type

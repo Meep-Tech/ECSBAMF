@@ -20,7 +20,7 @@ namespace Meep.Tech.Data {
       /// Publicly readable components
       /// </summary>
       [ModelComponentsProperty]
-      public IReadOnlyDictionary<string, IModel.IComponent> components {
+      public IReadOnlyDictionary<string, IModel.IComponent> Components {
         get => _components.ToDictionary(x => x.Key, y => y.Value as IModel.IComponent);
         // For deserialization:
         private set => value.Values.ForEach(AddComponent);
@@ -259,7 +259,7 @@ namespace Meep.Tech.Data {
       /// Publicly readable components
       /// </summary>
       [ModelComponentsProperty]
-      public IReadOnlyDictionary<string, IModel.IComponent> components {
+      public IReadOnlyDictionary<string, IModel.IComponent> Components {
         get => _components.ToDictionary(x => x.Key, y => y.Value as IModel.IComponent);
         // For deserialization:
         private set => value.Values.ForEach(AddComponent);

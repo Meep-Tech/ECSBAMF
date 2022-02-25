@@ -200,7 +200,7 @@ namespace Meep.Tech.Data {
                 break;
               }
               if(baseType.Name == typeof(Model<>.WithComponents).Name
-                  && baseType.Module.ToString() == "Meep.Tech.ECSBAM.dll") {
+                  && baseType.Module == typeof(Model<>.WithComponents).Module) {
                 factory = _makeDefaultFactoryFor(originalType);
                 break;
               }
@@ -315,7 +315,7 @@ namespace Meep.Tech.Data {
           builderIdType = typeof(IModel<>.BuilderFactory.Identity)
             .MakeGenericType(modelType, builderType);
         } catch (Exception e) {
-          throw new ArgumentException($"Could not apply generics to builder and Id for model: {modelType.FullName}.\n Inner Exception: {e} \n ===============");
+          throw new ArgumentException($"Could not apply generics to Builder or Id for XBam Model of Type {modelType.FullName}.\n Inner Exception: {e} \n ===============");
         }
 
         ctor = builderType

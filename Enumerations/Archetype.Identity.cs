@@ -40,6 +40,7 @@ namespace Meep.Tech.Data {
       /// Can be used as an internal value to index this identity.
       /// May change between runtimes/runs of a program.
       /// </summary>
+      [JsonIgnore]
       public int InternalIndex
         => InternalId;
 

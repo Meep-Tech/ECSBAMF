@@ -27,7 +27,7 @@ namespace Meep.Tech.Data {
     /// <summary>
     /// Make a component from a jobject
     /// </summary>
-    public new static IComponent FromJson(
+    public new static Data.IComponent FromJson(
       JObject jObject,
       Type deserializeToTypeOverride = null,
       Universe universeOverride = null

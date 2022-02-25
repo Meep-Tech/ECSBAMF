@@ -9,7 +9,7 @@
         "state": {
           "type": "markdown",
           "state": {
-            "file": "README.md",
+            "file": "Concepts/Archetype.md",
             "mode": "source"
           }
         }
@@ -76,7 +76,7 @@
             "state": {
               "type": "backlink",
               "state": {
-                "file": "README.md",
+                "file": "Concepts/Archetype.md",
                 "collapseAll": true,
                 "extraContext": false,
                 "sortOrder": "alphabetical",
@@ -93,7 +93,7 @@
             "state": {
               "type": "outgoing-link",
               "state": {
-                "file": "README.md",
+                "file": "Concepts/Archetype.md",
                 "linksCollapsed": false,
                 "unlinkedCollapsed": true
               }
@@ -116,7 +116,7 @@
             "state": {
               "type": "outline",
               "state": {
-                "file": "README.md"
+                "file": "Concepts/Archetype.md"
               }
             }
           }
@@ -125,19 +125,20 @@
       }
     ],
     "direction": "horizontal",
-    "width": 331
+    "width": 331,
+    "collapsed": true
   },
   "active": "065ad034f4eeed1b",
   "lastOpenFiles": [
-    "README.md",
     "Concepts/Archetype.md",
-    "Code/Enumeration.md",
-    "Concepts/Universe.md",
-    "Concepts/Enumeration.md",
-    "Concepts/Enumeration Base Class.md",
     "Concepts/Archetype Identity.md",
-    "Code/Enumeration+1.md",
+    "Concepts/Factory.md",
     "Concepts/Enumeration Value.md",
-    "Concepts/Parameter.md"
+    "Concepts/Enumeration Base Class.md",
+    "Concepts/Enumeration.md",
+    "Concepts/XBam.md",
+    "README.md",
+    "Code/Enumeration.md",
+    "Concepts/Universe.md"
   ]
 }

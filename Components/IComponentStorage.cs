@@ -4,28 +4,6 @@ using System.Linq;
 
 namespace Meep.Tech.Data {
 
-  /*public interface IReadableComponentStorage<Type> : IReadableComponentStorage {
-
-    /// <summary>
-    /// Internal holder for components data
-    /// </summary>
-    IReadOnlyDictionary<string, IComponent> ComponentsByBuilderKey
-      => _componentsByBuilderKey;
-
-    /// <summary>
-    /// Internal holder for components data
-    /// </summary>
-    protected new Dictionary<string, IComponent> _componentsByBuilderKey {
-      get;
-    }
-
-    /// <summary>
-    /// Internal holder for components data
-    /// </summary>
-    Dictionary<string, IComponent> IReadableComponentStorage._componentsByBuilderKey
-      => _componentsByBuilderKey;
-  }*/
-
   /// <summary>
   /// This represents an object with some kind of component storage.
   /// To override component get logic on objects, you must override them implicitly via IReadableComponentStorage

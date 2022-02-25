@@ -117,5 +117,59 @@ namespace Meep.Tech.Data {
     }
 
     #endregion
+
+    /// <summary>
+    /// Can be used to get any type by it's full name. Searches all assemblies and returns first match.
+    /// </summary>
+    public static Type GetTypeByFullName(string typeName) {
+      Type type = Type.GetType(typeName);
+      if (type != null) {
+        return type;
+      }
+
+      foreach (System.Reflection.Assembly assembly in AppDomain.CurrentDomain.GetAssemblies()) {
+        type = assembly.GetType(typeName);
+        if (type != null) {
+          return type;
+        }
+      }
+
+      return null;
+    }
+
+    /// <summary>
+    /// Get a clean, easier to read type name that's still fully qualified.
+    /// </summary>
+    public static string ToFullHumanReadableNameString(this Type type) {
+      if (type.IsGenericParameter) {
+        return type.Name;
+      }
+
+      if (!type.IsGenericType) {
+        return type.FullName;
+      }
+
+      System.Text.StringBuilder builder 
+        = new();
+
+      builder.AppendFormat(
+        "{0}.{1}",
+        type.Namespace,
+        type.Name[..type.Name.IndexOf("`")]
+      );
+
+      builder.Append('<');
+      bool first = true;
+      foreach (Type genericTypeArgument in type.GetGenericArguments()) {
+        if (!first) {
+          builder.Append(',');
+        }
+        builder.Append(genericTypeArgument.ToFullHumanReadableNameString());
+        first = false;
+      }
+      builder.Append('>');
+
+      return builder.ToString();
+    }
   }
 }

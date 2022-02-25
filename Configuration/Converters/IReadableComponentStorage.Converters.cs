@@ -28,7 +28,7 @@ namespace Meep.Tech.Data {
         JArray components = serializer.Deserialize<JArray>(reader);
         
         return components.Select(token =>
-          IComponent.FromJson(token as JObject)
+          IComponent.FromJson(token as JObject) as IModel.IComponent
         ).ToDictionary(
           component => component.Key,
           component => component

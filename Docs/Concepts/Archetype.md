@@ -3,7 +3,7 @@ Archetypes are the heart and soul of [[XBam]]. They are both [[Flyweight Data]] 
 By default, Archetypes act like Singletons; Only one archetype of each Class Type is allowed to exist at any given time.
 
 # Creating A New Tree of Achetypes
-Only [[Base Model Type]]s that extend [[Model+2]] can have branching trees of Archetypes. Alternately, [[Model+1]] types only have a single Root Archetype as a [[Builder Factory]] that can be customized to produce multiple Model Types if one desires.
+Only [[Base Model Type]]s that extend [[Model+2]] can have branching trees of Archetypes. Alternately, [[Model+1]] types only have a single Root Archetype which acts as a [[Simple Builder Factory]] which can be customized to produce multiple Model Types if one desires.
 
 [[Base Archetype]]s and their [[Child Archetype|children]] are organized into [[Archetype Tree]]s. The Base Archetype is the root of this tree, and all other Archetypes in this Tree/Family inherit from that Base Archetype. 
 The Base Archetype has a [[Base Model Type]], which is the most basic type of [[Model]] that this Archetype can produce as a Factory. All Models produced by any Archetype in this family will inherit from this Base Model Type.
