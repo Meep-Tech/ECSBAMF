@@ -26,7 +26,7 @@ namespace Meep.Tech.Data {
     public static bool Equals(IReadableComponentStorage model, IReadableComponentStorage other) {
       foreach((_, IComponent dataComponent) in model._componentsByBuilderKey) {
         // check each child component that we need to:
-        if(Components.GetBuilderFactoryFor(dataComponent.GetType()).IncludeInParentModelEqualityChecks) {
+        if(Meep.Tech.Data.Components.GetBuilderFactoryFor(dataComponent.GetType()).IncludeInParentModelEqualityChecks) {
           // if the other item doesn't have any components, is missing this component, or the other component doesn't equal the one from this model, it's not ==
           if(!other.HasComponent(dataComponent, out IComponent otherComponent)
             || !dataComponent.Equals(otherComponent)
@@ -99,6 +99,32 @@ namespace Meep.Tech.Data {
       => ReadableComponentStorageExtensions.HasComponent(this, componentModel, out component);
 
     #endregion
+  }
+
+  public partial interface IModel {
+
+    /// <summary>
+    /// Readble Component Storage more specific to a model.
+    /// Includes serialization requirements...
+    /// <inheritdoc/>
+    /// </summary>
+    public interface IReadableComponentStorage : Data.IReadableComponentStorage {
+
+      /// <summary>
+      /// The components, which will be serialized with the model.
+      /// </summary>
+      IReadOnlyDictionary<string, IModel.IComponent> Components { 
+        get;
+      }
+    }
+
+    /// <summary>
+    /// Readble Component Storage more specific to a model.
+    /// Includes serialization requirements...
+    /// <inheritdoc/>
+    /// </summary>
+    public interface IWriteableComponentStorage 
+      : Data.IWriteableComponentStorage, IModel.IReadableComponentStorage {}
   }
 
   /// <summary>

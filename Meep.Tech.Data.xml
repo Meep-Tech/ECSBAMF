@@ -2327,6 +2327,25 @@
             </summary>
         </member>
         <!-- Badly formed XML comment ignored for member "T:Meep.Tech.Data.IModel.IBuilderFactory" -->
+        <member name="T:Meep.Tech.Data.IModel.IReadableComponentStorage">
+            <summary>
+            Readble Component Storage more specific to a model.
+            Includes serialization requirements...
+            <inheritdoc/>
+            </summary>
+        </member>
+        <member name="P:Meep.Tech.Data.IModel.IReadableComponentStorage.Components">
+            <summary>
+            The components, which will be serialized with the model.
+            </summary>
+        </member>
+        <member name="T:Meep.Tech.Data.IModel.IWriteableComponentStorage">
+            <summary>
+            Readble Component Storage more specific to a model.
+            Includes serialization requirements...
+            <inheritdoc/>
+            </summary>
+        </member>
         <member name="T:Meep.Tech.Data.IModel.IComponent">
             <summary>
             A Component for an Model. Contains datas. Logic should usually be kept to Archetypes
@@ -2552,6 +2571,9 @@
             The accessor for the default Icomponents implimentation
             </summary>
         </member>
+        <member name="M:Meep.Tech.Data.Model`1.WithComponents.Equals(System.Object)">
+            <summary><inheritdoc/></summary>
+        </member>
         <member name="M:Meep.Tech.Data.Model`1.WithComponents.GetComponent(System.String)">
             <summary>
             Get a component if it exists. Throws if it doesn't
@@ -2759,13 +2781,13 @@
             Build the model.
             </summary>
         </member>
-        <member name="M:Meep.Tech.Data.IModel`1.Builder._initializeModelComponents(Meep.Tech.Data.IReadableComponentStorage)">
+        <member name="M:Meep.Tech.Data.IModel`1.Builder._initializeModelComponents(Meep.Tech.Data.IModel.IReadableComponentStorage)">
             <summary>
             Loop though each model component and initialize them.
             This also adds all model data componnets linked to an archetype component first.
             </summary>
         </member>
-        <member name="M:Meep.Tech.Data.IModel`1.Builder._finalizeModelComponents(Meep.Tech.Data.IReadableComponentStorage)">
+        <member name="M:Meep.Tech.Data.IModel`1.Builder._finalizeModelComponents(Meep.Tech.Data.IModel.IReadableComponentStorage)">
             <summary>
             Loop though each model component and finalize them.
             </summary>
@@ -4155,9 +4177,15 @@
             Get the first factory inherited by a given model:
             </summary>
         </member>
+        <member name="M:Meep.Tech.Data.Universe.ModelsData._findFirstInheritedDataItemFor``1(System.Type,System.Func{System.Type,``0},System.Func{System.Type,``0},System.Action{System.Type,``0})">
+            <summary>
+            Get the first factory inherited by a given model:
+            </summary>
+        </member>
         <member name="M:Meep.Tech.Data.Universe.ModelsData._findFirstInheritedCompareLogic(System.Type)">
             <summary>
             Get the first factory inherited by a given model:
+            TODO: this and the find first factory logic should be combined into one, with find first factory taking precidence. It's more up to date.
             </summary>
         </member>
         <member name="M:Meep.Tech.Data.Universe.ModelsData._makeDefaultCompareLogic">

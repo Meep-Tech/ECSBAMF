@@ -168,7 +168,17 @@ namespace Meep.Tech.Data {
       /// <summary>
       /// Get the first factory inherited by a given model:
       /// </summary>
-      IModel.IBuilderFactory _findFirstInheritedFactory(Type modelType) {
+      IModel.IBuilderFactory _findFirstInheritedFactory(Type modelType)
+        => _findFirstInheritedDataItemFor(
+          modelType,
+          type => _factoriesByModelType.TryGetValue(type, out var factory)
+            ? factory
+            : null,
+          type => _makeDefaultFactoryFor(modelType),
+          (type, newValue) => _factoriesByModelType[type] = newValue
+        );
+
+      /*IModel.IBuilderFactory _findFirstInheritedFactory(Type modelType) {
         if(!modelType.IsAssignableToGeneric(typeof(IModel<>))) {
           throw new NotImplementedException(
             $"Model Type: {modelType.FullName} does not inherit from Model<TModelBase>." +
@@ -190,38 +200,111 @@ namespace Meep.Tech.Data {
         else {
           Type baseType = modelType.BaseType;
           Type originalType = modelType;
+          Type currentValidType = originalType;
           while(baseType != null) {
-            if(typeof(IModel).IsAssignableFrom(baseType)) {
-              if(baseType.BaseType?.FullName == typeof(Model).FullName) {
+              if (typeof(IModel).IsAssignableFrom(baseType)) {
+                if (baseType.BaseType?.FullName == typeof(Model).FullName) {
+                  factory = _makeDefaultFactoryFor(originalType);
+                  break;
+                }
+                if (_factoriesByModelType.TryGetValue(baseType, out factory)) {
+                  break;
+                }
+                if (baseType.Name == typeof(Model<>.WithComponents).Name
+                    && baseType.Module == typeof(Model<>.WithComponents).Module) {
+                  factory = _makeDefaultFactoryFor(originalType);
+                  break;
+                }
+              } else {
                 factory = _makeDefaultFactoryFor(originalType);
                 break;
               }
-              if(_factoriesByModelType.TryGetValue(baseType, out factory)) {
-                break;
-              }
-              if(baseType.Name == typeof(Model<>.WithComponents).Name
-                  && baseType.Module == typeof(Model<>.WithComponents).Module) {
-                factory = _makeDefaultFactoryFor(originalType);
-                break;
-              }
-            }
-            else {
-              factory = _makeDefaultFactoryFor(originalType);
-              break;
+
+            if (!baseType.IsAbstract) {
+              currentValidType = baseType;
             }
 
             originalType = baseType;
             baseType = baseType.BaseType;
           }
+
+          if (factory is null) {
+            factory = _makeDefaultFactoryFor(currentValidType);
+          }
         }
+
 
         _factoriesByModelType[modelType] = factory
           ?? throw new NotImplementedException($"No BuilderFactory was found or built for the model type: {modelType.FullName}");
         return factory;
+      }*/
+
+      /// <summary>
+      /// Get the first factory inherited by a given model:
+      /// </summary>
+      TDataItem _findFirstInheritedDataItemFor<TDataItem>(Type modelType, Func<Type, TDataItem> cachedItemFetcher, Func<Type, TDataItem> defaultBulder, Action<Type, TDataItem> newItemCacheSetter) {
+        if(!modelType.IsAssignableToGeneric(typeof(IModel<>))) {
+          throw new NotImplementedException(
+            $"Model Type: {modelType.FullName} does not inherit from Model<TModelBase>." +
+            $" If you are using Model<TModelBase, TArchetypeBase> then the Archetype " +
+            $"Base would be the default FactoryBuilder, and this method of property searching/setting should not be used."
+          );
+        }
+
+        TDataItem found = cachedItemFetcher(modelType);
+        // check if we already have one set by someone:
+        if(found is not null) {
+          ///// Do nothing
+        }// just the interface:
+        else if(modelType.BaseType == null) {
+          if(modelType.IsAssignableToGeneric(typeof(IModel<>))) {
+            found = defaultBulder(modelType);
+          }
+        }// if we need to find the base type:
+        else {
+          Type baseType = modelType.BaseType;
+          Type originalType = modelType;
+          Type currentValidType = originalType;
+          while(baseType != null) {
+            if (typeof(IModel).IsAssignableFrom(baseType)) {
+              if (baseType.BaseType?.FullName == typeof(Model).FullName) {
+                found = defaultBulder(originalType);
+                break;
+              }
+              if ((found = cachedItemFetcher(baseType)) != null) {
+                break;
+              }
+              if (baseType.Name == typeof(Model<>.WithComponents).Name
+                  && baseType.Module == typeof(Model<>.WithComponents).Module) {
+                found = defaultBulder(originalType);
+                break;
+              }
+            } else {
+              found = defaultBulder(originalType);
+              break;
+            }
+
+            if (!baseType.IsAbstract) {
+              currentValidType = baseType;
+            }
+
+            originalType = baseType;
+            baseType = baseType.BaseType;
+          }
+
+          if (found is null) {
+            found = defaultBulder(currentValidType);
+          }
+        }
+
+        newItemCacheSetter(modelType, found
+          ?? throw new NotImplementedException($"No {typeof(TDataItem).Name} was found , or could be built for the model type: {modelType.FullName}"));
+        return found;
       }
       
       /// <summary>
       /// Get the first factory inherited by a given model:
+      /// TODO: this and the find first factory logic should be combined into one, with find first factory taking precidence. It's more up to date.
       /// </summary>
       CompareLogic _findFirstInheritedCompareLogic(Type modelType) {
         if(!modelType.IsAssignableToGeneric(typeof(IModel<>))) {
@@ -277,25 +360,29 @@ namespace Meep.Tech.Data {
       /// Make the default factory for a model type using reflection:
       /// </summary>
       IModel.IBuilderFactory _makeDefaultFactoryFor(Type modelType) {
-        Type builderType;
-        Type builderIdType;
+        Type builderType = null;
+        Type builderIdType = null;
         System.Reflection.ConstructorInfo ctor;
 
         // component
-        if(modelType.IsAssignableToGeneric(typeof(IComponent<>))) {
-          builderType = typeof(IComponent<>.BuilderFactory).MakeGenericType(modelType);
-          builderIdType = typeof(IComponent<>.BuilderFactory.Identity)
-            .MakeGenericType(modelType, builderType);
+        if (modelType.IsAssignableToGeneric(typeof(IComponent<>))) {
+          try {
+            builderType = typeof(IComponent<>.BuilderFactory).MakeGenericType(modelType);
+            builderIdType = typeof(IComponent<>.BuilderFactory.Identity)
+              .MakeGenericType(modelType, builderType);
+          } catch (Exception e) {
+            throw new ArgumentException($"Could not apply generics to Builder or Id for XBam Component of Type {modelType.FullName}. Using Component Type: {modelType?.ToString() ?? "null"} and Builder Tyoe:{builderType?.ToString() ?? "null"}  \n Inner Exception: {e} \n ===============");
+          }
 
           ctor = builderType
-            .GetConstructor(
-              System.Reflection.BindingFlags.NonPublic
-                | System.Reflection.BindingFlags.Instance
-                | System.Reflection.BindingFlags.Public,
-              null,
-              new Type[] { builderIdType, typeof(Universe) },
-              null
-            );
+              .GetConstructor(
+                System.Reflection.BindingFlags.NonPublic
+                  | System.Reflection.BindingFlags.Instance
+                  | System.Reflection.BindingFlags.Public,
+                null,
+                new Type[] { builderIdType, typeof(Universe) },
+                null
+              );
 
           return ctor.Invoke(new object[] {
             Activator.CreateInstance(
@@ -315,7 +402,7 @@ namespace Meep.Tech.Data {
           builderIdType = typeof(IModel<>.BuilderFactory.Identity)
             .MakeGenericType(modelType, builderType);
         } catch (Exception e) {
-          throw new ArgumentException($"Could not apply generics to Builder or Id for XBam Model of Type {modelType.FullName}.\n Inner Exception: {e} \n ===============");
+          throw new ArgumentException($"Could not apply generics to Builder or Id for XBam Model of Type {modelType.FullName}. Using Model Type: {modelType?.ToString() ?? "null"} and Builder Tyoe:{builderType?.ToString() ?? "null"}  \n Inner Exception: {e} \n ===============");
         }
 
         ctor = builderType
@@ -324,7 +411,7 @@ namespace Meep.Tech.Data {
                 | System.Reflection.BindingFlags.Instance
                 | System.Reflection.BindingFlags.Public,
               null,
-              new Type[] { 
+              new Type[] {
                 builderIdType,
                 typeof(Universe)
               },

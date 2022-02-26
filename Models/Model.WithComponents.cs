@@ -13,7 +13,7 @@ namespace Meep.Tech.Data {
     /// </summary>
     public abstract class WithComponents
       : Model<TModelBase>,
-      IReadableComponentStorage 
+      IModel.IReadableComponentStorage 
     {
 
       /// <summary>
@@ -30,7 +30,7 @@ namespace Meep.Tech.Data {
       /// Internally stored components
       /// </summary>
       Dictionary<string, Data.IComponent> _components 
-        = new Dictionary<string, Data.IComponent>();
+        = new();
 
       /// <summary>
       /// The accessor for the default Icomponents implimentation
@@ -38,6 +38,7 @@ namespace Meep.Tech.Data {
       Dictionary<string, Data.IComponent> IReadableComponentStorage._componentsByBuilderKey
         => _components;
 
+      ///<summary><inheritdoc/></summary>
       public override bool Equals(object obj) {
         return base.Equals(obj) 
           && IReadableComponentStorage.Equals(this, obj as IReadableComponentStorage);
@@ -252,7 +253,7 @@ namespace Meep.Tech.Data {
     /// </summary>
     public abstract class WithComponents
       : Model<TModelBase, TArchetypeBase>,
-      IReadableComponentStorage 
+      IModel.IReadableComponentStorage 
     {
 
       /// <summary>
