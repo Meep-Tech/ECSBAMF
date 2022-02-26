@@ -1,0 +1,44 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+	<PropertyGroup>
+		<TargetFrameworks>netstandard2.1;net5;net6</TargetFrameworks>
+		<LangVersion>9.0</LangVersion>
+		<RootNamespace>Meep.Tech.Data</RootNamespace>
+	  <GenerateDocumentationFile>true</GenerateDocumentationFile>
+	</PropertyGroup>
+
+	<PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Debug|netstandard2.1|AnyCPU'">
+	  <DocumentationFile>C:\Users\super\Projects\meep-tech\libraries\c-sharp\ECSBAM\Meep.Tech.Data\Meep.Tech.Data.xml</DocumentationFile>
+	  <DebugType>portable</DebugType>
+	  <DebugSymbols>true</DebugSymbols>
+	</PropertyGroup>
+
+	<ItemGroup>
+	  <Compile Remove="Utility\Templates\*" />
+	  <None Include="Utility\Templates\*" />
+	</ItemGroup>
+
+	<ItemGroup>
+	  <Compile Remove="Utility\Templates\New XBam Enumeration Type Class\New XBam Enumeration Type Class.cs" />
+	</ItemGroup>
+
+	<ItemGroup>
+	  <None Include="Utility\Templates\New XBam Enumeration Type Class\New XBam Enumeration Type Class.cs" />
+	</ItemGroup>
+
+	<ItemGroup>
+	  <PackageReference Include="CompareNETObjects" Version="4.74.0" />
+	  <PackageReference Include="Newtonsoft.Json" Version="12.0.3" />
+	</ItemGroup>
+
+	<Target Name="PostBuild" AfterTargets="PostBuildEvent">
+		<Exec Command="xcopy &quot;bin\Debug\netstandard2.1\Meep.Tech.Data.dll&quot; &quot;..\..\..\..\apps\unity\Overworld\Assets\Packages\ECSBAM\&quot; /y" />
+		<Exec Command="xcopy &quot;bin\Debug\netstandard2.1\Meep.Tech.Data.pdb&quot; &quot;..\..\..\..\apps\unity\Overworld\Assets\Packages\ECSBAM\&quot; /y" />
+		<Exec Command="xcopy &quot;bin\Debug\netstandard2.1\Meep.Tech.Data.deps.json&quot; &quot;..\..\..\..\apps\unity\Overworld\Assets\Packages\ECSBAM\&quot; /y" />
+
+		<Exec Command="xcopy &quot;bin\Debug\netstandard2.1\Meep.Tech.Data.dll&quot; &quot;..\..\..\..\apps\unity\Overworld Launcher\Assets\Packages\ECSBAM\&quot; /y" />
+		<Exec Command="xcopy &quot;bin\Debug\netstandard2.1\Meep.Tech.Data.pdb&quot; &quot;..\..\..\..\apps\unity\Overworld Launcher\Assets\Packages\ECSBAM\&quot; /y" />
+		<Exec Command="xcopy &quot;bin\Debug\netstandard2.1\Meep.Tech.Data.deps.json&quot; &quot;..\..\..\..\apps\unity\Overworld Launcher\Assets\Packages\ECSBAM\&quot; /y" />
+	</Target>
+
+</Project>

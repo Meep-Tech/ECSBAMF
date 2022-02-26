@@ -248,12 +248,12 @@ namespace Meep.Tech.Data.Configuration {
 
     void _initializeModelsAndArchetypesByAssembly() {
       foreach(AssemblyBuildableTypesCollection typesToBuild in _assemblyTypesToBuild.Values) {
-        // enums:
+        // enums first:
         foreach (PropertyInfo prop in typesToBuild.Enumerations) {
           _registerEnumValue(prop);
         }
 
-        // components first
+        // components next: 
         foreach (Type systemType in typesToBuild.Components) {
           try {
             _registerComponentType(systemType);
@@ -448,7 +448,7 @@ namespace Meep.Tech.Data.Configuration {
             = systemType;
       }
       catch (Exception e) {
-        throw new Exception($"Could not make a default component model of type: {systemType.FullName}, using default archeytpe of type: {defaultFactory}.", e);
+        throw new Exception($"Could not make a default component model of type: {systemType.FullName}, using default archeytpe of type: {defaultFactory}. Make sure you have propper default test parameters set for the archetype", e);
       }
     }
 
@@ -463,6 +463,7 @@ namespace Meep.Tech.Data.Configuration {
       internal List<PropertyInfo> Enumerations
           = new();
       internal Type Modifications;
+
       internal Assembly Assembly {
         get;
       }

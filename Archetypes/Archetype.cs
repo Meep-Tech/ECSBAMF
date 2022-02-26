@@ -489,6 +489,10 @@ namespace Meep.Tech.Data {
       : base(id) 
     {
       if(collection is null) {
+        if (Archetypes.DefaultUniverse.Loader.IsFinished && !AllowInitializationsAfterLoaderFinalization) {
+          throw new InvalidOperationException($"Tried to initialize archetype of type {id} while the loader was sealed");
+        }
+
         collection = (Collection)
           // if the base of this is registered somewhere, get the registered one by default
           (Archetypes.DefaultUniverse.Archetypes._tryToGetCollectionFor(GetType(), out var found)
@@ -501,7 +505,7 @@ namespace Meep.Tech.Data {
               = new Collection());
       }
 
-      if(collection.Universe.Loader.IsFinished && !AllowInitializationsAfterLoaderFinalization) {
+      if (collection.Universe.Loader.IsFinished && !AllowInitializationsAfterLoaderFinalization) {
         throw new InvalidOperationException($"Tried to initialize archetype of type {id} while the loader was sealed");
       }
 
@@ -609,14 +613,14 @@ namespace Meep.Tech.Data {
     /// The builder for the base model type of this archetype.
     /// You can override this and add more default props to the return for utility.
     /// </summary>
-    public virtual IBuilder<TModelBase> MakeDefaultBuilder()
+    protected virtual IBuilder<TModelBase> MakeDefaultBuilder()
       => (IBuilder<TModelBase>)GetGenericBuilderConstructor()(this, null);
 
     /// <summary>
     /// The builder for the base model type of this archetype.
     /// You can override this and add more default props to the return for utility.
     /// </summary>
-    public IBuilder<TModelBase> MakeBuilder(Dictionary<string, object> @params)
+    protected IBuilder<TModelBase> MakeBuilder(Dictionary<string, object> @params)
       => (IBuilder<TModelBase>)GetGenericBuilderConstructor()(this, @params);
 
     /// <summary>
@@ -713,8 +717,8 @@ namespace Meep.Tech.Data {
     /// <summary>
     /// Helper for potentially making an item without initializing a Builder object.
     /// </summary>
-    protected internal TModelBase Make(params (IModel.Builder.Param key, object value)[] @params)
-      => Make((IEnumerable<(IModel.Builder.Param key, object value)>)@params);
+    /*protected internal TModelBase Make(params (IModel.Builder.Param key, object value)[] @params)
+      => Make((IEnumerable<(IModel.Builder.Param key, object value)>)@params);*/
 
     /// <summary>
     /// Helper for potentially making an item without initializing a Builder object.
@@ -732,16 +736,16 @@ namespace Meep.Tech.Data {
     /// <summary>
     /// Helper for potentially making an item without initializing a Builder object.
     /// </summary>
-    protected internal TModelBase Make(params KeyValuePair<IModel.Builder.Param, object>[] @params)
-      => Make((IEnumerable<KeyValuePair<IModel.Builder.Param, object>>)@params);
+    /*protected internal TModelBase Make(params KeyValuePair<IModel.Builder.Param, object>[] @params)
+      => Make((IEnumerable<KeyValuePair<IModel.Builder.Param, object>>)@params);*/
 
     /// <summary>
     /// Helper for potentially making an item without initializing a dictionary object
     /// </summary>
     /// <returns></returns>
-    protected internal TModelBase Make(params KeyValuePair<string, object>[] @params)
-      => Make(@params.AsEnumerable());
-
+    /*protected internal TModelBase Make(params KeyValuePair<string, object>[] @params)
+      => Make(@params.AsEnumerable());*/
+    
     /// <summary>
     /// Helper for potentially making an item without initializing a dictionary object
     /// </summary>
@@ -762,9 +766,9 @@ namespace Meep.Tech.Data {
     /// Helper for potentially making an item without initializing a dictionary object
     /// </summary>
     /// <returns></returns>
-    protected internal TDesiredModel Make<TDesiredModel>(params KeyValuePair<string, object>[] @params)
+    /*protected internal TDesiredModel Make<TDesiredModel>(params KeyValuePair<string, object>[] @params)
       where TDesiredModel : TModelBase
-        => (TDesiredModel)Make(@params);
+        => (TDesiredModel)Make(@params);*/
 
     /// <summary>
     /// Helper for potentially making an item without initializing a dictionary object
@@ -786,9 +790,9 @@ namespace Meep.Tech.Data {
     /// Helper for potentially making an item without initializing a dictionary object
     /// </summary>
     /// <returns></returns>
-    protected internal TDesiredModel MakeAs<TDesiredModel>(out TDesiredModel model, params KeyValuePair<string, object>[] @params)
+    /*protected internal TDesiredModel MakeAs<TDesiredModel>(out TDesiredModel model, params KeyValuePair<string, object>[] @params)
       where TDesiredModel : class, TModelBase
-        => model = (TDesiredModel)Make(@params);
+        => model = (TDesiredModel)Make(@params);*/
 
     #endregion
 
