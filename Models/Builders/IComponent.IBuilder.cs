@@ -57,6 +57,18 @@ namespace Meep.Tech.Data {
         get;
       }
 
+      IModel IBuilder.Parent {
+        get => Parent;
+        set => Parent = value;
+      } 
+      /// <summary>
+      /// If this builder is passed to a child model or component, the original is made the parent.
+      /// </summary>
+      public IModel Parent {
+        get;
+        private set;
+      }
+
       /// <summary>
       /// Produce a new instance of the model type.
       /// this usually is just calling => new Model(this) to help set the type variable or something.
@@ -97,7 +109,7 @@ namespace Meep.Tech.Data {
         get;
       }
 
-      public LiteBuilder(Archetype forArchetype, Universe universe = null) {
+      public LiteBuilder(Archetype forArchetype, IModel parent = null, Universe universe = null) {
         Archetype = forArchetype;
         InitializeModel =
           builder => (TComponentBase)((IFactory)forArchetype).ModelConstructor(builder);
@@ -105,10 +117,11 @@ namespace Meep.Tech.Data {
         FinalizeModel = null;
         @params = null;
         Universe = universe ?? Components.DefaultUniverse;
+        Parent = parent;
       }
 
-      public LiteBuilder(Archetype forArchetype, Universe universe, params KeyValuePair<string, object>[] @params)
-        : this(forArchetype, universe) {
+      public LiteBuilder(Archetype forArchetype, IModel parent = null, Universe universe, params KeyValuePair<string, object>[] @params)
+        : this(forArchetype, parent, universe) {
         this.@params = @params;
       }
 
@@ -117,8 +130,13 @@ namespace Meep.Tech.Data {
         this.@params = @params;
       }
 
-      public LiteBuilder(Archetype forArchetype, IEnumerable<KeyValuePair<string, object>> @params, Universe universe = null)
-        : this(forArchetype, universe) {
+      public LiteBuilder(Archetype forArchetype, IModel parent, params KeyValuePair<string, object>[] @params)
+        : this(forArchetype, parent) {
+        this.@params = @params;
+      }
+
+      public LiteBuilder(Archetype forArchetype, IEnumerable<KeyValuePair<string, object>> @params, IModel parent = null, Universe universe = null)
+        : this(forArchetype, parent, universe) {
         this.@params = @params;
       }
 
@@ -156,6 +174,14 @@ namespace Meep.Tech.Data {
       /// </summary>
       public void ForEachParam(Action<(string key, object value)> @do)
         => @params.ForEach(entry => @do((entry.Key, entry.Value)));
+
+      TComponentBase IBuilder<TComponentBase>.Build() {
+        throw new NotImplementedException();
+      }
+
+      void IBuilder.ForEachParam(Action<(string key, object value)> @do) {
+        throw new NotImplementedException();
+      }
     }
   }
 }

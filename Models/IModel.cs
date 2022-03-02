@@ -18,7 +18,8 @@ namespace Meep.Tech.Data {
     public static IModel FromJson(
       JObject jObject,
       Type deserializeToTypeOverride = null,
-      Universe universeOverride = null
+      Universe universeOverride = null,
+      IBuilder withConfigurationParameters = null
     ) {
       string key;
       Universe universe = universeOverride;
@@ -45,6 +46,11 @@ namespace Meep.Tech.Data {
         deserializeToType,
         universe.ModelSerializer.Options.JsonSerializerSettings
       );
+
+      if (withConfigurationParameters is not null) {
+        var configModel = model as IModel;
+        model = configModel.Configure(withConfigurationParameters);
+      }
 
       return (IModel)model;
     }
@@ -98,8 +104,9 @@ namespace Meep.Tech.Data {
     public new static TModelBase FromJson(
        JObject jObject,
        Type deserializeToTypeOverride = null,
-       Universe universeOverride = null
-     ) => (TModelBase)IModel.FromJson(jObject, deserializeToTypeOverride, universeOverride);
+       Universe universeOverride = null,
+      IBuilder withConfigurationParameters = null
+     ) => (TModelBase)IModel.FromJson(jObject, deserializeToTypeOverride, universeOverride, withConfigurationParameters);
   }
 
   /// <summary>
@@ -126,8 +133,9 @@ namespace Meep.Tech.Data {
     public new static TModelBase FromJson(
        JObject jObject,
        Type deserializeToTypeOverride = null,
-       Universe universeOverride = null
-     ) => IModel<TModelBase>.FromJson(jObject, deserializeToTypeOverride, universeOverride);
+       Universe universeOverride = null,
+      IBuilder withConfigurationParameters = null
+     ) => IModel<TModelBase>.FromJson(jObject, deserializeToTypeOverride, universeOverride, withConfigurationParameters);
   }
 
   /// <summary>

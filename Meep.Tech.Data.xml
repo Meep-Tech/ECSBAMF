@@ -2033,7 +2033,13 @@
             This is the non-generic for utility reasons.
             </summary>
         </member>
-        <!-- Badly formed XML comment ignored for member "T:Meep.Tech.Data.IComponent.IBuilderFactory" -->
+        <member name="T:Meep.Tech.Data.IComponent.IBuilderFactory">
+            <summary>
+            The default factory for Models without Archetypes.
+            One of these is instantiated for each Model[] class and IComponent[] class by default.
+            This is the base interface.
+            </summary>
+        </member>
         <member name="P:Meep.Tech.Data.IComponent.IBuilderFactory.Key">
             <summary>
             The key for the component type.
@@ -2044,6 +2050,12 @@
             <summary>
             If the component made from this factory should be included in equality checks for the parent object
             </summary>
+        </member>
+        <member name="M:Meep.Tech.Data.IComponent.IBuilderFactory.Make">
+            <summary>
+            Make a default component for an archetype.
+            </summary>
+            <returns></returns>
         </member>
         <member name="P:Meep.Tech.Data.IComponent.Universe">
             <summary>
@@ -2100,6 +2112,17 @@
             <summary>
             This can be overriden if you want, but by default, struct based components don't have universe info at hand
             </summary>
+        </member>
+        <member name="T:Meep.Tech.Data.IComponentIBuilderFactoryExtensions">
+            <summary>
+            extension methods for IComponent.IBuilderFactory
+            </summary>
+        </member>
+        <member name="M:Meep.Tech.Data.IComponentIBuilderFactoryExtensions.Make(Meep.Tech.Data.IComponent.IBuilderFactory)">
+            <summary>
+            Make a default component for an archetype.
+            </summary>
+            <returns></returns>
         </member>
         <member name="T:Meep.Tech.Data.IComponent`1">
             <summary>

@@ -30,7 +30,8 @@ namespace Meep.Tech.Data {
     public new static Data.IComponent FromJson(
       JObject jObject,
       Type deserializeToTypeOverride = null,
-      Universe universeOverride = null
+      Universe universeOverride = null,
+      IBuilder withConfigurationParameters = null
     ) {
       string key;
       Universe universe = universeOverride;
@@ -55,10 +56,16 @@ namespace Meep.Tech.Data {
         );
       }
 
-      return (IComponent)jObject.ToObject(
-        deserializeToTypeOverride ?? universe.Components.Get(key), 
+      IComponent component = (IComponent)jObject.ToObject(
+        deserializeToTypeOverride ?? universe.Components.Get(key),
         universe.ModelSerializer.JsonSerializer
       );
+
+      if (withConfigurationParameters is not null) {
+        component = (IComponent)component.Configure(withConfigurationParameters);
+      }
+
+      return component;
     }
 
     internal static void SetUniverse(ref Data.IComponent component, Universe universe) {
@@ -87,7 +94,7 @@ namespace Meep.Tech.Data {
     /// <summary>
     /// optional finalization logic for components after the model has been finalized
     /// </summary>
-    public Data.IComponent FinalizeComponentAfterParent(IModel parent)
+    public Data.IComponent FinalizeComponentAfterParent(IModel parent, IBuilder builder)
       => this;
   }
 

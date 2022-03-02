@@ -48,13 +48,6 @@ namespace Meep.Tech.Data {
       => ReadableComponentStorageExtensions.GetComponent(this, key);
 
     /// <summary>
-    /// Get a component if this has a component of that given type
-    /// </summary>
-    public TComponent GetComponent<TComponent>()
-      where TComponent : IComponent<TComponent>
-      => ReadableComponentStorageExtensions.GetComponent<TComponent>(this);
-
-    /// <summary>
     /// Check if this has a component matching the given object.
     /// </summary>
     public bool HasComponent(string componentKey)

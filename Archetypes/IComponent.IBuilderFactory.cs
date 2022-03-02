@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace Meep.Tech.Data {
 
@@ -7,7 +8,7 @@ namespace Meep.Tech.Data {
 
     /// <summary>
     /// The default factory for Models without Archetypes.
-    /// One of these is instantiated for each Model<> class and IComponent<> class by default.
+    /// One of these is instantiated for each Model[] class and IComponent[] class by default.
     /// This is the base interface.
     /// </summary>
     public new interface IBuilderFactory
@@ -26,7 +27,34 @@ namespace Meep.Tech.Data {
       /// </summary>
       public virtual bool IncludeInParentModelEqualityChecks
         => true;
+
+      /// <summary>
+      /// Make a default component for an archetype.
+      /// </summary>
+      /// <returns></returns>
+      public IComponent Make()
+        => (IComponent)(this as Archetype).MakeDefault();
     }
+  }
+
+  /// <summary>
+  /// extension methods for IComponent.IBuilderFactory
+  /// </summary>
+  public static class IComponentIBuilderFactoryExtensions {
+
+    /// <summary>
+    /// Make a default component for an archetype.
+    /// </summary>
+    /// <returns></returns>
+    public static IComponent Make(this IComponent.IBuilderFactory @this)
+      => (IComponent)(@this as Archetype).MakeDefault();
+
+    /// <summary>
+    /// Make a default component for an archetype.
+    /// </summary>
+    /// <returns></returns>
+    public static IComponent Make(this IComponent.IBuilderFactory @this, IBuilder parentBuilder)
+      => (@this as Archetype).Make<IComponent>(parentBuilder);
   }
 
   /// <summary>

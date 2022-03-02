@@ -22,8 +22,9 @@ namespace Meep.Tech.Data {
     public static Model FromJson(
        JObject jObject,
        Type deserializeToTypeOverride = null,
-       Universe universeOverride = null
-     ) => (Model)IModel.FromJson(jObject, deserializeToTypeOverride, universeOverride);
+       Universe universeOverride = null,
+        IBuilder withConfigurationParameters = null
+     ) => (Model)IModel.FromJson(jObject, deserializeToTypeOverride, universeOverride, withConfigurationParameters);
 
     /// <summary>
     /// Deserialize a model from json as a Model
@@ -32,11 +33,12 @@ namespace Meep.Tech.Data {
     /// <param name="deserializeToTypeOverride">You can use this to try to make JsonSerialize 
     ///    use a different Type's info for deserialization than the default returned from GetModelTypeProducedBy</param>
     public static TModel FromJsonAs<TModel>(
-       JObject jObject,
-       Type deserializeToTypeOverride = null,
-       Universe universeOverride = null
+      JObject jObject,
+      Type deserializeToTypeOverride = null,
+      Universe universeOverride = null,
+      IBuilder withConfigurationParameters = null
      ) where TModel : Model
-      => (TModel)IModel.FromJson(jObject, deserializeToTypeOverride, universeOverride);
+      => (TModel)IModel.FromJson(jObject, deserializeToTypeOverride, universeOverride, withConfigurationParameters);
 
     /// <summary>
     /// The universe this model was made inside of
@@ -96,10 +98,11 @@ namespace Meep.Tech.Data {
     /// <param name="deserializeToTypeOverride">You can use this to try to make JsonSerialize 
     ///    use a different Type's info for deserialization than the default returned from GetModelTypeProducedBy</param>
     public new static TModelBase FromJson(
-       JObject jObject,
-       Type deserializeToTypeOverride = null,
-       Universe universeOverride = null
-     ) => (TModelBase)IModel.FromJson(jObject, deserializeToTypeOverride, universeOverride);
+      JObject jObject,
+      Type deserializeToTypeOverride = null,
+      Universe universeOverride = null,
+      IBuilder withConfigurationParameters = null
+     ) => (TModelBase)IModel.FromJson(jObject, deserializeToTypeOverride, universeOverride, withConfigurationParameters);
 
     /// <summary>
     /// Deserialize a model from json as a TModelBase
@@ -108,11 +111,12 @@ namespace Meep.Tech.Data {
     /// <param name="deserializeToTypeOverride">You can use this to try to make JsonSerialize 
     ///    use a different Type's info for deserialization than the default returned from GetModelTypeProducedBy</param>
     public new static TModel FromJsonAs<TModel>(
-       JObject jObject,
-       Type deserializeToTypeOverride = null,
-       Universe universeOverride = null
+      JObject jObject,
+      Type deserializeToTypeOverride = null,
+      Universe universeOverride = null,
+      IBuilder withConfigurationParameters = null
      ) where TModel : TModelBase
-      => (TModel)IModel.FromJson(jObject, deserializeToTypeOverride, universeOverride);
+      => (TModel)IModel.FromJson(jObject, deserializeToTypeOverride, universeOverride, withConfigurationParameters);
 
     internal override Model _initialize(IBuilder builder) {
       Model model = base._initialize(builder);
@@ -148,8 +152,9 @@ namespace Meep.Tech.Data {
     public new static TModelBase FromJson(
        JObject jObject,
        Type deserializeToTypeOverride = null,
-       Universe universeOverride = null
-     ) => (TModelBase)IModel.FromJson(jObject, deserializeToTypeOverride, universeOverride);
+       Universe universeOverride = null,
+      IBuilder withConfigurationParameters = null
+     ) => (TModelBase)IModel.FromJson(jObject, deserializeToTypeOverride, universeOverride, withConfigurationParameters);
 
     /// <summary>
     /// Deserialize a model from json as a TModelBase
@@ -160,9 +165,10 @@ namespace Meep.Tech.Data {
     public new static TModel FromJsonAs<TModel>(
        JObject jObject,
        Type deserializeToTypeOverride = null,
-       Universe universeOverride = null
+       Universe universeOverride = null,
+      IBuilder withConfigurationParameters = null
      ) where TModel : TModelBase
-      => (TModel)IModel.FromJson(jObject, deserializeToTypeOverride, universeOverride);
+      => (TModel)IModel.FromJson(jObject, deserializeToTypeOverride, universeOverride, withConfigurationParameters);
 
     /// <summary>
     /// Default collection of archetypes for this model type based on the Default Univese

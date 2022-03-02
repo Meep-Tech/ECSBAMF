@@ -27,6 +27,18 @@ namespace Meep.Tech.Data {
         get;
       }
 
+      IModel IBuilder.Parent {
+        get => Parent;
+        set => Parent = value;
+      }
+      /// <summary>
+      /// If this builder is passed to a child model or component, the original is made the parent.
+      /// </summary>
+      public IModel Parent {
+        get;
+        internal protected set;
+      }
+
       /// <summary>
       /// If this builder can be modified
       /// </summary>
@@ -259,6 +271,7 @@ namespace Meep.Tech.Data {
       /// This also adds all model data componnets linked to an archetype component first.
       /// </summary>
       protected TModelBase _initializeModelComponents(IReadableComponentStorage model) {
+        Parent = model as IModel;
         foreach(Type componentType in Archetype.InitialUnlinkedModelComponentTypes) {
           // Make a builder to match this component with the params from the parent:
           IBuilder componentBuilder
@@ -284,6 +297,7 @@ namespace Meep.Tech.Data {
           model.AddComponent(linkComponent.BuildDefaultModelComponent(this, Archetype.Id.Universe));
         }
 
+        Parent = null;
         return (TModelBase)model;
       }
 
@@ -291,10 +305,12 @@ namespace Meep.Tech.Data {
       /// Loop though each model component and finalize them.
       /// </summary>
       protected TModelBase _finalizeModelComponents(IReadableComponentStorage model) {
-        foreach(IModel.IComponent component in model._componentsByBuilderKey.Values) {
-          component.FinalizeComponentAfterParent(model as IModel);
+        Parent = model as IModel;
+        foreach (IModel.IComponent component in model._componentsByBuilderKey.Values) {
+          component.FinalizeComponentAfterParent(model as IModel, this);
         }
 
+        Parent = null;
         return (TModelBase)model;
       }
     }

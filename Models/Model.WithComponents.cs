@@ -51,13 +51,20 @@ namespace Meep.Tech.Data {
       /// <summary>
       /// Get a component if it exists. Throws if it doesn't
       /// </summary>
-      public virtual IComponent GetComponent(string componentKey)
+      public TComponent GetComponent<TComponent>()
+        where TComponent : IModel.IComponent<TComponent>
+          => (this as IReadableComponentStorage).GetComponent<TComponent>();
+
+      /// <summary>
+      /// Get a component if it exists. Throws if it doesn't
+      /// </summary>
+      public virtual IModel.IComponent GetComponent(string componentKey)
         => ReadableComponentStorageExtensions.GetComponent(this, componentKey) as IModel.IComponent;
 
       /// <summary>
       /// Get a component if it exists. Throws if it doesn't
       /// </summary>
-      public virtual IComponent GetComponent<TComponent>(string componentKey)
+      public virtual IModel.IComponent GetComponent<TComponent>(string componentKey)
         where TComponent : IModel.IComponent
           => ReadableComponentStorageExtensions.GetComponent(this, componentKey) as IModel.IComponent;
 
@@ -285,7 +292,14 @@ namespace Meep.Tech.Data {
       /// <summary>
       /// Get a component if it exists. Throws if it doesn't
       /// </summary>
-      public virtual IComponent GetComponent(string componentKey)
+      public TComponent GetComponent<TComponent>()
+        where TComponent : IModel.IComponent<TComponent>
+          => (this as IReadableComponentStorage).GetComponent<TComponent>();
+
+      /// <summary>
+      /// Get a component if it exists. Throws if it doesn't
+      /// </summary>
+      public virtual IModel.IComponent GetComponent(string componentKey)
         => ReadableComponentStorageExtensions.GetComponent(this, componentKey) as IModel.IComponent;
 
       /// <summary>

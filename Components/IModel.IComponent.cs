@@ -2,7 +2,8 @@
 
   public partial interface IModel {
 
-    public partial interface IComponent : Data.IComponent {}
+    public partial interface IComponent : Data.IComponent {
+    }
 
     /// <summary>
     /// A Component for an Model. Contains datas. Logic should usually be kept to Archetypes

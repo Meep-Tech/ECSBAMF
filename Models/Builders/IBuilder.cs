@@ -4,19 +4,36 @@ namespace Meep.Tech.Data {
 
   public interface IBuilder {
 
+    /// <summary>
+    /// The universe this is being built in
+    /// </summary>
     Universe Universe {
       get;
     }
     
+    /// <summary>
+    /// The archetype that initialize the building and made the builder
+    /// </summary>
     Archetype Archetype {
       get;
     }
 
+    /// <summary>
+    /// The parent mode, if this builder was passed down from one. Null if there is no parent
+    /// </summary>
+    IModel Parent {
+      get;
+      internal set;
+    }
+
+    /// <summary>
+    /// Do something for each param in a builder
+    /// </summary>
+    void ForEachParam(Action<(string key, object value)> @do);
+
     internal bool _tryToGetRawValue(string key, out object value);
 
     internal void _add(string key, object value);
-
-    void ForEachParam(Action<(string key, object value)> @do);
   }
 
   public interface IBuilder<TModelBase>
@@ -24,15 +41,28 @@ namespace Meep.Tech.Data {
     where TModelBase : IModel<TModelBase> 
   {
 
+    /// <summary>
+    /// used by a builder to initialize it's model.
+    /// Uses IFactory.ModelConstructor(builder): by default.
+    /// </summary>
     Func<IModel<TModelBase>.Builder, TModelBase> InitializeModel
       => builder => (TModelBase)((IFactory)builder.Archetype).ModelConstructor(builder);
 
+    /// <summary>
+    /// Used by a builder to configure it's model
+    /// </summary>
     Func<IModel<TModelBase>.Builder, TModelBase, TModelBase> ConfigureModel
       => null;
 
+    /// <summary>
+    /// Used by a builder to finalize it's model
+    /// </summary>
     Func<IModel<TModelBase>.Builder, TModelBase, TModelBase> FinalizeModel
       => null;
 
+    /// <summary>
+    /// Execute a builder
+    /// </summary>
     TModelBase Build();
   }
 

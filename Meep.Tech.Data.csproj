@@ -19,10 +19,12 @@
 	</ItemGroup>
 
 	<ItemGroup>
+	  <Compile Remove="Utility\Templates\New XBam Base Model and Base Archetype Nested Classes\New XBam Enumeration Type Class.cs" />
 	  <Compile Remove="Utility\Templates\New XBam Enumeration Type Class\New XBam Enumeration Type Class.cs" />
 	</ItemGroup>
 
 	<ItemGroup>
+	  <None Include="Utility\Templates\New XBam Base Model and Base Archetype Nested Classes\New XBam Enumeration Type Class.cs" />
 	  <None Include="Utility\Templates\New XBam Enumeration Type Class\New XBam Enumeration Type Class.cs" />
 	</ItemGroup>
 

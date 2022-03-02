@@ -277,8 +277,15 @@ namespace Meep.Tech.Data {
     /// Get a component if it exists. Throws if it doesn't
     /// </summary>
     public IComponent GetComponent<TComponent>(string componentKey)
-      where TComponent : IModel.IComponent
+      where TComponent : Archetype.IComponent
         => (this as IReadableComponentStorage).GetComponent(componentKey) as Archetype.IComponent;
+
+    /// <summary>
+    /// Get a component if it exists. Throws if it doesn't
+    /// </summary>
+    public TComponent GetComponent<TComponent>()
+      where TComponent : Archetype.IComponent<TComponent>
+        => (this as IReadableComponentStorage).GetComponent<TComponent>();
 
     /// <summary>
     /// Get a component if this has a component of that given type
