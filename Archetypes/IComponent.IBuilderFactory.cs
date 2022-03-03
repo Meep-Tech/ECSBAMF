@@ -34,13 +34,20 @@ namespace Meep.Tech.Data {
       /// <returns></returns>
       public IComponent Make()
         => (IComponent)(this as Archetype).MakeDefault();
+
+      /// <summary>
+      /// Make a default component for an archetype.
+      /// </summary>
+      /// <returns></returns>
+      public IComponent Make(IBuilder parentBuilder)
+        => (this as Archetype).Make<IComponent>(parentBuilder);
     }
   }
 
   /// <summary>
   /// extension methods for IComponent.IBuilderFactory
   /// </summary>
-  public static class IComponentIBuilderFactoryExtensions {
+  /*public static class IComponentIBuilderFactoryExtensions {
 
     /// <summary>
     /// Make a default component for an archetype.
@@ -55,7 +62,7 @@ namespace Meep.Tech.Data {
     /// <returns></returns>
     public static IComponent Make(this IComponent.IBuilderFactory @this, IBuilder parentBuilder)
       => (@this as Archetype).Make<IComponent>(parentBuilder);
-  }
+  }*/
 
   /// <summary>
   /// The base class for modular data holders for models and archetypes

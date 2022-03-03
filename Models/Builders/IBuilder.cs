@@ -73,7 +73,7 @@ namespace Meep.Tech.Data {
     /// <summary>
     /// Fetch a param from a collection, or the default if it's not provided, or the provided is a nullable and null is provided
     /// </summary>
-    public static T GetParam<T>(this IBuilder builder, IModel.Builder.Param toFetch, T defaultValue = default) {
+    public static T GetViaParam<T>(this IBuilder builder, IModel.Builder.Param toFetch, T defaultValue = default) {
       if(toFetch.ValueType != null && !toFetch.ValueType.IsAssignableFrom(typeof(T))) {
         throw new IModel.Builder.Param.MissmatchException($"Param {toFetch.Key}, is clamped to the type: {toFetch.ValueType.FullName}. {typeof(T).FullName} is not a valid type to try to fetch.");
       }
@@ -104,7 +104,7 @@ namespace Meep.Tech.Data {
     /// <summary>
     /// Fetch a param from a collection, or the default if it's not provided, or the provided is a nullable and null is provided
     /// </summary>
-    public static bool TryToGetParam<T>(this IBuilder builder, IModel.Builder.Param toFetch, out T result, T defaultValue = default) {
+    public static bool TryToGetViaParam<T>(this IBuilder builder, IModel.Builder.Param toFetch, out T result, T defaultValue = default) {
       if(toFetch.ValueType != null && !toFetch.ValueType.IsAssignableFrom(typeof(T))) {
         throw new IModel.Builder.Param.MissmatchException($"Param {toFetch.Key}, is clamped to the type: {toFetch.ValueType.FullName}. {typeof(T).FullName} is not a valid type to try to fetch.");
       }
@@ -140,7 +140,7 @@ namespace Meep.Tech.Data {
     /// <summary>
     /// Fetch a param from a collection. The param cannot be left out, and no defaults will be replaced.
     /// </summary>
-    public static T GetAndValidateParamAs<T>(this IBuilder builder, IModel.Builder.Param toFetch) {
+    public static T GetAndValidateViaParamAs<T>(this IBuilder builder, IModel.Builder.Param toFetch) {
       if(toFetch.ValueType != null && !toFetch.ValueType.IsAssignableFrom(typeof(T))) {
         throw new IModel.Builder.Param.MissmatchException($"Param {toFetch.Key}, is clamped to the type: {toFetch.ValueType.FullName}. {typeof(T).FullName} is not a valid type to try to fetch.");
       }
@@ -171,7 +171,7 @@ namespace Meep.Tech.Data {
     /// <summary>
     /// Add a default value to the param collection if there isn't one set already
     /// </summary>
-    public static void SetParam<T>(this IBuilder builder, IModel.Builder.Param toSet, T value = default) {
+    public static void SetViaParam<T>(this IBuilder builder, IModel.Builder.Param toSet, T value = default) {
       if(builder is IModel.Builder modelBuilder && modelBuilder._isImmutable) {
         throw new AccessViolationException($"Cannot change params on an immutable builder");
       }
@@ -185,7 +185,7 @@ namespace Meep.Tech.Data {
     /// <summary>
     /// Add a default value to the param collection if there isn't one set already
     /// </summary>
-    public static void SetDefaultParamValue<T>(this IBuilder builder, IModel.Builder.Param toSet, T defaultValue) {
+    public static void SetDefaultValueViaParam<T>(this IBuilder builder, IModel.Builder.Param toSet, T defaultValue) {
       if(builder is IModel.Builder modelBuilder && modelBuilder._isImmutable) {
         throw new AccessViolationException($"Cannot change params on an immutable builder");
       }
@@ -200,7 +200,7 @@ namespace Meep.Tech.Data {
     /// <summary>
     /// Add a default value to the param collection if there isn't one set already
     /// </summary>
-    public static void SetParamToDefault<T>(this IBuilder builder, IModel.Builder.Param toSet) {
+    public static void SetViaParamToDefault<T>(this IBuilder builder, IModel.Builder.Param toSet) {
       if(builder is IModel.Builder modelBuilder && modelBuilder._isImmutable) {
         throw new AccessViolationException($"Cannot change params on an immutable builder");
       }

@@ -64,9 +64,12 @@ namespace Meep.Tech.Data {
     /// The initial default components to add to this archetype on it's creation.
     /// </summary>
     protected internal virtual HashSet<Archetype.IComponent> InitialComponents {
-      get;
-      init;
-    } = new HashSet<IComponent>();
+      get => _InitialComponents ?? new();
+    } /** <summary> The backing field used to initialize and override the initail value of InitialComponents. You can this syntax to override or add to the base initial value: '=> _InitialComponents ??= base.InitialComponents.Append(...' </summary> **/
+    protected HashSet<Archetype.IComponent> _InitialComponents {
+      get => _initialComponents;
+      set => _initialComponents = value;
+    } HashSet<Archetype.IComponent> _initialComponents;
 
     /// <summary>
     /// The Archetype components linked to model components
@@ -74,25 +77,30 @@ namespace Meep.Tech.Data {
     protected internal IEnumerable<Archetype.IComponent> ModelLinkedComponents
       => _modelLinkedComponents;
     internal HashSet<Archetype.IComponent> _modelLinkedComponents
-      = new HashSet<IComponent>();
+      = new();
 
     /// <summary>
     /// constructors to make default components on a model made by this Archetype,
     /// Usually you'll want to use an Archetype.ILinkedComponent but this is here too.
     /// </summary>
     protected internal virtual HashSet<Func<IBuilder, IModel.IComponent>> InitialUnlinkedModelComponentCtors {
-      get;
-      init;
-    } = new HashSet<Func<IBuilder, IModel.IComponent>>();
+      get => _InitialIUnlinkedModelComponentConstructors ?? new();
+    } /**<summary> The backing field used to initialize and override InitialIUnlinkedModelComponentConstructors </summary>**/
+    protected HashSet<Func<IBuilder, IModel.IComponent>> _InitialIUnlinkedModelComponentConstructors {
+      get => _initialIUnlinkedModelComponentConstructors; set => _initialIUnlinkedModelComponentConstructors = value;
+    } HashSet<Func<IBuilder, IModel.IComponent>> _initialIUnlinkedModelComponentConstructors;
 
     /// <summary>
     /// The default component types to initialize with default values on a new model made by this archetype
     /// Usually you'll want to use an Archetype.ILinkedComponent but this is here too.
     /// </summary>
     protected internal virtual HashSet<System.Type> InitialUnlinkedModelComponentTypes {
-      get;
-      init;
-    } = new HashSet<System.Type>();
+      get => _InitialUnlinkedModelComponentTypes ?? new();
+    } /**<summary> The backing field used to initialize and override InitialUnlinkedModelComponentTypes </summary>**/
+    protected HashSet<System.Type> _InitialUnlinkedModelComponentTypes {
+      get => _initialUnlinkedModelComponentTypes;
+      set => _initialUnlinkedModelComponentTypes = value;
+    } HashSet<System.Type> _initialUnlinkedModelComponentTypes;
 
     /// <summary>
     /// If this is true, this Archetype can have it's component collection modified before load by mods and other libraries.
@@ -233,6 +241,13 @@ namespace Meep.Tech.Data {
     protected internal TDesiredModel Make<TDesiredModel>(IBuilder builder)
       where TDesiredModel : IModel
         => (TDesiredModel)MakeDefaultWith(builder);
+
+    /// <summary>
+    /// Base make helper
+    /// </summary>
+    /// <returns></returns>
+    protected internal IModel Make(IBuilder builder)
+        => MakeDefaultWith(builder);
 
     /// <summary>
     /// Base make helper
@@ -946,41 +961,6 @@ namespace Meep.Tech.Data {
     protected internal TDesiredModel Make<TDesiredModel>(Func<IBuilder<TModelBase>, IBuilder<TModelBase>> configureBuilder)
       where TDesiredModel : TModelBase
         => (TDesiredModel)BuildModel(configureBuilder(MakeDefaultBuilder()));
-
-    /// <summary>
-    /// Make a model that requires an object based builder:
-    /// </summary>
-    /*protected internal TDesiredModel MakeAs<TDesiredModel>(Action<IModel.Builder> configureBuilder, out TDesiredModel model)
-     where TDesiredModel : TModelBase
-        => model = (TDesiredModel)Make(configureBuilder);
-
-    /// <summary>
-    /// Make a model from this archetype using a fully qualified builder.
-    /// </summary>
-    protected internal TDesiredModel MakeAs<TDesiredModel>(IModel<TModelBase>.Builder builder, out TDesiredModel model)
-      where TDesiredModel : TModelBase
-        => model = (TDesiredModel)BuildModel(builder);
-
-    /// <summary>
-    /// Make a model from this archetype using a fully qualified builder.
-    /// </summary>
-    protected internal TDesiredModel MakeAs<TDesiredModel>(IBuilder<TModelBase> builder, out TDesiredModel model)
-      where TDesiredModel : TModelBase
-        => model = (TDesiredModel)BuildModel(builder);
-
-    /// <summary>
-    /// Make a model from this archetype by passing down and updating a default builder.
-    /// </summary>
-    protected internal TDesiredModel MakeAs<TDesiredModel>(Func<IModel<TModelBase>.Builder, IModel<TModelBase>.Builder> configureBuilder, out TDesiredModel model)
-      where TDesiredModel : TModelBase
-        => model = (TDesiredModel)BuildModel(configureBuilder((IModel<TModelBase>.Builder)MakeDefaultBuilder()));
-
-    /// <summary>
-    /// Make a model that requires a struct based builder"
-    /// </summary>
-    protected internal TDesiredModel MakeAs<TDesiredModel>(Func<IBuilder<TModelBase>, IBuilder<TModelBase>> configureBuilder, out TDesiredModel model)
-      where TDesiredModel : TModelBase
-        => model = (TDesiredModel)BuildModel(configureBuilder(MakeDefaultBuilder()));*/
 
     #endregion
 

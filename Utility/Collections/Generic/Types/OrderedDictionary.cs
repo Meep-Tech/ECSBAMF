@@ -377,5 +377,15 @@ namespace Meep.Tech.Collections.Generic {
     #endregion
 
     #endregion
+
+    #region Conversions
+
+    /// <summary>
+    /// Auto conver this to a regular dictionary
+    /// </summary>
+    public static implicit operator Dictionary<TKey, TValue>(OrderedDictionary<TKey, TValue> original)
+      => new(original);
+
+    #endregion
   }
 }

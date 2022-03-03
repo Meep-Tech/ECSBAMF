@@ -44,6 +44,9 @@
             The initial default components to add to this archetype on it's creation.
             </summary>
         </member>
+        <member name="P:Meep.Tech.Data.Archetype._InitialComponents">
+            <summary> The backing field used to initialize and override the initail value of InitialComponents. You can this syntax to override or add to the base initial value: '=> _InitialComponents ??= base.InitialComponents.Append(...' </summary> *
+        </member>
         <member name="P:Meep.Tech.Data.Archetype.ModelLinkedComponents">
             <summary>
             The Archetype components linked to model components
@@ -55,11 +58,17 @@
             Usually you'll want to use an Archetype.ILinkedComponent but this is here too.
             </summary>
         </member>
+        <member name="P:Meep.Tech.Data.Archetype._InitialIUnlinkedModelComponentConstructors">
+            <summary> The backing field used to initialize and override InitialIUnlinkedModelComponentConstructors </summary>*
+        </member>
         <member name="P:Meep.Tech.Data.Archetype.InitialUnlinkedModelComponentTypes">
             <summary>
             The default component types to initialize with default values on a new model made by this archetype
             Usually you'll want to use an Archetype.ILinkedComponent but this is here too.
             </summary>
+        </member>
+        <member name="P:Meep.Tech.Data.Archetype._InitialUnlinkedModelComponentTypes">
+            <summary> The backing field used to initialize and override InitialUnlinkedModelComponentTypes </summary>*
         </member>
         <member name="P:Meep.Tech.Data.Archetype.AllowExternalComponentConfiguration">
             <summary>
@@ -154,6 +163,12 @@
             </summary>
             <returns></returns>
         </member>
+        <member name="M:Meep.Tech.Data.Archetype.Make(Meep.Tech.Data.IBuilder)">
+            <summary>
+            Base make helper
+            </summary>
+            <returns></returns>
+        </member>
         <member name="M:Meep.Tech.Data.Archetype.Make``1(System.Func{Meep.Tech.Data.IBuilder,Meep.Tech.Data.IBuilder})">
             <summary>
             Base make helper
@@ -181,6 +196,11 @@
             </summary>
         </member>
         <member name="M:Meep.Tech.Data.Archetype.GetComponent``1(System.String)">
+            <summary>
+            Get a component if it exists. Throws if it doesn't
+            </summary>
+        </member>
+        <member name="M:Meep.Tech.Data.Archetype.GetComponent``1">
             <summary>
             Get a component if it exists. Throws if it doesn't
             </summary>
@@ -896,6 +916,16 @@
             Make a model from this archetype using a fully qualified builder.
             </summary>
         </member>
+        <member name="M:Meep.Tech.Data.Archetype`2.IExposeDefaultModelBuilderMakeMethods.WithBuilderParameters.Make(Meep.Tech.Data.IBuilder)">
+            <summary>
+            Make a model from this archetype using a fully qualified builder.
+            </summary>
+        </member>
+        <member name="M:Meep.Tech.Data.Archetype`2.IExposeDefaultModelBuilderMakeMethods.WithBuilderParameters.Make``1(Meep.Tech.Data.IBuilder)">
+            <summary>
+            Make a model from this archetype using a fully qualified builder.
+            </summary>
+        </member>
         <member name="M:Meep.Tech.Data.Archetype`2.IExposeDefaultModelBuilderMakeMethods.WithBuilderParameters.Make(Meep.Tech.Data.IBuilder{`0})">
             <summary>
             Make a model from this archetype using a fully qualified builder.
@@ -1530,6 +1560,11 @@
             Make a model from this archetype using a fully qualified builder.
             </summary>
         </member>
+        <member name="M:Meep.Tech.Data.ArchetypePublicBuilderMakers.Make``2(Meep.Tech.Data.Archetype{``0,``1}.IExposeDefaultModelBuilderMakeMethods.WithBuilderParameters,Meep.Tech.Data.IBuilder)">
+            <summary>
+            Make a model from this archetype using a  builder.
+            </summary>
+        </member>
         <member name="M:Meep.Tech.Data.ArchetypePublicBuilderMakers.Make``3(Meep.Tech.Data.Archetype{``1,``2}.IExposeDefaultModelBuilderMakeMethods.WithBuilderParameters,Meep.Tech.Data.IBuilder{``1})">
             <summary>
             Make a model from this archetype using a fully qualified builder.
@@ -2057,6 +2092,12 @@
             </summary>
             <returns></returns>
         </member>
+        <member name="M:Meep.Tech.Data.IComponent.IBuilderFactory.Make(Meep.Tech.Data.IBuilder)">
+            <summary>
+            Make a default component for an archetype.
+            </summary>
+            <returns></returns>
+        </member>
         <member name="P:Meep.Tech.Data.IComponent.Universe">
             <summary>
             <inheritdoc/>
@@ -2067,7 +2108,7 @@
             <inheritdoc/>
             </summary>
         </member>
-        <member name="M:Meep.Tech.Data.IComponent.FromJson(Newtonsoft.Json.Linq.JObject,System.Type,Meep.Tech.Data.Universe)">
+        <member name="M:Meep.Tech.Data.IComponent.FromJson(Newtonsoft.Json.Linq.JObject,System.Type,Meep.Tech.Data.Universe,Meep.Tech.Data.IBuilder)">
             <summary>
             Make a component from a jobject
             </summary>
@@ -2088,7 +2129,7 @@
             Default configuration
             </summary>
         </member>
-        <member name="M:Meep.Tech.Data.IComponent.FinalizeComponentAfterParent(Meep.Tech.Data.IModel)">
+        <member name="M:Meep.Tech.Data.IComponent.FinalizeComponentAfterParent(Meep.Tech.Data.IModel,Meep.Tech.Data.IBuilder)">
             <summary>
             optional finalization logic for components after the model has been finalized
             </summary>
@@ -2112,17 +2153,6 @@
             <summary>
             This can be overriden if you want, but by default, struct based components don't have universe info at hand
             </summary>
-        </member>
-        <member name="T:Meep.Tech.Data.IComponentIBuilderFactoryExtensions">
-            <summary>
-            extension methods for IComponent.IBuilderFactory
-            </summary>
-        </member>
-        <member name="M:Meep.Tech.Data.IComponentIBuilderFactoryExtensions.Make(Meep.Tech.Data.IComponent.IBuilderFactory)">
-            <summary>
-            Make a default component for an archetype.
-            </summary>
-            <returns></returns>
         </member>
         <member name="T:Meep.Tech.Data.IComponent`1">
             <summary>
@@ -2160,6 +2190,11 @@
         <member name="P:Meep.Tech.Data.IComponent`1.LiteBuilder.Archetype">
             <summary>
             The factory this is for.
+            </summary>
+        </member>
+        <member name="P:Meep.Tech.Data.IComponent`1.LiteBuilder.Parent">
+            <summary>
+            If this builder is passed to a child model or component, the original is made the parent.
             </summary>
         </member>
         <member name="P:Meep.Tech.Data.IComponent`1.LiteBuilder.InitializeModel">
@@ -2326,6 +2361,11 @@
             The universe this builder is building in
             </summary>
         </member>
+        <member name="P:Meep.Tech.Data.IModel.Builder.Parent">
+            <summary>
+            If this builder is passed to a child model or component, the original is made the parent.
+            </summary>
+        </member>
         <member name="F:Meep.Tech.Data.IModel.Builder._isImmutable">
             <summary>
             If this builder can be modified
@@ -2373,7 +2413,7 @@
             Can be used for preventing a mappable type from retries while being built
             </summary>
         </member>
-        <member name="M:Meep.Tech.Data.IModel.FromJson(Newtonsoft.Json.Linq.JObject,System.Type,Meep.Tech.Data.Universe)">
+        <member name="M:Meep.Tech.Data.IModel.FromJson(Newtonsoft.Json.Linq.JObject,System.Type,Meep.Tech.Data.Universe,Meep.Tech.Data.IBuilder)">
             <summary>
             Deserialize a model from a json object
             </summary>
@@ -2429,14 +2469,14 @@
             The factory that was used to make this object
             </summary>
         </member>
-        <member name="M:Meep.Tech.Data.Model`1.FromJson(Newtonsoft.Json.Linq.JObject,System.Type,Meep.Tech.Data.Universe)">
+        <member name="M:Meep.Tech.Data.Model`1.FromJson(Newtonsoft.Json.Linq.JObject,System.Type,Meep.Tech.Data.Universe,Meep.Tech.Data.IBuilder)">
             <summary>
             Deserialize a model from json as a TModelBase
             </summary>
             <param name="deserializeToTypeOverride">You can use this to try to make JsonSerialize 
                use a different Type's info for deserialization than the default returned from GetModelTypeProducedBy</param>
         </member>
-        <member name="M:Meep.Tech.Data.Model`1.FromJsonAs``1(Newtonsoft.Json.Linq.JObject,System.Type,Meep.Tech.Data.Universe)">
+        <member name="M:Meep.Tech.Data.Model`1.FromJsonAs``1(Newtonsoft.Json.Linq.JObject,System.Type,Meep.Tech.Data.Universe,Meep.Tech.Data.IBuilder)">
             <summary>
             Deserialize a model from json as a TModelBase
             </summary>
@@ -2471,6 +2511,11 @@
         </member>
         <member name="M:Meep.Tech.Data.Model`1.WithComponents.Equals(System.Object)">
             <summary><inheritdoc/></summary>
+        </member>
+        <member name="M:Meep.Tech.Data.Model`1.WithComponents.GetComponent``1">
+            <summary>
+            Get a component if it exists. Throws if it doesn't
+            </summary>
         </member>
         <member name="M:Meep.Tech.Data.Model`1.WithComponents.GetComponent(System.String)">
             <summary>
@@ -2638,6 +2683,12 @@
             Make a param with a default value.
             </summary>
         </member>
+        <member name="M:Meep.Tech.Data.IModel`1.Builder.Param.op_Implicit(Meep.Tech.Data.IModel{`0}.Builder.Param)~System.String">
+            <summary>
+            Params can be auto converted into strings.
+            </summary>
+            <param name="param"></param>
+        </member>
         <member name="M:Meep.Tech.Data.IModel`1.Builder.#ctor(Meep.Tech.Data.Archetype,Meep.Tech.Data.Universe)">
             <summary>
             Empty new builder
@@ -2690,7 +2741,7 @@
             Loop though each model component and finalize them.
             </summary>
         </member>
-        <member name="M:Meep.Tech.Data.IModel`1.FromJson(Newtonsoft.Json.Linq.JObject,System.Type,Meep.Tech.Data.Universe)">
+        <member name="M:Meep.Tech.Data.IModel`1.FromJson(Newtonsoft.Json.Linq.JObject,System.Type,Meep.Tech.Data.Universe,Meep.Tech.Data.IBuilder)">
             <summary>
             Deserialize a model from json as a TModelBase
             </summary>
@@ -2734,11 +2785,6 @@
             </summary>
         </member>
         <member name="M:Meep.Tech.Data.IReadableComponentStorage.GetComponent(System.String)">
-            <summary>
-            Get a component if this has a component of that given type
-            </summary>
-        </member>
-        <member name="M:Meep.Tech.Data.IReadableComponentStorage.GetComponent``1">
             <summary>
             Get a component if this has a component of that given type
             </summary>
@@ -3160,14 +3206,14 @@
             The default config used to compare model objects
             </summary>
         </member>
-        <member name="M:Meep.Tech.Data.Model.FromJson(Newtonsoft.Json.Linq.JObject,System.Type,Meep.Tech.Data.Universe)">
+        <member name="M:Meep.Tech.Data.Model.FromJson(Newtonsoft.Json.Linq.JObject,System.Type,Meep.Tech.Data.Universe,Meep.Tech.Data.IBuilder)">
             <summary>
             Deserialize a model from json as a Model
             </summary>
             <param name="deserializeToTypeOverride">You can use this to try to make JsonSerialize 
                use a different Type's info for deserialization than the default returned from GetModelTypeProducedBy</param>
         </member>
-        <member name="M:Meep.Tech.Data.Model.FromJsonAs``1(Newtonsoft.Json.Linq.JObject,System.Type,Meep.Tech.Data.Universe)">
+        <member name="M:Meep.Tech.Data.Model.FromJsonAs``1(Newtonsoft.Json.Linq.JObject,System.Type,Meep.Tech.Data.Universe,Meep.Tech.Data.IBuilder)">
             <summary>
             Deserialize a model from json as a Model
             </summary>
@@ -3233,32 +3279,73 @@
             Used for serialization methods
             </summary>
         </member>
-        <member name="M:Meep.Tech.Data.BuilderExtensions.GetParam``1(Meep.Tech.Data.IBuilder,Meep.Tech.Data.IModel.Builder.Param,``0)">
+        <member name="P:Meep.Tech.Data.IBuilder.Universe">
+            <summary>
+            The universe this is being built in
+            </summary>
+        </member>
+        <member name="P:Meep.Tech.Data.IBuilder.Archetype">
+            <summary>
+            The archetype that initialize the building and made the builder
+            </summary>
+        </member>
+        <member name="P:Meep.Tech.Data.IBuilder.Parent">
+            <summary>
+            The parent mode, if this builder was passed down from one. Null if there is no parent
+            </summary>
+        </member>
+        <member name="M:Meep.Tech.Data.IBuilder.ForEachParam(System.Action{System.ValueTuple{System.String,System.Object}})">
+            <summary>
+            Do something for each param in a builder
+            </summary>
+        </member>
+        <member name="P:Meep.Tech.Data.IBuilder`1.InitializeModel">
+            <summary>
+            used by a builder to initialize it's model.
+            Uses IFactory.ModelConstructor(builder): by default.
+            </summary>
+        </member>
+        <member name="P:Meep.Tech.Data.IBuilder`1.ConfigureModel">
+            <summary>
+            Used by a builder to configure it's model
+            </summary>
+        </member>
+        <member name="P:Meep.Tech.Data.IBuilder`1.FinalizeModel">
+            <summary>
+            Used by a builder to finalize it's model
+            </summary>
+        </member>
+        <member name="M:Meep.Tech.Data.IBuilder`1.Build">
+            <summary>
+            Execute a builder
+            </summary>
+        </member>
+        <member name="M:Meep.Tech.Data.BuilderExtensions.GetViaParam``1(Meep.Tech.Data.IBuilder,Meep.Tech.Data.IModel.Builder.Param,``0)">
             <summary>
             Fetch a param from a collection, or the default if it's not provided, or the provided is a nullable and null is provided
             </summary>
         </member>
-        <member name="M:Meep.Tech.Data.BuilderExtensions.TryToGetParam``1(Meep.Tech.Data.IBuilder,Meep.Tech.Data.IModel.Builder.Param,``0@,``0)">
+        <member name="M:Meep.Tech.Data.BuilderExtensions.TryToGetViaParam``1(Meep.Tech.Data.IBuilder,Meep.Tech.Data.IModel.Builder.Param,``0@,``0)">
             <summary>
             Fetch a param from a collection, or the default if it's not provided, or the provided is a nullable and null is provided
             </summary>
         </member>
-        <member name="M:Meep.Tech.Data.BuilderExtensions.GetAndValidateParamAs``1(Meep.Tech.Data.IBuilder,Meep.Tech.Data.IModel.Builder.Param)">
+        <member name="M:Meep.Tech.Data.BuilderExtensions.GetAndValidateViaParamAs``1(Meep.Tech.Data.IBuilder,Meep.Tech.Data.IModel.Builder.Param)">
             <summary>
             Fetch a param from a collection. The param cannot be left out, and no defaults will be replaced.
             </summary>
         </member>
-        <member name="M:Meep.Tech.Data.BuilderExtensions.SetParam``1(Meep.Tech.Data.IBuilder,Meep.Tech.Data.IModel.Builder.Param,``0)">
+        <member name="M:Meep.Tech.Data.BuilderExtensions.SetViaParam``1(Meep.Tech.Data.IBuilder,Meep.Tech.Data.IModel.Builder.Param,``0)">
             <summary>
             Add a default value to the param collection if there isn't one set already
             </summary>
         </member>
-        <member name="M:Meep.Tech.Data.BuilderExtensions.SetDefaultParamValue``1(Meep.Tech.Data.IBuilder,Meep.Tech.Data.IModel.Builder.Param,``0)">
+        <member name="M:Meep.Tech.Data.BuilderExtensions.SetDefaultValueViaParam``1(Meep.Tech.Data.IBuilder,Meep.Tech.Data.IModel.Builder.Param,``0)">
             <summary>
             Add a default value to the param collection if there isn't one set already
             </summary>
         </member>
-        <member name="M:Meep.Tech.Data.BuilderExtensions.SetParamToDefault``1(Meep.Tech.Data.IBuilder,Meep.Tech.Data.IModel.Builder.Param)">
+        <member name="M:Meep.Tech.Data.BuilderExtensions.SetViaParamToDefault``1(Meep.Tech.Data.IBuilder,Meep.Tech.Data.IModel.Builder.Param)">
             <summary>
             Add a default value to the param collection if there isn't one set already
             </summary>
@@ -3323,7 +3410,7 @@
             The archetype for this model
             </summary>
         </member>
-        <member name="M:Meep.Tech.Data.IModel`2.FromJson(Newtonsoft.Json.Linq.JObject,System.Type,Meep.Tech.Data.Universe)">
+        <member name="M:Meep.Tech.Data.IModel`2.FromJson(Newtonsoft.Json.Linq.JObject,System.Type,Meep.Tech.Data.Universe,Meep.Tech.Data.IBuilder)">
             <summary>
             Deserialize a model from json as a TModelBase
             </summary>
@@ -3404,14 +3491,14 @@
             This includes a components system.
             </summary>
         </member>
-        <member name="M:Meep.Tech.Data.Model`2.FromJson(Newtonsoft.Json.Linq.JObject,System.Type,Meep.Tech.Data.Universe)">
+        <member name="M:Meep.Tech.Data.Model`2.FromJson(Newtonsoft.Json.Linq.JObject,System.Type,Meep.Tech.Data.Universe,Meep.Tech.Data.IBuilder)">
             <summary>
             Deserialize a model from json as a TModelBase
             </summary>
             <param name="deserializeToTypeOverride">You can use this to try to make JsonSerialize 
                use a different Type's info for deserialization than the default returned from GetModelTypeProducedBy</param>
         </member>
-        <member name="M:Meep.Tech.Data.Model`2.FromJsonAs``1(Newtonsoft.Json.Linq.JObject,System.Type,Meep.Tech.Data.Universe)">
+        <member name="M:Meep.Tech.Data.Model`2.FromJsonAs``1(Newtonsoft.Json.Linq.JObject,System.Type,Meep.Tech.Data.Universe,Meep.Tech.Data.IBuilder)">
             <summary>
             Deserialize a model from json as a TModelBase
             </summary>
@@ -3457,6 +3544,11 @@
         <member name="P:Meep.Tech.Data.Model`2.WithComponents.Meep#Tech#Data#IReadableComponentStorage#_componentsByBuilderKey">
             <summary>
             The accessor for the default Icomponents implimentation
+            </summary>
+        </member>
+        <member name="M:Meep.Tech.Data.Model`2.WithComponents.GetComponent``1">
+            <summary>
+            Get a component if it exists. Throws if it doesn't
             </summary>
         </member>
         <member name="M:Meep.Tech.Data.Model`2.WithComponents.GetComponent(System.String)">
@@ -4683,6 +4775,11 @@
         </member>
         <member name="M:Meep.Tech.Collections.Generic.OrderedDictionary`2.GetEnumerator">
             <summary><inheritdoc/></summary>
+        </member>
+        <member name="M:Meep.Tech.Collections.Generic.OrderedDictionary`2.op_Implicit(Meep.Tech.Collections.Generic.OrderedDictionary{`0,`1})~System.Collections.Generic.Dictionary{`0,`1}">
+            <summary>
+            Auto conver this to a regular dictionary
+            </summary>
         </member>
     </members>
 </doc>

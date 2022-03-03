@@ -9,8 +9,8 @@
         "state": {
           "type": "markdown",
           "state": {
-            "file": "Concepts/Archetype.md",
-            "mode": "source"
+            "file": "Concepts/Importing Archetypes/Tile Types.md",
+            "mode": "preview"
           }
         }
       }
@@ -76,7 +76,7 @@
             "state": {
               "type": "backlink",
               "state": {
-                "file": "Concepts/Archetype.md",
+                "file": "Concepts/Importing Archetypes/Tile Types.md",
                 "collapseAll": true,
                 "extraContext": false,
                 "sortOrder": "alphabetical",
@@ -93,7 +93,7 @@
             "state": {
               "type": "outgoing-link",
               "state": {
-                "file": "Concepts/Archetype.md",
+                "file": "Concepts/Importing Archetypes/Tile Types.md",
                 "linksCollapsed": false,
                 "unlinkedCollapsed": true
               }
@@ -116,7 +116,7 @@
             "state": {
               "type": "outline",
               "state": {
-                "file": "Concepts/Archetype.md"
+                "file": "Concepts/Importing Archetypes/Tile Types.md"
               }
             }
           }
@@ -130,15 +130,15 @@
   },
   "active": "065ad034f4eeed1b",
   "lastOpenFiles": [
+    "Concepts/Importing Archetypes/Tile Types.md",
+    "Concepts/Importing Archetypes/Importing Archetypes.md",
     "Concepts/Archetype.md",
-    "Concepts/Archetype Identity.md",
-    "Concepts/Factory.md",
+    "README.md",
     "Concepts/Enumeration Value.md",
     "Concepts/Enumeration Base Class.md",
     "Concepts/Enumeration.md",
-    "Concepts/XBam.md",
-    "README.md",
-    "Code/Enumeration.md",
-    "Concepts/Universe.md"
+    "Concepts/Archetype Identity.md",
+    "Code/Param.md",
+    "Code/IFactory.md"
   ]
 }

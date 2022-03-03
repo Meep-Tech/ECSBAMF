@@ -199,6 +199,19 @@ namespace Meep.Tech.Data {
         /// <summary>
         /// Make a model from this archetype using a fully qualified builder.
         /// </summary>
+        TModelBase Make(IBuilder builder)
+          => (TModelBase)(this as Archetype<TModelBase, TArchetypeBase>).Make(builder);
+
+        /// <summary>
+        /// Make a model from this archetype using a fully qualified builder.
+        /// </summary>
+        TDesiredModel Make<TDesiredModel>(IBuilder builder)
+          where TDesiredModel : TModelBase
+            => (this as Archetype<TModelBase, TArchetypeBase>).Make<TDesiredModel>(builder);
+
+        /// <summary>
+        /// Make a model from this archetype using a fully qualified builder.
+        /// </summary>
         TModelBase Make(IBuilder<TModelBase> builder)
           => (this as Archetype<TModelBase, TArchetypeBase>).Make(builder);
 
@@ -498,6 +511,14 @@ namespace Meep.Tech.Data {
     /// Make a model from this archetype using a fully qualified builder.
     /// </summary>
     public static TModelBase Make<TModelBase, TArchetypeBase>(this Archetype<TModelBase, TArchetypeBase>.IExposeDefaultModelBuilderMakeMethods.WithBuilderParameters @this, IBuilder<TModelBase> builder)
+      where TModelBase : IModel<TModelBase>
+      where TArchetypeBase : Archetype<TModelBase, TArchetypeBase>
+        => @this.Make(builder);
+
+    /// <summary>
+    /// Make a model from this archetype using a  builder.
+    /// </summary>
+    public static TModelBase Make<TModelBase, TArchetypeBase>(this Archetype<TModelBase, TArchetypeBase>.IExposeDefaultModelBuilderMakeMethods.WithBuilderParameters @this, IBuilder builder)
       where TModelBase : IModel<TModelBase>
       where TArchetypeBase : Archetype<TModelBase, TArchetypeBase>
         => @this.Make(builder);

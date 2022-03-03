@@ -112,6 +112,13 @@ namespace Meep.Tech.Data {
           : base(name, defaultValue, valueType) {
           _all.Add(this);
         }
+
+        /// <summary>
+        /// Params can be auto converted into strings.
+        /// </summary>
+        /// <param name="param"></param>
+        public static implicit operator string(Param param)
+          => param.Key;
       }
     }
   }

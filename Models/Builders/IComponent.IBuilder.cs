@@ -120,7 +120,7 @@ namespace Meep.Tech.Data {
         Parent = parent;
       }
 
-      public LiteBuilder(Archetype forArchetype, IModel parent = null, Universe universe, params KeyValuePair<string, object>[] @params)
+      public LiteBuilder(Archetype forArchetype, IModel parent, Universe universe, params KeyValuePair<string, object>[] @params)
         : this(forArchetype, parent, universe) {
         this.@params = @params;
       }
@@ -175,13 +175,11 @@ namespace Meep.Tech.Data {
       public void ForEachParam(Action<(string key, object value)> @do)
         => @params.ForEach(entry => @do((entry.Key, entry.Value)));
 
-      TComponentBase IBuilder<TComponentBase>.Build() {
-        throw new NotImplementedException();
-      }
+      TComponentBase IBuilder<TComponentBase>.Build() 
+        => Build();
 
-      void IBuilder.ForEachParam(Action<(string key, object value)> @do) {
-        throw new NotImplementedException();
-      }
+      void IBuilder.ForEachParam(Action<(string key, object value)> @do)
+        => ForEachParam(@do);
     }
   }
 }
