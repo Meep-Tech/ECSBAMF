@@ -74,10 +74,24 @@ namespace Meep.Tech.Data {
       /// This does NOT register the archetype, this can only be used to add a
       /// previously registered archetype to another collection.
       /// </summary>
-      public void Add(Archetype archetype) {
+      public virtual void Add(Archetype archetype) {
         _byId.Add(archetype.Id.Key, archetype);
-        if(!_byType.ContainsKey(archetype.GetType().FullName)) {
+        if (!_byType.ContainsKey(archetype.GetType().FullName)) {
           _byType.Add(archetype.GetType().FullName, archetype);
+        }
+      }
+
+      #endregion
+
+      #region Deinitialization
+
+      /// <summary>
+      ///  used to de-register an archetype.
+      /// </summary>
+      internal virtual void _remove(Archetype archetype) {
+        _byId.Remove(archetype.Id.Key);
+        if (_byType.ContainsKey(archetype.GetType().FullName)) {
+          _byType.Remove(archetype.GetType().FullName);
         }
       }
 
@@ -211,14 +225,25 @@ namespace Meep.Tech.Data {
           archetype => (Identity)Universe.Archetypes.Id[archetype.Key],
           archetype => (TArchetypeBase)archetype.Value
         );
-      }
-      Dictionary<Identity, TArchetypeBase> _compiledById;
+      } Dictionary<Identity, TArchetypeBase> _compiledById;
 
       /// <summary>
       /// <inheritdoc/>
       /// </summary>
       public Collection(Universe universe = null)
         : base(universe ?? Archetypes.DefaultUniverse) { }
+
+      ///<summary><inheritdoc/></summary>
+      public override void Add(Archetype archetype) {
+        base.Add(archetype);
+        _compiledById = null;
+      }
+
+      ///<summary><inheritdoc/></summary>
+      internal override void _remove(Archetype archetype) {
+        base._remove(archetype);
+        _compiledById = null;
+      }
 
       #region Accessors
 

@@ -19,12 +19,13 @@
 	</ItemGroup>
 
 	<ItemGroup>
+	  <Compile Remove="Utility\Templates\New XBam Base Model and Base Archetype Nested Classes\New XBam Base Model and Base Archetype Nested Classes.cs" />
 	  <Compile Remove="Utility\Templates\New XBam Base Model and Base Archetype Nested Classes\New XBam Enumeration Type Class.cs" />
 	  <Compile Remove="Utility\Templates\New XBam Enumeration Type Class\New XBam Enumeration Type Class.cs" />
 	</ItemGroup>
 
 	<ItemGroup>
-	  <None Include="Utility\Templates\New XBam Base Model and Base Archetype Nested Classes\New XBam Enumeration Type Class.cs" />
+	  <None Include="Utility\Templates\New XBam Base Model and Base Archetype Nested Classes\New XBam Base Model and Base Archetype Nested Classes.cs" />
 	  <None Include="Utility\Templates\New XBam Enumeration Type Class\New XBam Enumeration Type Class.cs" />
 	</ItemGroup>
 
@@ -41,6 +42,10 @@
 		<Exec Command="xcopy &quot;bin\Debug\netstandard2.1\Meep.Tech.Data.dll&quot; &quot;..\..\..\..\apps\unity\Overworld Launcher\Assets\Packages\ECSBAM\&quot; /y" />
 		<Exec Command="xcopy &quot;bin\Debug\netstandard2.1\Meep.Tech.Data.pdb&quot; &quot;..\..\..\..\apps\unity\Overworld Launcher\Assets\Packages\ECSBAM\&quot; /y" />
 		<Exec Command="xcopy &quot;bin\Debug\netstandard2.1\Meep.Tech.Data.deps.json&quot; &quot;..\..\..\..\apps\unity\Overworld Launcher\Assets\Packages\ECSBAM\&quot; /y" />
+    
+		<Exec Command="xcopy &quot;bin\Debug\netstandard2.1\Meep.Tech.Data.dll&quot; &quot;..\..\..\..\apps\unity\Overworld Tests\Assets\Packages\ECSBAM\&quot; /y" />
+		<Exec Command="xcopy &quot;bin\Debug\netstandard2.1\Meep.Tech.Data.pdb&quot; &quot;..\..\..\..\apps\unity\Overworld Tests\Assets\Packages\ECSBAM\&quot; /y" />
+		<Exec Command="xcopy &quot;bin\Debug\netstandard2.1\Meep.Tech.Data.deps.json&quot; &quot;..\..\..\..\apps\unity\Overworld Tests\Assets\Packages\ECSBAM\&quot; /y" />
 	</Target>
 
 </Project>

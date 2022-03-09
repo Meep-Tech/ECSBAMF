@@ -6,19 +6,23 @@ using System.Linq;
 namespace Meep.Tech.Data {
 
   public partial class Universe {
+
+    /// <summary>
+    /// Data for the models in a Xbam universe.
+    /// </summary>
     public class ModelsData {
 
       /// <summary>
       /// Cached model base types
       /// </summary>
       internal Dictionary<string, System.Type> _baseTypes
-        = new Dictionary<string, Type>();
+        = new();
 
       /// <summary>
       /// Cached model base types
       /// </summary>
       internal Dictionary<Archetype, System.Type> _modelTypesProducedByArchetypes
-        = new Dictionary<Archetype, Type>();
+        = new();
 
       /// <summary>
       /// The collection of all base model BuilderFactories.
@@ -36,26 +40,26 @@ namespace Meep.Tech.Data {
       /// The collection of all base model BuilderFactories.
       /// </summary>
       internal Dictionary<Type, Archetype.Collection> _factoriesByModelBases
-        = new Dictionary<Type, Archetype.Collection>();
+        = new();
 
       /// <summary>
       /// The collection of all base model BuilderFactories.
       /// </summary>
       internal Dictionary<Type, IModel.IBuilderFactory> _factoriesByModelType
-        = new Dictionary<Type, IModel.IBuilderFactory>();
+        = new();
 
       /// <summary>
       /// The compare logic organized by inheritance/types
       /// </summary>
       internal readonly Dictionary<Type, CompareLogic> _compareLogicByModelType 
-        = new Dictionary<Type, CompareLogic>();
+        = new();
 
       internal ModelsData(Universe universe) {
         _factories
           = new Archetype.Collection(universe);
         universe.Archetypes._collectionsByRootArchetype
           .Add(typeof(IModel.IBuilderFactory).FullName, _factories);
-        this._universe = universe;
+        _universe = universe;
       }
 
       /// <summary>
@@ -354,7 +358,7 @@ namespace Meep.Tech.Data {
       /// Makes the default compare logic using this universes settings
       /// </summary>
       CompareLogic _makeDefaultCompareLogic()
-        => new CompareLogic(_universe.ModelSerializer.Options.DefaultComparisonConfig);
+        => new(_universe.ModelSerializer.Options.DefaultComparisonConfig);
 
       /// <summary>
       /// Make the default factory for a model type using reflection:

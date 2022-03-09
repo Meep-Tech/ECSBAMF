@@ -26,7 +26,8 @@ namespace Meep.Tech.Data {
     [JsonIgnore]
     public int InternalId {
       get;
-    }
+      private set;
+    } = -1;
 
     /// <summary>
     /// The perminant and unique external id
@@ -45,6 +46,7 @@ namespace Meep.Tech.Data {
     [JsonIgnore]
     public Universe Universe {
       get;
+      private set;
     }
 
     /// <summary>
@@ -76,6 +78,12 @@ namespace Meep.Tech.Data {
     void _registerNew(object uniqueIdentifier) {
       _externalId = UniqueIdCreationLogic(uniqueIdentifier);
       Universe.Enumerations._register(this);
+    }
+
+    internal void _deRegisterFromCurrentUniverse() {
+      Universe.Enumerations._deRegister(this);
+      InternalId = -1;
+      Universe = null;
     }
 
     /// <summary>

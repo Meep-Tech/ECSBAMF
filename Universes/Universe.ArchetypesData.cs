@@ -28,8 +28,8 @@ namespace Meep.Tech.Data {
       /// </summary>
       public IEnumerable<Archetype.Identity> Ids
         => _ids.Values;
-      internal Dictionary<string, Archetype.Identity> _ids
-        = new Dictionary<string, Archetype.Identity>();
+      Dictionary<string, Archetype.Identity> _ids
+        = new();
 
       /// <summary>
       /// Ids, indexed by external id value
@@ -41,7 +41,7 @@ namespace Meep.Tech.Data {
       /// Root types for archetypes based on a model type fullname.
       /// </summary>
       internal Dictionary<string, System.Type> _rootArchetypeTypesByBaseModelType
-        = new Dictionary<string, System.Type>();
+        = new();
 
       /// <summary>
       /// All Root Archetype Collections.
@@ -118,17 +118,37 @@ namespace Meep.Tech.Data {
             ?? GetCollectionFor(_rootArchetypeTypesByBaseModelType[modelBaseType.FullName]).First()
           : _universe.Models.GetBuilderFactoryFor(modelBaseType) as Archetype;
 
-
       internal void _registerArchetype(Archetype archetype, Archetype.Collection collection) {
         // Register to it's id
         archetype.Id.Archetype = archetype;
 
         // Register to collection:
         collection.Add(archetype);
+        archetype.TypeCollection = collection;
 
         // Add to All:
         All.Add(archetype);
         _ids.Add(archetype.Id.Key, archetype.Id);
+      }
+
+      internal void _unRegisterArchetype(Archetype archetype) {
+        // remove from all:
+        All._remove(archetype);
+        _ids.Remove(archetype.Id.Key);
+
+        // remove metadata:
+        foreach((string modelType, Type archetypeType) in _rootArchetypeTypesByBaseModelType.ToArray()) {
+          if (archetypeType == archetype.Type) {
+            _rootArchetypeTypesByBaseModelType.Remove(modelType);
+          }
+        }
+
+        // Register to collection:
+        archetype.TypeCollection._remove(archetype);
+        archetype.TypeCollection = null;
+
+        // de-register it from it's id
+        archetype.Id.Archetype = null;
       }
 
       internal void _registerCollection(Archetype.Collection collection, Type rootArchetypeType = null) {
@@ -138,6 +158,17 @@ namespace Meep.Tech.Data {
           } else
            _collectionsByRootArchetype.Add(rootArchetypeType?.FullName ?? "_all", collection);
         }
+      }
+
+      /// <summary>
+      /// TODO: impliment?
+      /// </summary>
+      internal void _unRegisterCollection(Archetype.Collection collection, Type rootArchetypeType = null) {
+        if (collection is Archetype.Collection.IBranch) {
+          _branchedCollectionsByBranchArchetype.Remove(rootArchetypeType.FullName);
+        }
+        else
+          _collectionsByRootArchetype.Remove(rootArchetypeType?.FullName ?? "_all");
       }
     }
   }

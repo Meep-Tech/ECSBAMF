@@ -781,11 +781,21 @@ namespace Meep.Tech.Data.Configuration {
                 $"\n====:{failure.xbamType}::{failure.systemType.FullName}:===="
               + $"\n\t==Exception:=="
               + $"\n\t{failure.exception.Message.Replace(Environment.NewLine,"\n").Replace("\n","\n\t\t")}"
-              + $"\n\t====\n"
-              + $"\n\t==Stack Trace:=="
-              + $"\n\t\t{failure.exception.StackTrace.Replace(Environment.NewLine, "\n").Replace("\n", "\n\t\t")}"
               + $"\n\t===="
-              + $"\n========"
+              + (failure.exception.InnerException is not null 
+                ? $"\n\t====Inner Exception:=="
+                  + $"\n\t\t{failure.exception.InnerException.Message.Replace(Environment.NewLine,"\n").Replace("\n","\n\t\t\t")}"
+                  + $"\n\t======\n"
+                : "\n"
+              ) + $"\n\t==Stack Trace:=="
+              + $"\n\t\t{failure.exception.StackTrace.Replace(Environment.NewLine, "\n").Replace("\n", "\n\t\t")}"
+              + $"\n\t====" 
+              + (failure.exception.InnerException is not null
+                ? $"\n\t====Inner Exception Stack Trace:=="
+                  + $"\n\t\t{failure.exception.InnerException.StackTrace.Replace(Environment.NewLine, "\n").Replace("\n", "\n\t\t\t")}"
+                  + $"\n\t======"
+                : ""
+              ) + $"\n========"
           ))
         );
       }

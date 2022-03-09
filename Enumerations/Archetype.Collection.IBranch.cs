@@ -1,4 +1,6 @@
-﻿namespace Meep.Tech.Data {
+﻿using System;
+
+namespace Meep.Tech.Data {
 
   public abstract partial class Archetype {
 

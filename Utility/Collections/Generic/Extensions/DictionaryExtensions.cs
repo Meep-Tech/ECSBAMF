@@ -21,6 +21,17 @@ namespace Meep.Tech.Collections.Generic {
     }
 
     /// <summary>
+    /// Add an item to a ICollection within a dictionary at the given key
+    /// </summary>
+    public static void AppendToValueCollection<TKey, TValue>(this IDictionary<TKey, IEnumerable<TValue>> dictionary, TKey key, TValue value) {
+      if(dictionary.TryGetValue(key, out IEnumerable<TValue> currentValueCollection)) {
+       dictionary[key] = currentValueCollection.Append(value);
+      }
+      else
+        dictionary.Add(key, new List<TValue> { value });
+    }
+
+    /// <summary>
     /// Remove an item from an ICollection within a dictionary at the given key
     /// </summary>
     public static bool RemoveFromValueCollection<TKey, TValue>(this IDictionary<TKey, ICollection<TValue>> dictionary, TKey key, TValue value) {
@@ -126,6 +137,48 @@ namespace Meep.Tech.Collections.Generic {
       where TDictionary : IDictionary<TKey, TValue> 
     {
       current.Add(key, value);
+      return current;
+    }
+
+    /// <summary>
+    /// Append a value to a dictionary and return the collection
+    /// </summary>
+    public static IDictionary<TKey, TValue> AppendOrReplace<TKey, TValue>(this IDictionary<TKey, TValue> current, TKey key, TValue value) {
+      current[key] = value;
+      return current;
+    }
+
+    /// <summary>
+    /// Append a value to a dictionary and return the collection
+    /// </summary>
+    public static Dictionary<TKey, TValue> AppendOrReplace<TKey, TValue>(this Dictionary<TKey, TValue> current, TKey key, TValue value) {
+      current[key] = value;
+      return current;
+    }
+
+    /// <summary>
+    /// Append a value to a dictionary and return the collection
+    /// </summary>
+    public static DelegateCollection<TAction> AppendOrReplace<TAction>(this DelegateCollection<TAction> current, string key, TAction action)
+      where TAction : Delegate {
+      current[key] = action;
+      return current;
+    }
+
+    /// <summary>
+    /// Append a value to a dictionary and return the collection
+    /// </summary>
+    public static OrderedDictionary<TKey, TValue> AppendOrReplace<TKey, TValue>(this OrderedDictionary<TKey, TValue> current, TKey key, TValue value) {
+      current[key] = value;
+      return current;
+    }
+
+    /// <summary>
+    /// Append a value to a dictionary and return the collection
+    /// </summary>
+    public static TDictionary AppendOrReplace<TDictionary, TKey, TValue>(this TDictionary current, TKey key, TValue value) 
+      where TDictionary : IDictionary<TKey, TValue> {
+      current[key] = value;
       return current;
     }
 

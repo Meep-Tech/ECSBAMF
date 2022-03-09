@@ -56,6 +56,14 @@ namespace Meep.Tech.Data {
     public bool IsBaseArchetype
       => BaseArchetype?.Equals(null) ?? true;
 
+    /// <summary>
+    /// The collection containing this archetype
+    /// </summary>
+    public Collection TypeCollection {
+      get;
+      internal set;
+    }
+
     #endregion
 
     #region Archetype Configuration Settings
@@ -478,6 +486,12 @@ namespace Meep.Tech.Data {
     #region Archetype Data Members
 
     /// <summary>
+    /// The collection containing this archetype
+    /// </summary>
+    public new Collection TypeCollection 
+      => base.TypeCollection as Collection;
+
+    /// <summary>
     /// The base archetype that all of the ones like it are based on.
     /// </summary>
     public override System.Type BaseArchetype
@@ -525,10 +539,40 @@ namespace Meep.Tech.Data {
             // else this is the base and we need a new one
             : Archetypes.DefaultUniverse.Archetypes._collectionsByRootArchetype[typeof(TArchetypeBase).FullName] 
               = new Collection());
+      } // if we have a collection, just make sure it accepts new entries
+      else if (collection.Universe.Loader.IsFinished && !AllowInitializationsAfterLoaderFinalization) {
+        throw new InvalidOperationException($"Tried to initialize archetype of type {id} while the loader was sealed");
       }
 
-      if (collection.Universe.Loader.IsFinished && !AllowInitializationsAfterLoaderFinalization) {
+      collection.Universe.Archetypes._registerArchetype(this, collection);
+      _initialize();
+    }
+
+    /// <summary>
+    /// The base for making a new archetype in a universe other than the default.
+    /// </summary>
+    protected Archetype(Archetype.Identity id, Universe universe, Collection collection = null) 
+      : base(id) 
+    {
+      if (universe is null) {
+        universe = Archetypes.DefaultUniverse;
+      }
+
+      if (universe.Loader.IsFinished && !AllowInitializationsAfterLoaderFinalization) {
         throw new InvalidOperationException($"Tried to initialize archetype of type {id} while the loader was sealed");
+      }
+
+      if (collection is null) {
+        collection = (Collection)
+          // if the base of this is registered somewhere, get the registered one by default
+          (universe.Archetypes._tryToGetCollectionFor(GetType(), out var found)
+            ? found is Collection
+              ? found
+              : universe.Archetypes._collectionsByRootArchetype[typeof(TArchetypeBase).FullName]
+                = new Collection()
+            // else this is the base and we need a new one
+            : universe.Archetypes._collectionsByRootArchetype[typeof(TArchetypeBase).FullName]
+              = new Collection());
       }
 
       collection.Universe.Archetypes._registerArchetype(this, collection);
@@ -550,6 +594,26 @@ namespace Meep.Tech.Data {
         AddComponent(component);
         if(component is Archetype.ILinkedComponent linkedComponent) {
           _modelLinkedComponents.Add(linkedComponent);
+        }
+      }
+    }
+
+    /// <summary>
+    /// Deinitialize this Archetype internally
+    /// </summary>
+    void _deInitialize() {
+      _modelConstructor = null;
+      _deInitializeInitialComponents();
+    }
+
+    /// <summary>
+    /// remove all components
+    /// </summary>
+    void _deInitializeInitialComponents() {
+      foreach(Archetype.IComponent component in InitialComponents) {
+        RemoveComponent(component);
+        if(component is Archetype.ILinkedComponent linkedComponent) {
+          _modelLinkedComponents.Remove(linkedComponent);
         }
       }
     }
@@ -965,6 +1029,32 @@ namespace Meep.Tech.Data {
     #endregion
 
     #endregion
+
+    #endregion
+
+    #region Archetype DeInitialization
+
+    /// <summary>
+    /// Called on unload being called, after removed from collections but before de-constructed.
+    /// Id.Archetype will be null when this is called.
+    /// </summary>
+    protected virtual void OnUnload() {}
+
+    /// <summary>
+    /// Attempts to unload this archetype from the universe and collections it's registered to
+    /// </summary>
+    protected void TryToUnload() {
+      // TODO: should this be it's own setting; AllowDeInitializationsAfterLoaderFinalization?
+      if (!Id.Universe.Loader.IsFinished || AllowInitializationsAfterLoaderFinalization) {
+        Universe universe = Id.Universe;
+        universe.Archetypes._unRegisterArchetype(this);
+
+        OnUnload();
+
+        Id._deRegisterFromCurrentUniverse();
+        _deInitialize();
+      }
+    }
 
     #endregion
   }

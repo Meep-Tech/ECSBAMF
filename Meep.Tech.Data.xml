@@ -39,6 +39,11 @@
             If this is an archetype that inherits from Archetype[,] directly.
             </summary>
         </member>
+        <member name="P:Meep.Tech.Data.Archetype.TypeCollection">
+            <summary>
+            The collection containing this archetype
+            </summary>
+        </member>
         <member name="P:Meep.Tech.Data.Archetype.InitialComponents">
             <summary>
             The initial default components to add to this archetype on it's creation.
@@ -399,6 +404,11 @@
             previously registered archetype to another collection.
             </summary>
         </member>
+        <member name="M:Meep.Tech.Data.Archetype.Collection._remove(Meep.Tech.Data.Archetype)">
+            <summary>
+             used to de-register an archetype.
+            </summary>
+        </member>
         <member name="M:Meep.Tech.Data.Archetype.Collection.Get``1">
             <summary>
             Get an archetype from this collection by it's type.
@@ -504,6 +514,11 @@
             Can be used as a static key.
             </summary>
         </member>
+        <member name="P:Meep.Tech.Data.Archetype`2.TypeCollection">
+            <summary>
+            The collection containing this archetype
+            </summary>
+        </member>
         <member name="P:Meep.Tech.Data.Archetype`2.BaseArchetype">
             <summary>
             The base archetype that all of the ones like it are based on.
@@ -526,6 +541,11 @@
             This should be extended into a private constructor that will only be called once by the Loader
             </summary>
         </member>
+        <member name="M:Meep.Tech.Data.Archetype`2.#ctor(Meep.Tech.Data.Archetype.Identity,Meep.Tech.Data.Universe,Meep.Tech.Data.Archetype{`0,`1}.Collection)">
+            <summary>
+            The base for making a new archetype in a universe other than the default.
+            </summary>
+        </member>
         <member name="M:Meep.Tech.Data.Archetype`2._initialize">
             <summary>
             Initialize this Archetype internally
@@ -534,6 +554,16 @@
         <member name="M:Meep.Tech.Data.Archetype`2._initializeInitialComponents">
             <summary>
             Add all initial components
+            </summary>
+        </member>
+        <member name="M:Meep.Tech.Data.Archetype`2._deInitialize">
+            <summary>
+            Deinitialize this Archetype internally
+            </summary>
+        </member>
+        <member name="M:Meep.Tech.Data.Archetype`2._deInitializeInitialComponents">
+            <summary>
+            remove all components
             </summary>
         </member>
         <member name="P:Meep.Tech.Data.Archetype`2.ModelConstructor">
@@ -769,6 +799,17 @@
             Make a model that requires a struct based builder"
             </summary>
         </member>
+        <member name="M:Meep.Tech.Data.Archetype`2.OnUnload">
+            <summary>
+            Called on unload being called, after removed from collections but before de-constructed.
+            Id.Archetype will be null when this is called.
+            </summary>
+        </member>
+        <member name="M:Meep.Tech.Data.Archetype`2.TryToUnload">
+            <summary>
+            Attempts to unload this archetype from the universe and collections it's registered to
+            </summary>
+        </member>
         <member name="T:Meep.Tech.Data.Archetype`2.IExposeDefaultModelBuilderMakeMethods">
             <summary>
             Exposes the base set of builder Make functions publicly for ease of access. 
@@ -956,6 +997,12 @@
             A root archetype with IExposeDefaultModelBuilderMakeMethods.Fully implemented from the start.
             </summary>
         </member>
+        <member name="M:Meep.Tech.Data.Archetype`2.WithAllDefaultModelBuilders.#ctor(Meep.Tech.Data.Archetype.Identity,Meep.Tech.Data.Archetype{`0,`1}.Collection)">
+            <summary><inheritdoc/></summary>
+        </member>
+        <member name="M:Meep.Tech.Data.Archetype`2.WithAllDefaultModelBuilders.#ctor(Meep.Tech.Data.Archetype.Identity,Meep.Tech.Data.Universe,Meep.Tech.Data.Archetype{`0,`1}.Collection)">
+            <summary><inheritdoc/></summary>
+        </member>
         <member name="M:Meep.Tech.Data.Archetype`2.WithAllDefaultModelBuilders.Make``1">
             <summary>
             <inheritdoc/>
@@ -1021,6 +1068,12 @@
             A root archetype with IExposeDefaultModelBuilderMakeMethods.WithBuilderParameters implemented from the start.
             </summary>
         </member>
+        <member name="M:Meep.Tech.Data.Archetype`2.WithDefaultParamBasedModelBuilders.#ctor(Meep.Tech.Data.Archetype.Identity,Meep.Tech.Data.Archetype{`0,`1}.Collection)">
+            <summary><inheritdoc/></summary>
+        </member>
+        <member name="M:Meep.Tech.Data.Archetype`2.WithDefaultParamBasedModelBuilders.#ctor(Meep.Tech.Data.Archetype.Identity,Meep.Tech.Data.Universe,Meep.Tech.Data.Archetype{`0,`1}.Collection)">
+            <summary><inheritdoc/></summary>
+        </member>
         <member name="M:Meep.Tech.Data.Archetype`2.WithDefaultParamBasedModelBuilders.Make``1(System.ValueTuple{System.String,System.Object}[])">
             <summary>
             Make a model from this archetype using a set of params to populate the default builder.
@@ -1075,6 +1128,12 @@
             <summary>
             A root archetype with IExposeDefaultModelBuilderMakeMethods.WithParamListParameters implemented from the start.
             </summary>
+        </member>
+        <member name="M:Meep.Tech.Data.Archetype`2.WithDefaultBuilderBasedModelBuilders.#ctor(Meep.Tech.Data.Archetype.Identity,Meep.Tech.Data.Archetype{`0,`1}.Collection)">
+            <summary><inheritdoc/></summary>
+        </member>
+        <member name="M:Meep.Tech.Data.Archetype`2.WithDefaultBuilderBasedModelBuilders.#ctor(Meep.Tech.Data.Archetype.Identity,Meep.Tech.Data.Universe,Meep.Tech.Data.Archetype{`0,`1}.Collection)">
+            <summary><inheritdoc/></summary>
         </member>
         <member name="M:Meep.Tech.Data.Archetype`2.WithDefaultBuilderBasedModelBuilders.Make``1">
             <summary>
@@ -1280,6 +1339,12 @@
             <summary>
             <inheritdoc/>
             </summary>
+        </member>
+        <member name="M:Meep.Tech.Data.Archetype`2.Collection.Add(Meep.Tech.Data.Archetype)">
+            <summary><inheritdoc/></summary>
+        </member>
+        <member name="M:Meep.Tech.Data.Archetype`2.Collection._remove(Meep.Tech.Data.Archetype)">
+            <summary><inheritdoc/></summary>
         </member>
         <member name="M:Meep.Tech.Data.Archetype`2.Collection.Get``1">
             <summary>
@@ -3929,6 +3994,11 @@
             Get the "default" archetype or factory for a given model type.
             </summary>
         </member>
+        <member name="M:Meep.Tech.Data.Universe.ArchetypesData._unRegisterCollection(Meep.Tech.Data.Archetype.Collection,System.Type)">
+            <summary>
+            TODO: impliment?
+            </summary>
+        </member>
         <member name="F:Meep.Tech.Data.Universe.ComponentsData._baseTypes">
             <summary>
             Cached model base types
@@ -4084,6 +4154,11 @@
         <member name="M:Meep.Tech.Data.Universe.ExtraContext.OnModelTypeRegistered(System.Type,Meep.Tech.Data.IModel)">
             <summary>
             Code that's executed on finalization of a new type of model.
+            </summary>
+        </member>
+        <member name="T:Meep.Tech.Data.Universe.ModelsData">
+            <summary>
+            Data for the models in a Xbam universe.
             </summary>
         </member>
         <member name="F:Meep.Tech.Data.Universe.ModelsData._baseTypes">
@@ -4303,6 +4378,11 @@
             Add an item to a ICollection within a dictionary at the given key
             </summary>
         </member>
+        <member name="M:Meep.Tech.Collections.Generic.DictionaryExtensions.AppendToValueCollection``2(System.Collections.Generic.IDictionary{``0,System.Collections.Generic.IEnumerable{``1}},``0,``1)">
+            <summary>
+            Add an item to a ICollection within a dictionary at the given key
+            </summary>
+        </member>
         <member name="M:Meep.Tech.Collections.Generic.DictionaryExtensions.RemoveFromValueCollection``2(System.Collections.Generic.IDictionary{``0,System.Collections.Generic.ICollection{``1}},``0,``1)">
             <summary>
             Remove an item from an ICollection within a dictionary at the given key
@@ -4349,6 +4429,31 @@
             </summary>
         </member>
         <member name="M:Meep.Tech.Collections.Generic.DictionaryExtensions.Append``3(``0,``1,``2)">
+            <summary>
+            Append a value to a dictionary and return the collection
+            </summary>
+        </member>
+        <member name="M:Meep.Tech.Collections.Generic.DictionaryExtensions.AppendOrReplace``2(System.Collections.Generic.IDictionary{``0,``1},``0,``1)">
+            <summary>
+            Append a value to a dictionary and return the collection
+            </summary>
+        </member>
+        <member name="M:Meep.Tech.Collections.Generic.DictionaryExtensions.AppendOrReplace``2(System.Collections.Generic.Dictionary{``0,``1},``0,``1)">
+            <summary>
+            Append a value to a dictionary and return the collection
+            </summary>
+        </member>
+        <member name="M:Meep.Tech.Collections.Generic.DictionaryExtensions.AppendOrReplace``1(Meep.Tech.Collections.Generic.DelegateCollection{``0},System.String,``0)">
+            <summary>
+            Append a value to a dictionary and return the collection
+            </summary>
+        </member>
+        <member name="M:Meep.Tech.Collections.Generic.DictionaryExtensions.AppendOrReplace``2(Meep.Tech.Collections.Generic.OrderedDictionary{``0,``1},``0,``1)">
+            <summary>
+            Append a value to a dictionary and return the collection
+            </summary>
+        </member>
+        <member name="M:Meep.Tech.Collections.Generic.DictionaryExtensions.AppendOrReplace``3(``0,``1,``2)">
             <summary>
             Append a value to a dictionary and return the collection
             </summary>

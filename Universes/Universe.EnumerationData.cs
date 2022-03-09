@@ -71,6 +71,12 @@ namespace Meep.Tech.Data {
             {enumeration.ExternalId, enumeration }
           };
       }
+
+      internal void _deRegister(Enumeration enumeration) {
+        if(_byType.TryGetValue(enumeration.GetType().FullName, out var found)) {
+          found.Remove(enumeration.ExternalId);
+        }
+      }
     }
   }
 }
