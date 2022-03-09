@@ -25,5 +25,16 @@ namespace Meep.Tech.Data {
 
       return @default;
     }
+
+    /// <summary>
+    /// See if this has a property, case insensitive by default.
+    /// </summary>
+    public static bool HasProperty(this JObject jObject, string propertyName, StringComparison comparer = StringComparison.OrdinalIgnoreCase) {
+      if (jObject.TryGetValue(propertyName, comparer, out JToken valueToken)) {
+        return true;
+      }
+
+      return false;
+    }
   }
 }

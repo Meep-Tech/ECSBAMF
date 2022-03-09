@@ -4309,6 +4309,11 @@
             Try to get a value by type, case insensitive by default.
             </summary>
         </member>
+        <member name="M:Meep.Tech.Data.JsonExtensions.HasProperty(Newtonsoft.Json.Linq.JObject,System.String,System.StringComparison)">
+            <summary>
+            See if this has a property, case insensitive by default.
+            </summary>
+        </member>
         <member name="T:Meep.Tech.Data.TypeExtensions">
             <summary>
             Shortcuts and caching for casting types for xbam
