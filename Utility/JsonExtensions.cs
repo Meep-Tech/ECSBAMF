@@ -30,11 +30,37 @@ namespace Meep.Tech.Data {
     /// See if this has a property, case insensitive by default.
     /// </summary>
     public static bool HasProperty(this JObject jObject, string propertyName, StringComparison comparer = StringComparison.OrdinalIgnoreCase) {
-      if (jObject.TryGetValue(propertyName, comparer, out JToken valueToken)) {
+      if (jObject.TryGetValue(propertyName, comparer, out _)) {
         return true;
       }
 
       return false;
+    }
+
+    /// <summary>
+    /// See if this has a property, case insensitive by default.
+    /// </summary>
+    public static bool HasProperty(this JObject jObject, string propertyName, out string exactPropertyKey, StringComparison comparer = StringComparison.OrdinalIgnoreCase) {
+      JProperty found;
+      if ((found = jObject.Property(propertyName, comparer)) != null) {
+        exactPropertyKey = found.Name;
+        return true;
+      }
+
+      exactPropertyKey = null;
+      return false;
+    }
+
+    /// <summary>
+    /// remove a property if it exists, case insensitive by default.
+    /// </summary>
+    public static bool RemoveProperty(this JObject jObject, string propertyName, StringComparison comparer = StringComparison.OrdinalIgnoreCase) {
+      if (jObject.Remove(propertyName)) {
+        return true;
+      }
+
+      JProperty heightConfig = jObject.Property(propertyName, comparer);
+      return jObject.Remove(heightConfig.Name);
     }
   }
 }
