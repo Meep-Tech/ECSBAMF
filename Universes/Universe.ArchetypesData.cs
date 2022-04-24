@@ -38,6 +38,13 @@ namespace Meep.Tech.Data {
         => _ids;
 
       /// <summary>
+      /// Dependencies for different types.
+      /// </summary>
+      public IReadOnlyDictionary<System.Type, IEnumerable<System.Type>> Dependencies
+        => _dependencies; internal Dictionary<System.Type, IEnumerable<System.Type>> _dependencies
+          = new();
+
+      /// <summary>
       /// Root types for archetypes based on a model type fullname.
       /// </summary>
       internal Dictionary<string, System.Type> _rootArchetypeTypesByBaseModelType
@@ -106,17 +113,45 @@ namespace Meep.Tech.Data {
       /// Get the "default" archetype or factory for a given model type.
       /// </summary>
       public Archetype GetDefaultForModelOfType<TModelBase>()
-        where TModelBase : IModel<TModelBase>
+        where TModelBase : IModel
           => GetDefaultForModelOfType(typeof(TModelBase));
 
       /// <summary>
       /// Get the "default" archetype or factory for a given model type.
       /// </summary>
-      public Archetype GetDefaultForModelOfType(System.Type modelBaseType)
+      public Archetype GetDefaultForModelOfType(System.Type modelBaseType) {
+        Archetype archetype;
+        if (modelBaseType.IsAssignableToGeneric(typeof(IModel<,>))) {
+          if (_rootArchetypeTypesByBaseModelType.TryGetValue(modelBaseType.FullName, out var rootArchetypeType)) {
+            if ((archetype = rootArchetypeType.TryToGetAsArchetype()) != null) {
+              return archetype;
+            }
+
+            // if we couldn;t make the type into an archetype (it may be a base type), we need to get any default archetype from it's collection:
+            Archetype.Collection collection = GetCollectionFor(rootArchetypeType);
+            if (collection is null) {
+              throw new KeyNotFoundException($"Could not find an archetype collection the model Type: {modelBaseType}");
+            }
+            if ((archetype = collection.FirstOrDefault()) != null) {
+              return archetype;
+            } else {
+              throw new KeyNotFoundException($"Could not find a default archetype for the model Type: {modelBaseType}, in collection: {GetCollectionFor(_rootArchetypeTypesByBaseModelType[modelBaseType.FullName]).GetType().ToFullHumanReadableNameString()}");
+            }
+          } else throw new KeyNotFoundException($"Could not find a Root Archetype for the Base Model Type: {modelBaseType}");
+        } else {
+          return _universe.Models.GetBuilderFactoryFor(modelBaseType) as Archetype;
+        }
+      }
+
+      /// <summary>
+      /// Get the "default" archetype or factory for a given model type.
+      /// </summary>
+      /*public Archetype GetDefaultForModelOfType(System.Type modelBaseType)
         => modelBaseType.IsAssignableToGeneric(typeof(IModel<,>))
           ? _rootArchetypeTypesByBaseModelType[modelBaseType.FullName].TryToGetAsArchetype()
-            ?? GetCollectionFor(_rootArchetypeTypesByBaseModelType[modelBaseType.FullName]).First()
-          : _universe.Models.GetBuilderFactoryFor(modelBaseType) as Archetype;
+            ?? GetCollectionFor(_rootArchetypeTypesByBaseModelType[modelBaseType.FullName]).FirstOrDefault()
+              ?? throw new KeyNotFoundException($"Could not find a default archetype for the model Type: {modelBaseType}, in collection:{GetCollectionFor(_rootArchetypeTypesByBaseModelType[modelBaseType.FullName])}")
+          : _universe.Models.GetBuilderFactoryFor(modelBaseType) as Archetype;*/
 
       internal void _registerArchetype(Archetype archetype, Archetype.Collection collection) {
         // Register to it's id

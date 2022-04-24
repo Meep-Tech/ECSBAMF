@@ -1,29 +1,50 @@
-﻿using System;
+﻿using Meep.Tech.Collections.Generic;
+using System;
 using System.Collections.Generic;
 
 namespace Meep.Tech.Data {
 
   public partial class Universe {
+
+    /// <summary>
+    /// Data for all components in the universe
+    /// </summary>
     public class ComponentsData {
+
+      /// <summary>
+      /// The number of different loaded model types.
+      /// </summary>
+      public int Count
+        => _baseTypes.Count;
+
+      /// <summary>
+      /// Dependencies for different types.
+      /// </summary>
+      public IReadOnlyDictionary<System.Type, IEnumerable<System.Type>> Dependencies
+        => _dependencies; internal Dictionary<System.Type, IEnumerable<System.Type>> _dependencies
+          = new();
 
       /// <summary>
       /// Cached model base types
       /// </summary>
       internal Dictionary<string, System.Type> _baseTypes
-        = new Dictionary<string, Type>();
+        = new();
 
       /// <summary>
       /// Cached model base types
       /// </summary>
       internal Dictionary<string, System.Type> _byKey
-        = new Dictionary<string, Type>();
+        = new();
 
       Universe _universe;
 
-      public ComponentsData(Universe universe) {
+      internal ComponentsData(Universe universe) {
         _universe = universe;
       }
 
+      /// <summary>
+      /// Get a component type by it's key
+      /// </summary>
       public Type Get(string key)
         => _byKey[key];
 

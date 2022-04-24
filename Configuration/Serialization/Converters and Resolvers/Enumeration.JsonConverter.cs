@@ -1,4 +1,5 @@
-﻿using Newtonsoft.Json;
+﻿using Meep.Tech.Collections.Generic;
+using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System;
 using System.Diagnostics.CodeAnalysis;
@@ -18,7 +19,8 @@ namespace Meep.Tech.Data {
         string[] parts = key.Split('@');
         Universe universe = parts.Length == 1 
           ? Archetypes.DefaultUniverse 
-          : Universe.Get(parts.Last());
+          : Universe.s.TryToGet(parts.Last())
+            ?? Archetypes.DefaultUniverse;
 
         return universe.Enumerations.Get(
           parts.First(),

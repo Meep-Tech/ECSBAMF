@@ -154,6 +154,7 @@ namespace Meep.Tech.Data {
       /// </summary>
       public TComponentBase Build() {
         TComponentBase model = InitializeModel(this);
+        model = (TComponentBase)(model as IModel).Initialize(this);
         model = (TComponentBase)(model as IModel).Configure(this);
 
         if(ConfigureModel != null) {

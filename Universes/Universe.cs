@@ -10,14 +10,16 @@ namespace Meep.Tech.Data {
   /// This is what the loader builds.
   /// </summary>
   public partial class Universe {
+    internal readonly Dictionary<Type, ExtraContext> _extraContexts
+      = new();
 
     /// <summary>
     /// All Universes
     /// </summary>
-    public static IEnumerable<Universe> s
-      => _all.Values;
+    public static IReadOnlyDictionary<string, Universe> s
+      => _all;
     static OrderedDictionary<string, Universe> _all
-      = new OrderedDictionary<string, Universe>();
+      = new();
 
     /// <summary>
     /// The unique key of this universe.
@@ -70,30 +72,21 @@ namespace Meep.Tech.Data {
       get;
     }
 
-    internal readonly Dictionary<Type, ExtraContext> _extraContexts
-      = new();
-
     /// <summary>
     /// Make a new universe of Archetypes
     /// </summary>
     public Universe(Loader loader, string nameKey = null) {
       Key = nameKey ?? Key;
       Loader = loader;
-      Archetypes = new ArchetypesData(this);
-      Models = new ModelsData(this);
-      Components = new ComponentsData(this);
-      Enumerations = new EnumerationData();
+      Archetypes = new(this);
+      Models = new(this);
+      Components = new(this);
+      Enumerations = new();
 
       // set this as the default universe if there isn't one yet
       Data.Archetypes.DefaultUniverse ??= this;
       _all.Add(Key, this);
     }
-
-    /// <summary>
-    /// Get a loaded universe by it's unique name key
-    /// </summary>
-    public static Universe Get(string nameKey)
-      => _all[nameKey];
 
     /// <summary>
     /// Get an extra context item that was assigned to this universe.

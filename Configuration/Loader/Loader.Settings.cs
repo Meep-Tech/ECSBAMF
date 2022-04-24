@@ -39,6 +39,14 @@ namespace Meep.Tech.Data.Configuration {
       } = false;
 
       /// <summary>
+      /// If any archetypes not being initialized by the time we get to finalize should throw a fatal.
+      /// </summary>
+      public bool FatalDuringFinalizationOnCouldNotInitializeTypes {
+        get;
+        set;
+      } = false;
+
+      /// <summary>
       /// The prefix to limit assemblies to for loading archetypes
       /// </summary>
       public string ArchetypeAssembliesPrefix {
@@ -55,10 +63,11 @@ namespace Meep.Tech.Data.Configuration {
       } = new List<string> {
         "System.",
         "Microsoft.",
-        "Newtonsoft.Json",
+        "Newtonsoft.",
         "netstandard",
         "NuGet.",
-        "Meep.Tech.ECSBAM"
+        "KellermanSoftware.",
+        "Meep.Tech.Data"
       };
 
       /// <summary>
@@ -94,7 +103,15 @@ namespace Meep.Tech.Data.Configuration {
       } = false;
 
       /// <summary>
-      /// The location of archetype librararies and mod extensions
+      /// If true (is true by default), this tells the loader to pre-load all assemblies referenced by the one currently running the loader.
+      /// </summary>
+      public bool PreLoadAllReferencedAssemblies {
+        get;
+        set;
+      } = true;
+
+      /// <summary>
+      /// The location of archetype librararies, plugins, and mod extensions
       /// </summary>
       public string ModsRootFolderLocation {
         get;

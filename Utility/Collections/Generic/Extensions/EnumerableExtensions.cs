@@ -5,6 +5,33 @@ using System.Linq;
 namespace Meep.Tech.Collections.Generic {
 
   public static class EnumerableExtensions {
+    
+    /// <summary>
+    /// Get x of something.
+    /// </summary>
+    public static IEnumerable<T> Of<T>(this int count, T value = default) {
+      for(int x = 0; x < count; x++) {
+        yield return value;
+      }
+    }
+    
+    /// <summary>
+    /// Get x of something.
+    /// </summary>
+    public static IEnumerable<T> Of<T>(this int count, Func<T> action) {
+      for(int x = 0; x < count; x++) {
+        yield return action();
+      }
+    }
+
+    /// <summary>
+    /// Get x of something with the index looping up
+    /// </summary>
+    public static IEnumerable<T> Of<T>(this int count, Func<int, T> action) {
+      for(int x = 0; x < count; x++) {
+        yield return action(x);
+      }
+    }
 
     /// <summary>
     /// Turn one item into an enumerable contaiing itself.
@@ -18,6 +45,16 @@ namespace Meep.Tech.Collections.Generic {
     public static void ForEach<T>(this IEnumerable<T> enumeration, Action<T> @do) {
       foreach(T @value in enumeration) {
         @do(value);
+      }
+    }
+
+    /// <summary>
+    /// do on each with an index too
+    /// </summary>
+    public static void ForEach<T>(this IEnumerable<T> enumeration, Action<T, int> @do) {
+      int index = 0;
+      foreach(T @value in enumeration) {
+        @do(value, index++);
       }
     }
 

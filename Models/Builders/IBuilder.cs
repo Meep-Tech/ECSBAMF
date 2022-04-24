@@ -222,25 +222,26 @@ namespace Meep.Tech.Data {
     /// Fetch a param from a collection, or the default if it's not provided, or the provided is a nullable and null is provided
     /// </summary>
     public static T GetParam<T>(this IBuilder builder, string paramKey, T defaultValue = default) {
-      Type valueType = typeof(T);
-      if(builder._tryToGetRawValue(paramKey, out object value)) {
-        // if the value is of the requested type, return it
-        if(value is T typedValue) {
-          return typedValue;
-        }
+      if (builder is not null) {
+        Type valueType = typeof(T);
+        if (builder._tryToGetRawValue(paramKey, out object value)) {
+          // if the value is of the requested type, return it
+          if (value is T typedValue) {
+            return typedValue;
+          }
 
-        // if the provided value is null, and this is nullable, return the default value
-        bool canBeNull = !valueType.IsValueType || (Nullable.GetUnderlyingType(valueType) != null);
-        if(canBeNull && value == null) {
-          return defaultValue;
-        }
+          // if the provided value is null, and this is nullable, return the default value
+          bool canBeNull = !valueType.IsValueType || (Nullable.GetUnderlyingType(valueType) != null);
+          if (canBeNull && value == null) {
+            return defaultValue;
+          }
 
-        // See if this can be cast to the valuetype of the param, and return it if it can.
-        try {
-          return (T)value.CastTo(valueType);
-        }
-        catch(Exception e) {
-          throw new IModel.Builder.Param.MissmatchException($"Tried to get param as type {typeof(T).FullName}. But param has type {value?.GetType().FullName ?? "null"}, and should be type {valueType}.\n{e}");
+          // See if this can be cast to the valuetype of the param, and return it if it can.
+          try {
+            return (T)value.CastTo(valueType);
+          } catch (Exception e) {
+            throw new IModel.Builder.Param.MissmatchException($"Tried to get param as type {typeof(T).FullName}. But param has type {value?.GetType().FullName ?? "null"}, and should be type {valueType}.\n{e}");
+          }
         }
       }
 
@@ -251,28 +252,29 @@ namespace Meep.Tech.Data {
     /// Fetch a param from a collection, or the default if it's not provided, or the provided is a nullable and null is provided
     /// </summary>
     public static bool TryToGetParam<T>(this IBuilder builder, string paramKey, out T result, T defaultValue = default) {
-      Type valueType = typeof(T);
-      if(builder._tryToGetRawValue(paramKey, out object value)) {
-        // if the value is of the requested type, return it
-        if(value is T typedValue) {
-          result = typedValue;
-          return true;
-        }
+      if (builder is not null) {
+        Type valueType = typeof(T);
+        if (builder._tryToGetRawValue(paramKey, out object value)) {
+          // if the value is of the requested type, return it
+          if (value is T typedValue) {
+            result = typedValue;
+            return true;
+          }
 
-        // if the provided value is null, and this is nullable, return the default value
-        bool canBeNull = !valueType.IsValueType || (Nullable.GetUnderlyingType(valueType) != null);
-        if(canBeNull && value == null) {
-          result = defaultValue;
-          return false;
-        }
+          // if the provided value is null, and this is nullable, return the default value
+          bool canBeNull = !valueType.IsValueType || (Nullable.GetUnderlyingType(valueType) != null);
+          if (canBeNull && value == null) {
+            result = defaultValue;
+            return false;
+          }
 
-        // See if this can be cast to the valuetype of the param, and return it if it can.
-        try {
-          result = (T)value.CastTo(valueType);
-          return true;
-        }
-        catch(Exception e) {
-          throw new IModel.Builder.Param.MissmatchException($"Tried to get param as type {typeof(T).FullName}. But param has type {value?.GetType().FullName ?? "null"}, and should be type {valueType}.\n{e}");
+          // See if this can be cast to the valuetype of the param, and return it if it can.
+          try {
+            result = (T)value.CastTo(valueType);
+            return true;
+          } catch (Exception e) {
+            throw new IModel.Builder.Param.MissmatchException($"Tried to get param as type {typeof(T).FullName}. But param has type {value?.GetType().FullName ?? "null"}, and should be type {valueType}.\n{e}");
+          }
         }
       }
 
@@ -284,25 +286,26 @@ namespace Meep.Tech.Data {
     /// Fetch a param from a collection. The param cannot be left out, and no defaults will be replaced.
     /// </summary>
     public static T GetAndValidateParamAs<T>(this IBuilder builder, string paramKey) {
-      Type valueType = typeof(T);
-      if(builder._tryToGetRawValue(paramKey, out object value)) {
-        // if the value is of the requested type, return it
-        if(value is T typedValue) {
-          return typedValue;
-        }
+      if (builder is not null) {
+        Type valueType = typeof(T);
+        if (builder._tryToGetRawValue(paramKey, out object value)) {
+          // if the value is of the requested type, return it
+          if (value is T typedValue) {
+            return typedValue;
+          }
 
-        // if the provided value is null, and this is nullable, return the provided null
-        bool canBeNull = !valueType.IsValueType || (Nullable.GetUnderlyingType(valueType) != null);
-        if(canBeNull && value == null) {
-          return default;
-        }
+          // if the provided value is null, and this is nullable, return the provided null
+          bool canBeNull = !valueType.IsValueType || (Nullable.GetUnderlyingType(valueType) != null);
+          if (canBeNull && value == null) {
+            return default;
+          }
 
-        // See if this can be cast to the valuetype of the param, and return it if it can.
-        try {
-          return (T)value.CastTo(valueType);
-        }
-        catch(Exception e) {
-          throw new IModel.Builder.Param.MissmatchException($"Tried to get param as type {typeof(T).FullName}. But param has type {value?.GetType().FullName ?? "null"}, and should be type {valueType}.\n{e}");
+          // See if this can be cast to the valuetype of the param, and return it if it can.
+          try {
+            return (T)value.CastTo(valueType);
+          } catch (Exception e) {
+            throw new IModel.Builder.Param.MissmatchException($"Tried to get param as type {typeof(T).FullName}. But param has type {value?.GetType().FullName ?? "null"}, and should be type {valueType}.\n{e}");
+          }
         }
       }
 
@@ -316,8 +319,10 @@ namespace Meep.Tech.Data {
       if(builder is IModel.Builder modelBuilder && modelBuilder._isImmutable) {
         throw new AccessViolationException($"Cannot change params on an immutable builder");
       }
-      if(!builder._tryToGetRawValue(parameter, out _)) {
-        builder._add(parameter, defaultValue);
+      if (builder is not null) {
+        if (!builder._tryToGetRawValue(parameter, out _)) {
+          builder._add(parameter, defaultValue);
+        }
       }
     }
 
@@ -325,11 +330,13 @@ namespace Meep.Tech.Data {
     /// set a value
     /// </summary>
     public static void SetParam<T>(this IBuilder builder, string parameter, T defaultValue = default) {
-      if(builder is IModel.Builder modelBuilder && modelBuilder._isImmutable) {
-        throw new AccessViolationException($"Cannot change params on an immutable builder");
-      }
+      if (builder is not null) {
+        if (builder is IModel.Builder modelBuilder && modelBuilder._isImmutable) {
+          throw new AccessViolationException($"Cannot change params on an immutable builder");
+        }
 
-      builder._add(parameter, defaultValue);
+        builder._add(parameter, defaultValue);
+      }
     }
 
     #endregion

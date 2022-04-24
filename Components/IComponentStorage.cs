@@ -28,7 +28,7 @@ namespace Meep.Tech.Data {
         // check each child component that we need to:
         if(Meep.Tech.Data.Components.GetBuilderFactoryFor(dataComponent.GetType()).IncludeInParentModelEqualityChecks) {
           // if the other item doesn't have any components, is missing this component, or the other component doesn't equal the one from this model, it's not ==
-          if(!other.HasComponent(dataComponent, out IComponent otherComponent)
+          if(!other.TryToGetComponent(dataComponent, out IComponent otherComponent)
             || !dataComponent.Equals(otherComponent)
           ) {
             return false;
@@ -57,21 +57,21 @@ namespace Meep.Tech.Data {
     /// Get a component if this has that given component
     /// Overriding this overrides Get component and all other Has component functionalities
     /// </summary>
-    public bool HasComponent(string componentKey, out IComponent component)
-      => ReadableComponentStorageExtensions.HasComponent(this, componentKey, out component);
+    public bool TryToGetComponent(string componentKey, out IComponent component)
+      => ReadableComponentStorageExtensions.TryToGetComponent(this, componentKey, out component);
 
     /// <summary>
     /// Get a component if this has a component of that given type
     /// </summary>
-    public bool HasComponent(System.Type componentType, out IComponent component)
-      => ReadableComponentStorageExtensions.HasComponent(this, componentType, out component);
+    public bool TryToGetComponent(System.Type componentType, out IComponent component)
+      => ReadableComponentStorageExtensions.TryToGetComponent(this, componentType, out component);
 
     /// <summary>
     /// Get a component if this has a component of that given type
     /// </summary>
-    public bool HasComponent<TComponent>(out IComponent component)
+    public bool TryToGetComponent<TComponent>(out TComponent component)
       where TComponent : IComponent<TComponent>
-        => ReadableComponentStorageExtensions.HasComponent<TComponent>(this, out component);
+        => ReadableComponentStorageExtensions.TryToGetComponent<TComponent>(this, out component);
 
     /// <summary>
     /// Check if this has a given component by base type
@@ -88,8 +88,8 @@ namespace Meep.Tech.Data {
     /// <summary>
     /// Get a component if this has that given component
     /// </summary>
-    public bool HasComponent(IComponent componentModel, out IComponent component)
-      => ReadableComponentStorageExtensions.HasComponent(this, componentModel, out component);
+    public bool TryToGetComponent(IComponent componentModel, out IComponent component)
+      => ReadableComponentStorageExtensions.TryToGetComponent(this, componentModel, out component);
 
     #endregion
   }
@@ -106,7 +106,7 @@ namespace Meep.Tech.Data {
       /// <summary>
       /// The components, which will be serialized with the model.
       /// </summary>
-      IReadOnlyDictionary<string, IModel.IComponent> Components { 
+      ReadOnlyModelComponentCollection Components { 
         get;
       }
     }
@@ -135,7 +135,7 @@ namespace Meep.Tech.Data {
     /// Get a component if this has a component of that given type
     /// </summary>
     public static IComponent GetComponent(this IReadableComponentStorage storage, string key)
-      => storage.HasComponent(key, out IComponent component)
+      => storage.TryToGetComponent(key, out IComponent component)
         ? component
         : throw new KeyNotFoundException($"No component of type {key} found in the storage.");
 
@@ -150,27 +150,34 @@ namespace Meep.Tech.Data {
     /// Check if this has a component matching the given object.
     /// </summary>
     public static bool HasComponent(this IReadableComponentStorage storage, string componentKey)
-      => storage.HasComponent(componentKey, out _);
+      => storage.TryToGetComponent(componentKey, out _);
 
     /// <summary>
     /// Get a component if this has that given component
     /// Overriding this overrides Get component and all other Has component functionalities
     /// </summary>
-    public static bool HasComponent(this IReadableComponentStorage storage, string componentBaseKey, out IComponent component)
+    public static bool TryToGetComponent(this IReadableComponentStorage storage, string componentBaseKey, out IComponent component)
       => storage._componentsByBuilderKey.TryGetValue(componentBaseKey, out component);
 
     /// <summary>
     /// Get a component if this has a component of that given type
     /// </summary>
-    public static bool HasComponent(this IReadableComponentStorage storage, System.Type componentType, out IComponent component)
-      => storage.HasComponent(Components.GetBuilderFactoryFor(componentType).Key, out component);
+    public static bool TryToGetComponent(this IReadableComponentStorage storage, System.Type componentType, out IComponent component)
+      => storage.TryToGetComponent(Components.GetBuilderFactoryFor(componentType).Key, out component);
 
     /// <summary>
     /// Get a component if this has a component of that given type
     /// </summary>
-    public static bool HasComponent<TComponent>(this IReadableComponentStorage storage, out IComponent component)
-      where TComponent : IComponent<TComponent>
-        => storage.HasComponent(Components<TComponent>.Key, out component);
+    public static bool TryToGetComponent<TComponent>(this IReadableComponentStorage storage, out TComponent component)
+      where TComponent : IComponent<TComponent> {
+     if (storage.TryToGetComponent(Components<TComponent>.Key, out var found)) {
+        component = (TComponent)found;
+        return true;
+      }
+
+      component = default;
+      return false;
+    }
 
     /// <summary>
     /// Get a component if this has a component of that given type
@@ -183,7 +190,7 @@ namespace Meep.Tech.Data {
     /// Check if this has a given component by base type
     /// </summary>
     public static bool HasComponent(this IReadableComponentStorage storage, System.Type componentType)
-      => storage.HasComponent(componentType, out _);
+      => storage.TryToGetComponent(componentType, out _);
 
     /// <summary>
     /// Check if this has a component matching the given object
@@ -194,8 +201,8 @@ namespace Meep.Tech.Data {
     /// <summary>
     /// Get a component if this has that given component
     /// </summary>
-    public static bool HasComponent(this IReadableComponentStorage storage, IComponent componentModel, out IComponent component)
-      => storage.HasComponent(componentModel.Key, out component);
+    public static bool TryToGetComponent(this IReadableComponentStorage storage, IComponent componentModel, out IComponent component)
+      => storage.TryToGetComponent(componentModel.Key, out component);
 
     /// <summary>
     /// Add a component, if it doesn't exist. Otherwise this throws.
@@ -211,10 +218,10 @@ namespace Meep.Tech.Data {
     /// </summary>
     static void _updateComponentUniverse(IReadableComponentStorage storage, IComponent toAdd) {
       if(storage is IModel model) {
-        IComponent.SetUniverse(ref toAdd, model.Universe);
+        IComponent._setUniverse(ref toAdd, model.Universe);
       }
       else if(storage is Archetype archetype) {
-        IComponent.SetUniverse(ref toAdd, archetype.Id.Universe);
+        IComponent._setUniverse(ref toAdd, archetype.Id.Universe);
       }
     }
 
@@ -243,7 +250,7 @@ namespace Meep.Tech.Data {
     /// </summary>
     internal static void UpdateComponent<TComponentType>(this IReadableComponentStorage storage, Func<TComponentType, TComponentType> UpdateComponent)
       where TComponentType : IComponent {
-      if(storage.HasComponent(typeof(TComponentType), out IComponent current)) {
+      if(storage.TryToGetComponent(typeof(TComponentType), out IComponent current)) {
         storage._componentsByBuilderKey[current.Key] = UpdateComponent((TComponentType)current);
       }
       else
@@ -381,7 +388,7 @@ namespace Meep.Tech.Data {
     public static void AddNewComponent<TComponent>(this IWriteableComponentStorage storage, IEnumerable<(string, object)> @params)
       where TComponent : Data.IComponent<TComponent> {
       IComponent toAdd = Components<TComponent>.BuilderFactory.Make(@params);
-      if(toAdd is IModel.IRestrictedComponent restrictedComponent && storage is IModel storageModel && !restrictedComponent.IsCompatableWith(storageModel)) {
+      if(toAdd is IModel.IComponent.IIsRestrictedToCertainTypes restrictedComponent && storage is IModel storageModel && !restrictedComponent.IsCompatableWith(storageModel)) {
         throw new System.ArgumentException($"Component of type {toAdd.Key} is not compatable with model of type {storage.GetType()}. The model must inherit from {restrictedComponent.RestrictedTo.FullName}.");
       }
 

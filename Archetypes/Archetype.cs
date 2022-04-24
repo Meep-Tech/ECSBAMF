@@ -1,4 +1,7 @@
-﻿using System;
+﻿using Meep.Tech.Collections.Generic;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -69,15 +72,16 @@ namespace Meep.Tech.Data {
     #region Archetype Configuration Settings
 
     /// <summary>
-    /// The initial default components to add to this archetype on it's creation.
+    /// The initial default components to add to this archetype on it's creation, indexed by their keys. 
+    /// You can add values using the '_InitialComponents ??= base.InitialComponents .Append(' syntax.
     /// </summary>
-    protected internal virtual HashSet<Archetype.IComponent> InitialComponents {
+    protected internal virtual Dictionary<string, Archetype.IComponent> InitialComponents {
       get => _InitialComponents ?? new();
     } /** <summary> The backing field used to initialize and override the initail value of InitialComponents. You can this syntax to override or add to the base initial value: '=> _InitialComponents ??= base.InitialComponents.Append(...' </summary> **/
-    protected HashSet<Archetype.IComponent> _InitialComponents {
+    protected Dictionary<string, Archetype.IComponent> _InitialComponents {
       get => _initialComponents;
       set => _initialComponents = value;
-    } HashSet<Archetype.IComponent> _initialComponents;
+    } Dictionary<string, Archetype.IComponent> _initialComponents;
 
     /// <summary>
     /// The Archetype components linked to model components
@@ -313,8 +317,8 @@ namespace Meep.Tech.Data {
     /// <summary>
     /// Get a component if this has a component of that given type
     /// </summary>
-    public bool HasComponent(System.Type componentType, out Archetype.IComponent component) {
-      if((this as IReadableComponentStorage).HasComponent(componentType, out Data.IComponent found)) {
+    public bool TryToGetComponent(System.Type componentType, out Archetype.IComponent component) {
+      if((this as IReadableComponentStorage).TryToGetComponent(componentType, out Data.IComponent found)) {
         component = found as Archetype.IComponent;
         return true;
       }
@@ -340,8 +344,8 @@ namespace Meep.Tech.Data {
     /// <summary>
     /// Get a component if this has that given component
     /// </summary>
-    public bool HasComponent(string componentBaseKey, out Archetype.IComponent component) {
-      if((this as IReadableComponentStorage).HasComponent(componentBaseKey, out Data.IComponent found)) {
+    public bool TryToGetComponent(string componentBaseKey, out Archetype.IComponent component) {
+      if((this as IReadableComponentStorage).TryToGetComponent(componentBaseKey, out Data.IComponent found)) {
         component = found as Archetype.IComponent;
         return true;
       }
@@ -359,8 +363,8 @@ namespace Meep.Tech.Data {
     /// <summary>
     /// Get a component if this has that given component
     /// </summary>
-    public bool HasComponent(Archetype.IComponent componentModel, out Archetype.IComponent component) {
-      if((this as IReadableComponentStorage).HasComponent(componentModel, out Data.IComponent found)) {
+    public bool TryToGetComponent(Archetype.IComponent componentModel, out Archetype.IComponent component) {
+      if((this as IReadableComponentStorage).TryToGetComponent(componentModel, out Data.IComponent found)) {
         component = found as Archetype.IComponent;
         return true;
       }
@@ -377,7 +381,7 @@ namespace Meep.Tech.Data {
     /// Add a new component, throws if the component key is taken already
     /// </summary>
     protected void AddComponent(Archetype.IComponent toAdd) {
-      if(toAdd is IRestrictedComponent restrictedComponent && !restrictedComponent.IsCompatableWith(this)) {
+      if(toAdd is Archetype.IComponent.IIsRestrictedToCertainTypes restrictedComponent && !restrictedComponent.IsCompatableWith(this)) {
         throw new System.ArgumentException($"Component of type {toAdd.Key} is not compatable with model of type {GetType()}. The model must inherit from {restrictedComponent.RestrictedTo.FullName}.");
       }
 
@@ -403,7 +407,7 @@ namespace Meep.Tech.Data {
     /// Add or replace a component
     /// </summary>
     protected void AddOrUpdateComponent(Archetype.IComponent toSet) {
-      if(toSet is IRestrictedComponent restrictedComponent && !restrictedComponent.IsCompatableWith(this)) {
+      if(toSet is Archetype.IComponent.IIsRestrictedToCertainTypes restrictedComponent && !restrictedComponent.IsCompatableWith(this)) {
         throw new System.ArgumentException($"Component of type {toSet.Key} is not compatable with model of type {GetType()}. The model must inherit from {restrictedComponent.RestrictedTo.FullName}.");
       }
       (this as IReadableComponentStorage).AddOrUpdateComponent(toSet);
@@ -471,6 +475,41 @@ namespace Meep.Tech.Data {
     #endregion
 
     #endregion
+  
+    /// <summary>
+    /// Used to deserialize a jobject by default.
+    /// </summary>
+    protected virtual internal IModel DeserializeModelFromJson(JObject jObject, Type deserializeToTypeOverride = null, params (string key, object value)[] withConfigurationParameters) {
+      string json = jObject.ToString();
+      deserializeToTypeOverride
+        ??= Id.Universe.Models.GetModelTypeProducedBy(this);
+      IModel model = JsonConvert.DeserializeObject(
+        json,
+        deserializeToTypeOverride,
+        Id.Universe.ModelSerializer.Options.JsonSerializerSettings
+      ) as IModel;
+
+      model.Universe = Id.Universe;
+      // default init and configure.
+      if (withConfigurationParameters.Any()) {
+        Archetype builderFactory = (Models.GetBuilderFactoryFor(model.GetType()) as Archetype);
+        IBuilder builder = builderFactory
+          .GetGenericBuilderConstructor()(builderFactory, withConfigurationParameters.ToDictionary(p => p.key, p => p.value));
+        model = model.Initialize(builder);
+        model = model.Configure(builder);
+      }
+
+      return model;
+    }
+
+    /// <summary>
+    /// Used to serialize a model with this archetype to a jobject by default
+    /// </summary>
+    protected internal virtual JObject SerializeModelToJson(IModel model)
+      => JObject.FromObject(
+        this,
+        Id.Universe.ModelSerializer.JsonSerializer
+      );
   }
 
   /// <summary>
@@ -512,6 +551,12 @@ namespace Meep.Tech.Data {
     /// </summary>
     public new Identity Id
       => base.Id as Identity;
+
+    /// <summary>
+    /// Just used to get Id in case the Id namespace is overriden.
+    /// </summary>
+    public Identity GetId()
+      => Id;
 
     #endregion
 
@@ -590,7 +635,7 @@ namespace Meep.Tech.Data {
     /// Add all initial components
     /// </summary>
     void _initializeInitialComponents() {
-      foreach(Archetype.IComponent component in InitialComponents) {
+      foreach(Archetype.IComponent component in InitialComponents.Values) {
         AddComponent(component);
         if(component is Archetype.ILinkedComponent linkedComponent) {
           _modelLinkedComponents.Add(linkedComponent);
@@ -610,7 +655,7 @@ namespace Meep.Tech.Data {
     /// remove all components
     /// </summary>
     void _deInitializeInitialComponents() {
-      foreach(Archetype.IComponent component in InitialComponents) {
+      foreach(Archetype.IComponent component in InitialComponents.Values) {
         RemoveComponent(component);
         if(component is Archetype.ILinkedComponent linkedComponent) {
           _modelLinkedComponents.Remove(linkedComponent);
@@ -625,7 +670,7 @@ namespace Meep.Tech.Data {
     #region Model Constructor Settings
 
     /// <summary>
-    /// Overrideable Model Constructor
+    /// Overrideable Model Constructor.
     /// </summary>
     public virtual Func<IBuilder<TModelBase>, TModelBase> ModelConstructor {
       get {
@@ -894,6 +939,9 @@ namespace Meep.Tech.Data {
       }
 
       var model = builderToUse.Build();
+      if (model.Universe is null) {
+        model.Universe = Id.Universe;
+      }
 
       return model;
     }
@@ -1035,10 +1083,14 @@ namespace Meep.Tech.Data {
     #region Archetype DeInitialization
 
     /// <summary>
-    /// Called on unload being called, after removed from collections but before de-constructed.
-    /// Id.Archetype will be null when this is called.
+    /// Called on unload before the type is actually un-registered from the universe.
+    /// the base version of this calls OnUnload for all extra contexts, if there are any.
     /// </summary>
-    protected virtual void OnUnload() {}
+    protected virtual void OnUnloadFrom(Universe universe) {
+      universe._extraContexts.Values.ForEach(ec => {
+        ec.OnUnload(this);
+      });
+    }
 
     /// <summary>
     /// Attempts to unload this archetype from the universe and collections it's registered to
@@ -1047,10 +1099,8 @@ namespace Meep.Tech.Data {
       // TODO: should this be it's own setting; AllowDeInitializationsAfterLoaderFinalization?
       if (!Id.Universe.Loader.IsFinished || AllowInitializationsAfterLoaderFinalization) {
         Universe universe = Id.Universe;
+        OnUnloadFrom(universe);
         universe.Archetypes._unRegisterArchetype(this);
-
-        OnUnload();
-
         Id._deRegisterFromCurrentUniverse();
         _deInitialize();
       }

@@ -1,4 +1,6 @@
-﻿namespace Meep.Tech.Data {
+﻿using Meep.Tech.Noise;
+
+namespace Meep.Tech.Data {
 
   /// <summary>
   /// An unique object with a unique id.
@@ -61,7 +63,7 @@
     /// This can break saving/linking!
     /// </summary>
     internal static void _resetUniqueId(this IUnique original) {
-      original.Id = RNG.GetNextUniqueId();
+      original.Id = RNG.GenerateNextGuid();
     }
 
     /// <summary>

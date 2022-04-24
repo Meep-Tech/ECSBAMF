@@ -220,6 +220,7 @@ namespace Meep.Tech.Data {
       /// </summary>
       public TModelBase Build() {
         TModelBase model = InitializeModel(this);
+        model = (TModelBase)(model as IModel).Initialize(this);
         model = (TModelBase)(model as IModel).Configure(this);
 
         /// Unique ID logic:

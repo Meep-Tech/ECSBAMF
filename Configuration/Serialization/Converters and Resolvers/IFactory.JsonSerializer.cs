@@ -1,4 +1,5 @@
-﻿using Newtonsoft.Json;
+﻿using Meep.Tech.Collections.Generic;
+using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
@@ -37,7 +38,7 @@ namespace Meep.Tech.Data {
         } else if(parts.Length == 2) {
           Universe universe;
           try {
-            universe = Universe.Get(parts[1]);
+            universe = Universe.s.TryToGet(parts[1]);
           } catch(Exception) {
             throw new KeyNotFoundException($"Universe with name: {parts[1]}, not found.");
           }

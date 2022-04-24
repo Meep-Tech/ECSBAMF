@@ -9,6 +9,21 @@ namespace Meep.Tech.Data {
   /// </summary>
   public static class TypeExtensions {
 
+    /// <summary>
+    /// Modify and return something.
+    /// </summary>
+    public static T Modify<T>(this T @object, Func<T, T> modifier)
+      => modifier(@object);
+
+    /// <summary>
+    /// Modify and return an object.
+    /// </summary>
+    public static T Modify<T>(this T @object, Action<T> modifier)
+      where T : class {
+      modifier(@object);
+      return @object;
+    }
+
     #region Inheritance Testing
 
     /// <summary>
@@ -69,6 +84,19 @@ namespace Meep.Tech.Data {
         yield return currentBaseType;
         currentBaseType = currentBaseType.BaseType;
       }
+    }
+
+    /// <summary>
+    /// Get the depth of inheritance of a type
+    /// </summary>
+    public static int GetDepthOfInheritance(this Type type) {
+      int index = 0;
+      while (type.BaseType != null) {
+        index++;
+        type = type.BaseType;
+      }
+
+      return index;
     }
 
     #endregion
@@ -140,7 +168,7 @@ namespace Meep.Tech.Data {
     /// <summary>
     /// Get a clean, easier to read type name that's still fully qualified.
     /// </summary>
-    public static string ToFullHumanReadableNameString(this Type type) {
+    public static string ToFullHumanReadableNameString(this Type type, bool withNamespace = true, IEnumerable<Type> genericTypeOverrides = null) {
       if (type.IsGenericParameter) {
         return type.Name;
       }
@@ -149,18 +177,28 @@ namespace Meep.Tech.Data {
         return type.FullName;
       }
 
-      System.Text.StringBuilder builder 
+      System.Text.StringBuilder builder
         = new();
 
-      builder.AppendFormat(
-        "{0}.{1}",
-        type.Namespace,
-        type.Name[..type.Name.IndexOf("`")]
-      );
+      if (withNamespace) {
+        builder.Append(type.Namespace);
+        builder.Append(".");
+      }
+
+      if (type.DeclaringType != null) {
+        builder.Append(ToFullHumanReadableNameString(type.DeclaringType, false, type.GetGenericArguments()));
+        builder.Append(".");
+      }
+
+      if (!type.Name.Contains("`")) {
+        builder.Append(type.Name);
+        return builder.ToString();
+      } else
+        builder.Append(type.Name[..type.Name.IndexOf("`")]);
 
       builder.Append('<');
       bool first = true;
-      foreach (Type genericTypeArgument in type.GetGenericArguments()) {
+      foreach (Type genericTypeArgument in genericTypeOverrides ?? type.GetGenericArguments()) {
         if (!first) {
           builder.Append(',');
         }

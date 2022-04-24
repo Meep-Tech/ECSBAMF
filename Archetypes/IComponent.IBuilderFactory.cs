@@ -45,26 +45,6 @@ namespace Meep.Tech.Data {
   }
 
   /// <summary>
-  /// extension methods for IComponent.IBuilderFactory
-  /// </summary>
-  /*public static class IComponentIBuilderFactoryExtensions {
-
-    /// <summary>
-    /// Make a default component for an archetype.
-    /// </summary>
-    /// <returns></returns>
-    public static IComponent Make(this IComponent.IBuilderFactory @this)
-      => (IComponent)(@this as Archetype).MakeDefault();
-
-    /// <summary>
-    /// Make a default component for an archetype.
-    /// </summary>
-    /// <returns></returns>
-    public static IComponent Make(this IComponent.IBuilderFactory @this, IBuilder parentBuilder)
-      => (@this as Archetype).Make<IComponent>(parentBuilder);
-  }*/
-
-  /// <summary>
   /// The base class for modular data holders for models and archetypes
   /// </summary>
   public partial interface IComponent<TComponentBase> : IModel<TComponentBase>, IComponent
@@ -77,6 +57,14 @@ namespace Meep.Tech.Data {
     public new class BuilderFactory
       : BuilderFactory<BuilderFactory>,
       IComponent.IBuilderFactory {
+
+      /// <summary>
+      /// Default test params for this builder factory.
+      /// </summary>
+      public new Dictionary<string, object> DefaultTestParams {
+        protected get => base.DefaultTestParams;
+        init => base.DefaultTestParams = value; 
+      }
 
       /// <summary>
       /// The key for the component type.

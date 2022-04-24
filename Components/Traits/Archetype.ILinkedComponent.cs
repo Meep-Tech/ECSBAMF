@@ -7,7 +7,7 @@
     /// </summary>
     public interface ILinkedComponent<TLinkedModelComponent>
       : ILinkedComponent,
-        IComponent
+        Archetype.IComponent
       where TLinkedModelComponent : IModel.IComponent<TLinkedModelComponent>
     {
 

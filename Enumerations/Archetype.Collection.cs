@@ -49,7 +49,7 @@ namespace Meep.Tech.Data {
           entry => entry.Value
         );
       } internal readonly Dictionary<string, Archetype> _byId
-        = new ();
+        = new();
 
       /// <summary>
       /// All archetypes:
@@ -57,7 +57,7 @@ namespace Meep.Tech.Data {
       public IReadOnlyDictionary<string, Archetype> ByFullTypeName {
         get => _byType;
       } internal readonly Dictionary<string, Archetype> _byType
-      = new Dictionary<string, Archetype>();
+        = new();
 
       #region Initialization
 
@@ -104,7 +104,7 @@ namespace Meep.Tech.Data {
       /// </summary>
       public TArchetype Get<TArchetype>()
         where TArchetype : Archetype
-          => Archetypes<TArchetype>.Instance;
+          => Get(typeof(TArchetype)) as TArchetype;
 
       /// <summary>
       /// Get an archetype from this collection by it's type.

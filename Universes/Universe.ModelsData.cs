@@ -13,6 +13,19 @@ namespace Meep.Tech.Data {
     public class ModelsData {
 
       /// <summary>
+      /// The number of different loaded model types.
+      /// </summary>
+      public int Count
+        => _baseTypes.Count;
+
+      /// <summary>
+      /// Dependencies for different types.
+      /// </summary>
+      public IReadOnlyDictionary<System.Type, IEnumerable<System.Type>> Dependencies
+        => _dependencies; internal Dictionary<System.Type, IEnumerable<System.Type>> _dependencies
+          = new();
+
+      /// <summary>
       /// Cached model base types
       /// </summary>
       internal Dictionary<string, System.Type> _baseTypes

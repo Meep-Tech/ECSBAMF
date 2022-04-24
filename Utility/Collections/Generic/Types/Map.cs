@@ -1,14 +1,52 @@
 ﻿
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 
 namespace Meep.Tech.Collections.Generic {
 
   /// <summary>
+  /// A read only map.
+  /// </summary>
+  /// <typeparam name="TForwardKey"></typeparam>
+  /// <typeparam name="TReverseKey"></typeparam>
+  public interface IReadOnlyMap<TForwardKey, TReverseKey> 
+    : IEnumerable<(TForwardKey Forward, TReverseKey Reverse)> {
+
+    /// <summary>
+    /// The forward key value set
+    /// </summary>
+    public IReadOnlyDictionary<TForwardKey, TReverseKey> Forward { get; }
+
+    /// <summary>
+    /// The reversed key value set
+    /// </summary>
+    public IReadOnlyDictionary<TReverseKey, TForwardKey> Reverse { get; }
+  }
+
+  /// <summary>
+  /// Extensions for read only maps.
+  /// </summary>
+  public static class ReadOnlyMapExtensions {
+
+    /// <summary>
+    /// Try to get the map pair with either item having the given key.
+    /// </summary>
+    public static (TKey forward, TKey reverse)? TryToGetAny<TKey>(this IReadOnlyMap<TKey, TKey> map, TKey key)
+      => map.Forward.TryGetValue(key, out var found) ? (key, found) : map.Reverse.TryGetValue(key, out found) ? (found, key) : default;
+
+    /// <summary>
+    /// Try to get the map pair with either item having the given key.
+    /// </summary>
+    public static bool TryToGetAny<TKey>(this IReadOnlyMap<TKey, TKey> map, TKey key, out (TKey forward, TKey reverse)? found)
+      => (found = map.TryToGetAny(key)) != null;
+  }
+
+  /// <summary>
   /// A better, home made version of the 2 way map.
   /// </summary>
-  public class Map<TForwardKey, TReverseKey> {
+  public class Map<TForwardKey, TReverseKey> : IReadOnlyMap<TForwardKey, TReverseKey> {
 
     /// <summary>
     /// The forward key value set
@@ -140,5 +178,12 @@ namespace Meep.Tech.Collections.Generic {
     public int Count() {
       return Forward.Count();
     }
+
+    ///<summary><inheritdoc/></summary>
+    public IEnumerator<(TForwardKey Forward, TReverseKey Reverse)> GetEnumerator() 
+      => Forward.Select(e => (e.Key, e.Value)).GetEnumerator();
+
+    IEnumerator IEnumerable.GetEnumerator() 
+      => GetEnumerator();
   }
 }

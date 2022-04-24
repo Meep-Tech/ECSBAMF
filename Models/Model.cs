@@ -23,7 +23,7 @@ namespace Meep.Tech.Data {
        JObject jObject,
        Type deserializeToTypeOverride = null,
        Universe universeOverride = null,
-        IBuilder withConfigurationParameters = null
+       params (string key, object value)[] withConfigurationParameters
      ) => (Model)IModel.FromJson(jObject, deserializeToTypeOverride, universeOverride, withConfigurationParameters);
 
     /// <summary>
@@ -36,7 +36,7 @@ namespace Meep.Tech.Data {
       JObject jObject,
       Type deserializeToTypeOverride = null,
       Universe universeOverride = null,
-      IBuilder withConfigurationParameters = null
+      params (string key, object value)[] withConfigurationParameters
      ) where TModel : Model
       => (TModel)IModel.FromJson(jObject, deserializeToTypeOverride, universeOverride, withConfigurationParameters);
 
@@ -47,24 +47,12 @@ namespace Meep.Tech.Data {
     public Universe Universe {
       get;
       internal set;
+    } Universe IModel.Universe { 
+      get => Universe;
+      set => Universe = value; 
     }
 
-    /// <summary>
-    /// For the base configure calls
-    /// </summary>
-    IModel IModel.Configure(IBuilder @params)
-      => _initialize(@params);
-
-    /// <summary>
-    /// Initialization logic
-    /// </summary>
-    internal virtual Model _initialize(IBuilder builder) {
-      Universe
-        = builder.Archetype.Id.Universe;
-
-      return this;
-    }
-
+    ///<summary><inheritdoc/></summary>
     public override bool Equals(object obj) {
       // must be this type or a child
       if(obj is not null && !GetType().IsAssignableFrom(obj.GetType())) {
@@ -101,7 +89,7 @@ namespace Meep.Tech.Data {
       JObject jObject,
       Type deserializeToTypeOverride = null,
       Universe universeOverride = null,
-      IBuilder withConfigurationParameters = null
+      params (string key, object value)[] withConfigurationParameters
      ) => (TModelBase)IModel.FromJson(jObject, deserializeToTypeOverride, universeOverride, withConfigurationParameters);
 
     /// <summary>
@@ -114,24 +102,25 @@ namespace Meep.Tech.Data {
       JObject jObject,
       Type deserializeToTypeOverride = null,
       Universe universeOverride = null,
-      IBuilder withConfigurationParameters = null
+      params (string key, object value)[] withConfigurationParameters
      ) where TModel : TModelBase
       => (TModel)IModel.FromJson(jObject, deserializeToTypeOverride, universeOverride, withConfigurationParameters);
 
-    internal override Model _initialize(IBuilder builder) {
-      Model model = base._initialize(builder);
+    /// <summary>
+    /// For the base configure calls
+    /// </summary>
+    IModel IModel.Initialize(IBuilder builder) {
       Factory = (IModel.IBuilderFactory)builder.Archetype;
-      model = (model as Model<TModelBase>)
-        .Initialize((IBuilder<TModelBase>)builder);
-
-      return model;
+      Universe
+        = builder.Archetype.Id.Universe;
+      return Initialize((IBuilder<TModelBase>)builder);
     }
 
     /// <summary>
     /// Can be used to initialize a model after the ctor call in xbam
     /// </summary>
-    protected virtual TModelBase Initialize(IBuilder<TModelBase> builder)
-      => (TModelBase)this;
+    protected virtual Model<TModelBase> Initialize(IBuilder<TModelBase> builder)
+      => this;
   }
 
   /// <summary>
@@ -153,7 +142,7 @@ namespace Meep.Tech.Data {
        JObject jObject,
        Type deserializeToTypeOverride = null,
        Universe universeOverride = null,
-      IBuilder withConfigurationParameters = null
+       params (string key, object value)[] withConfigurationParameters
      ) => (TModelBase)IModel.FromJson(jObject, deserializeToTypeOverride, universeOverride, withConfigurationParameters);
 
     /// <summary>
@@ -166,7 +155,7 @@ namespace Meep.Tech.Data {
        JObject jObject,
        Type deserializeToTypeOverride = null,
        Universe universeOverride = null,
-      IBuilder withConfigurationParameters = null
+       params (string key, object value)[] withConfigurationParameters
      ) where TModel : TModelBase
       => (TModel)IModel.FromJson(jObject, deserializeToTypeOverride, universeOverride, withConfigurationParameters);
 
@@ -182,19 +171,12 @@ namespace Meep.Tech.Data {
     /// </summary>
     [ArchetypeProperty]
     public TArchetypeBase Archetype {
-      get => _archetype;
-      private set {
-        _archetype = value;
-        Universe ??= _archetype.Id.Universe;
-      }
-    } TArchetypeBase _archetype;
-
-    internal override Model _initialize(IBuilder builder) {
-      Model model = base._initialize(builder);
-      Archetype = builder?.Archetype as TArchetypeBase;
-
-      return model;
-    } 
+      get;
+      private set;
+    } TArchetypeBase IModel<TModelBase, TArchetypeBase>.Archetype { 
+      get => Archetype; 
+      set => Archetype = value; 
+    }
 
     /// <summary>
     /// Make shortcut.

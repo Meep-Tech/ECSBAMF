@@ -20,8 +20,8 @@ namespace Meep.Tech.Data {
       /// Publicly readable components
       /// </summary>
       [ModelComponentsProperty]
-      public IReadOnlyDictionary<string, IModel.IComponent> Components {
-        get => _components.ToDictionary(x => x.Key, y => y.Value as IModel.IComponent);
+      public IReadableComponentStorage.ReadOnlyModelComponentCollection Components {
+        get => new(this, _components.ToDictionary(x => x.Key, y => y.Value as IModel.IComponent));
         // For deserialization:
         private set => value.Values.ForEach(AddComponent);
       }
@@ -71,8 +71,8 @@ namespace Meep.Tech.Data {
       /// <summary>
       /// Get a component if this has a component of that given type
       /// </summary>
-      public virtual bool HasComponent(System.Type componentType, out IModel.IComponent component) {
-        if(ReadableComponentStorageExtensions.HasComponent(this, componentType, out Data.IComponent found)) {
+      public virtual bool TryToGetComponent(System.Type componentType, out IModel.IComponent component) {
+        if(ReadableComponentStorageExtensions.TryToGetComponent(this, componentType, out Data.IComponent found)) {
           component = found as IModel.IComponent;
           return true;
         }
@@ -98,8 +98,8 @@ namespace Meep.Tech.Data {
       /// <summary>
       /// Get a component if this has that given component
       /// </summary>
-      public virtual bool HasComponent(string componentBaseKey, out IModel.IComponent component) {
-        if(ReadableComponentStorageExtensions.HasComponent(this, componentBaseKey, out Data.IComponent found)) {
+      public virtual bool TryToGetComponent(string componentBaseKey, out IModel.IComponent component) {
+        if(ReadableComponentStorageExtensions.TryToGetComponent(this, componentBaseKey, out Data.IComponent found)) {
           component = found as IModel.IComponent;
           return true;
         }
@@ -117,8 +117,8 @@ namespace Meep.Tech.Data {
       /// <summary>
       /// Get a component if this has that given component
       /// </summary>
-      public virtual bool HasComponent(IModel.IComponent componentModel, out IModel.IComponent component) {
-        if(ReadableComponentStorageExtensions.HasComponent(this, componentModel, out Data.IComponent found)) {
+      public virtual bool TryToGetComponent(IModel.IComponent componentModel, out IModel.IComponent component) {
+        if(ReadableComponentStorageExtensions.TryToGetComponent(this, componentModel, out Data.IComponent found)) {
           component = found as IModel.IComponent;
           return true;
         }
@@ -135,7 +135,7 @@ namespace Meep.Tech.Data {
       /// Add a new component, throws if the component key is taken already
       /// </summary>
       protected virtual void AddComponent(IModel.IComponent toAdd) {
-        if(toAdd is IModel.IRestrictedComponent restrictedComponent && !restrictedComponent.IsCompatableWith(this)) {
+        if(toAdd is IModel.IComponent.IIsRestrictedToCertainTypes restrictedComponent && !restrictedComponent.IsCompatableWith(this)) {
           throw new System.ArgumentException($"Component of type {toAdd.Key} is not compatable with model of type {GetType()}. The model must inherit from {restrictedComponent.RestrictedTo.FullName}.");
         }
 
@@ -148,7 +148,7 @@ namespace Meep.Tech.Data {
       protected virtual void AddNewComponent<TComponent>(IEnumerable<(string, object)> @params)
         where TComponent : IModel.IComponent<TComponent> {
         IComponent toAdd = Components<TComponent>.BuilderFactory.Make(@params);
-        if(toAdd is IModel.IRestrictedComponent restrictedComponent && !restrictedComponent.IsCompatableWith(this)) {
+        if(toAdd is IModel.IComponent.IIsRestrictedToCertainTypes restrictedComponent && !restrictedComponent.IsCompatableWith(this)) {
           throw new System.ArgumentException($"Component of type {toAdd.Key} is not compatable with model of type {GetType()}. The model must inherit from {restrictedComponent.RestrictedTo.FullName}.");
         }
 
@@ -181,7 +181,7 @@ namespace Meep.Tech.Data {
       /// Add or replace a component
       /// </summary>
       protected virtual void AddOrUpdateComponent(IModel.IComponent toSet) {
-        if(toSet is IModel.IRestrictedComponent restrictedComponent && !restrictedComponent.IsCompatableWith(this)) {
+        if(toSet is IModel.IComponent.IIsRestrictedToCertainTypes restrictedComponent && !restrictedComponent.IsCompatableWith(this)) {
           throw new System.ArgumentException($"Component of type {toSet.Key} is not compatable with model of type {GetType()}. The model must inherit from {restrictedComponent.RestrictedTo.FullName}.");
         }
         ReadableComponentStorageExtensions.AddOrUpdateComponent(this, toSet);
@@ -267,8 +267,8 @@ namespace Meep.Tech.Data {
       /// Publicly readable components
       /// </summary>
       [ModelComponentsProperty]
-      public IReadOnlyDictionary<string, IModel.IComponent> Components {
-        get => _components.ToDictionary(x => x.Key, y => y.Value as IModel.IComponent);
+      public IReadableComponentStorage.ReadOnlyModelComponentCollection Components {
+        get => new(this, _components.ToDictionary(x => x.Key, y => y.Value as IModel.IComponent));
         // For deserialization:
         private set => value.Values.ForEach(AddComponent);
       }
@@ -312,8 +312,8 @@ namespace Meep.Tech.Data {
       /// <summary>
       /// Get a component if this has a component of that given type
       /// </summary>
-      public virtual bool HasComponent(System.Type componentType, out IModel.IComponent component) {
-        if(ReadableComponentStorageExtensions.HasComponent(this, componentType, out Data.IComponent found)) {
+      public virtual bool TryToGetComponent(System.Type componentType, out IModel.IComponent component) {
+        if(ReadableComponentStorageExtensions.TryToGetComponent(this, componentType, out Data.IComponent found)) {
           component = found as IModel.IComponent;
           return true;
         }
@@ -337,8 +337,8 @@ namespace Meep.Tech.Data {
       /// <summary>
       /// Get a component if this has that given component
       /// </summary>
-      public virtual bool HasComponent(string componentBaseKey, out IModel.IComponent component) {
-        if(ReadableComponentStorageExtensions.HasComponent(this, componentBaseKey, out Data.IComponent found)) {
+      public virtual bool TryToGetComponent(string componentBaseKey, out IModel.IComponent component) {
+        if(ReadableComponentStorageExtensions.TryToGetComponent(this, componentBaseKey, out Data.IComponent found)) {
           component = found as IModel.IComponent;
           return true;
         }
@@ -356,8 +356,8 @@ namespace Meep.Tech.Data {
       /// <summary>
       /// Get a component if this has that given component
       /// </summary>
-      public virtual bool HasComponent(IModel.IComponent componentModel, out IModel.IComponent component) {
-        if(ReadableComponentStorageExtensions.HasComponent(this, componentModel, out Data.IComponent found)) {
+      public virtual bool TryToGetComponent(IModel.IComponent componentModel, out IModel.IComponent component) {
+        if(ReadableComponentStorageExtensions.TryToGetComponent(this, componentModel, out Data.IComponent found)) {
           component = found as IModel.IComponent;
           return true;
         }
@@ -374,7 +374,7 @@ namespace Meep.Tech.Data {
       /// Add a new component, throws if the component key is taken already
       /// </summary>
       protected virtual void AddComponent(IModel.IComponent toAdd) {
-        if(toAdd is IModel.IRestrictedComponent restrictedComponent && !restrictedComponent.IsCompatableWith(this)) {
+        if(toAdd is IModel.IComponent.IIsRestrictedToCertainTypes restrictedComponent && !restrictedComponent.IsCompatableWith(this)) {
           throw new System.ArgumentException($"Component of type {toAdd.Key} is not compatable with model of type {GetType()}. The model must inherit from {restrictedComponent.RestrictedTo.FullName}.");
         }
 
@@ -388,7 +388,7 @@ namespace Meep.Tech.Data {
         where TComponent : IModel.IComponent<TComponent> 
       {
         IComponent toAdd = Components<TComponent>.BuilderFactory.Make(@params);
-        if(toAdd is IModel.IRestrictedComponent restrictedComponent && !restrictedComponent.IsCompatableWith(this)) {
+        if(toAdd is IModel.IComponent.IIsRestrictedToCertainTypes restrictedComponent && !restrictedComponent.IsCompatableWith(this)) {
           throw new System.ArgumentException($"Component of type {toAdd.Key} is not compatable with model of type {GetType()}. The model must inherit from {restrictedComponent.RestrictedTo.FullName}.");
         }
 
@@ -421,7 +421,7 @@ namespace Meep.Tech.Data {
       /// Add or replace a component
       /// </summary>
       protected virtual void AddOrUpdateComponent(IModel.IComponent toSet) {
-        if(toSet is IModel.IRestrictedComponent restrictedComponent && !restrictedComponent.IsCompatableWith(this)) {
+        if(toSet is IModel.IComponent.IIsRestrictedToCertainTypes restrictedComponent && !restrictedComponent.IsCompatableWith(this)) {
           throw new System.ArgumentException($"Component of type {toSet.Key} is not compatable with model of type {GetType()}. The model must inherit from {restrictedComponent.RestrictedTo.FullName}.");
         }
         ReadableComponentStorageExtensions.AddOrUpdateComponent(this, toSet);

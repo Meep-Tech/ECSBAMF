@@ -13,11 +13,7 @@ namespace Meep.Tech.Data {
       /// Settings for the Model Serializer
       /// </summary>
       public class Settings {
-
-        internal Universe _universe {
-          get;
-          set;
-        }
+        internal Universe _universe;
 
         /// <summary>
         /// Helper function to set the default json serializer settings for models.
@@ -25,19 +21,7 @@ namespace Meep.Tech.Data {
         public Func<DefaultContractResolver, IEnumerable<Newtonsoft.Json.JsonConverter>, JsonSerializerSettings> ConfigureJsonSerializerSettings {
           get;
           set;
-        } = (defaultResolver, defaultConverters) => new JsonSerializerSettings {
-          ContractResolver = defaultResolver,
-          Formatting = Formatting.Indented,
-          Converters = defaultConverters.ToList()
-#if DEBUG
-          ,
-          Error = (sender, args) => {
-            if(System.Diagnostics.Debugger.IsAttached) {
-              System.Diagnostics.Debugger.Break();
-            }
-          }
-#endif
-        };
+        } = DefaultJsonSerializerSettingsConfigurationLogic;
 
         /// <summary>
         /// Compiled model serializer from the settings config function
@@ -46,15 +30,23 @@ namespace Meep.Tech.Data {
           get => _modelJsonSerializerSettings 
             ??= ConfigureJsonSerializerSettings(
               new DefaultContractResolver(_universe),
-              new Newtonsoft.Json.JsonConverter[] {
-                new Enumeration.JsonConverter()
-              }
+              DefaultJsonCoverters
             );
         } JsonSerializerSettings _modelJsonSerializerSettings;
 
         /// <summary>
-        /// If true, properies need to opt out to avoid being serialized into json using JsonIgnore. Even private properties.
+        /// The default json converters to include
         /// </summary>
+        public IEnumerable<Newtonsoft.Json.JsonConverter> DefaultJsonCoverters {
+          get;
+          set;
+        } = new Newtonsoft.Json.JsonConverter[] {
+          new Enumeration.JsonConverter()
+        };
+
+      /// <summary>
+      /// If true, properies need to opt out to avoid being serialized into json using JsonIgnore. Even private properties.
+      /// </summary>
         public bool PropertiesMustOptOutForJsonSerialization {
           get;
           set;
@@ -70,11 +62,32 @@ namespace Meep.Tech.Data {
           AttributesToIgnore = new List<Type> {
             typeof(ModelComponentsProperty)
           },
-          IgnoreObjectTypes = true,
+          IgnoreObjectTypes = true
+#if DEBUG
+          ,
           DifferenceCallback = x => {
             Console.WriteLine("$fgsdfgsdfgsdgf");
           }
+#endif
         };
+
+        /// <summary>
+        /// The default logic for ConfigureJsonSerializerSettings
+        /// </summary>
+        public static JsonSerializerSettings DefaultJsonSerializerSettingsConfigurationLogic(DefaultContractResolver contractResolver, IEnumerable<Newtonsoft.Json.JsonConverter> jsonConverters)
+          => new() {
+            ContractResolver = contractResolver,
+            Formatting = Formatting.Indented,
+            Converters = jsonConverters.ToList()
+#if DEBUG
+            ,
+            Error = (sender, args) => {
+              if (System.Diagnostics.Debugger.IsAttached) {
+                System.Diagnostics.Debugger.Break();
+              }
+            }
+#endif
+          };
       }
     }
   }

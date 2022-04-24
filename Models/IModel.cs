@@ -1,65 +1,27 @@
-﻿using Newtonsoft.Json;
+﻿using Meep.Tech.Collections.Generic;
+using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System;
 
 namespace Meep.Tech.Data {
 
   /// <summary>
-  /// The base interface for a mutable data model that can be produced by an Archetype.
-  /// This is the non generic for Utility only, extend IModel[], or IModel[,] instead.
+  /// The base interface for all XBam Models.
+  /// A Model is a mutable grouping of data fields that can be produced by an Archetype.
+  /// This is the non generic for Utility only, don't inherit from this direclty; Extend IModel[], Model[], or Model[,], or  Model[,].IFromInterface instead.
   /// </summary>
+  /// <see cref="IModel{TModelBase}"/>
+  /// <see cref="Model{TModelBase}"/>
+  /// <see cref="Model{TModelBase, TArchetypeBase}"/>
+  /// <see cref="Model{TModelBase, TArchetypeBase}.IFromInterface"/>
   public partial interface IModel {
-
-    /// <summary>
-    /// Deserialize a model from a json object
-    /// </summary>
-    /// <param name="deserializeToTypeOverride">You can use this to try to make JsonSerialize use 
-    ///    a different Type's info for deserialization than the default returned from GetModelTypeProducedBy</param>
-    public static IModel FromJson(
-      JObject jObject,
-      Type deserializeToTypeOverride = null,
-      Universe universeOverride = null,
-      IBuilder withConfigurationParameters = null
-    ) {
-      string key;
-      Universe universe = universeOverride;
-      string compoundKey = jObject.Value<string>(nameof(Archetype).ToLower());
-      string[] parts = compoundKey.Split('@');
-      if(parts.Length == 1) {
-        key = compoundKey;
-        universe ??= Models.DefaultUniverse;
-      }
-      else if(parts.Length == 2) {
-        key = parts[0];
-        universe ??= Universe.Get(parts[1]);
-      }
-      else
-        throw new ArgumentException($"No __key_ identifier provided in component data: \n{jObject}");
-
-      string json = jObject.ToString();
-      Type deserializeToType = deserializeToTypeOverride
-        ?? universe.Models.GetModelTypeProducedBy(
-          universe.Archetypes.All.Get(key)
-        );
-      object model = JsonConvert.DeserializeObject(
-        json,
-        deserializeToType,
-        universe.ModelSerializer.Options.JsonSerializerSettings
-      );
-
-      if (withConfigurationParameters is not null) {
-        var configModel = model as IModel;
-        model = configModel.Configure(withConfigurationParameters);
-      }
-
-      return (IModel)model;
-    }
 
     /// <summary>
     /// The universe this model was made in
     /// </summary>
     public Universe Universe {
       get;
+      internal set;
     }
 
     /// <summary>
@@ -70,10 +32,10 @@ namespace Meep.Tech.Data {
     protected internal static void Setup(Universe universe) { }
 
     /// <summary>
-    /// Copy the model by serializing and deserializing it.
+    /// Initializes the universe, archetype, factory and other built in model links
     /// </summary>
-    public IModel Copy() =>
-       FromJson(this.ToJson());
+    protected internal IModel Initialize(IBuilder builder)
+      => this;
 
     /// <summary>
     /// Can be used to initially configure a model in the base ctor.
@@ -85,12 +47,70 @@ namespace Meep.Tech.Data {
     /// <summary>
     /// (optional)Finish deserializing the model
     /// </summary>
-    internal protected virtual void FinishDeserialization() {}
+    internal protected virtual void FinishDeserialization() { }
+
+    /// <summary>
+    /// Copy the model by serializing and deserializing it.
+    /// </summary>
+    public IModel Copy() =>
+       FromJson(ToJson());
+
+    #region Json Serialization
+
+    /// <summary>
+    /// Turn the model into a serialized data object.
+    /// </summary>
+    public JObject ToJson() {
+      JsonSerializer serializer = (Universe ?? Models.DefaultUniverse).ModelSerializer.JsonSerializer;
+      var json = JObject.FromObject(
+        this,
+        serializer
+      );
+
+      return json;
+    }
+
+    /// <summary>
+    /// Deserialize a model from a json object
+    /// </summary>
+    /// <param name="deserializeToTypeOverride">You can use this to try to make JsonSerialize use 
+    ///    a different Type's info for deserialization than the default returned from GetModelTypeProducedBy</param>
+    /// <param name="withConfigurationParameters">configuration paramaters to use while re-building the model.</param>
+    public static IModel FromJson(
+      JObject jObject,
+      Type deserializeToTypeOverride = null,
+      Universe universeOverride = null,
+      params (string key, object value)[] withConfigurationParameters
+    ) {
+      string key;
+      Universe universe = universeOverride;
+      string compoundKey = jObject.Value<string>(nameof(Archetype).ToLower());
+      string[] parts = compoundKey.Split('@');
+      if (parts.Length == 1) {
+        key = compoundKey;
+        universe ??= Models.DefaultUniverse;
+      } else if (parts.Length == 2) {
+        key = parts[0];
+        universe ??= Universe.s.TryToGet(parts[1]);
+      } else
+        throw new ArgumentException($"No property with key '{nameof(Archetype).ToLower()}' provided in XBam model data: \n{jObject}");
+
+      universe ??= Models.DefaultUniverse;
+      return universe.Archetypes.All.Get(key)
+        .DeserializeModelFromJson(jObject, deserializeToTypeOverride, withConfigurationParameters);
+    }
+
+    #endregion
   }
 
   /// <summary>
-  /// The base interface for a mutable data model that can be produced by an Archetype.
+  /// The base interface for all 'Simple' XBam Models.
+  /// A Model is a mutable grouping of data fields that can be produced by an Archetype.
+  /// Simple Models have a single non-branching Archetype called a BuilderFactory.
   /// </summary>
+  /// <see cref="Model{TModelBase}"/>
+  /// <see cref="Model{TModelBase, TArchetypeBase}"/>
+  /// <see cref="Model{TModelBase, TArchetypeBase}.IFromInterface"/>
   public partial interface IModel<TModelBase>
     : IModel
     where TModelBase : IModel<TModelBase>
@@ -105,25 +125,49 @@ namespace Meep.Tech.Data {
        JObject jObject,
        Type deserializeToTypeOverride = null,
        Universe universeOverride = null,
-      IBuilder withConfigurationParameters = null
+       params (string key, object value)[] withConfigurationParameters
      ) => (TModelBase)IModel.FromJson(jObject, deserializeToTypeOverride, universeOverride, withConfigurationParameters);
   }
 
   /// <summary>
-  /// The base interface for a mutable data model that can be produced by an Archetype.
+  /// The base interface for all Branchable XBam Models.
+  /// A Model is a mutable grouping of data fields that can be produced by an Archetype.
+  /// Brnachable XBam models can have branching inheritance trees for both the Archetypes that produce the Models, and the Models produced.
+  /// This is the nbase interface for utility only, don't inherit from this directly; Extend IModel[], Model[], or Model[,], or  Model[,].IFromInterface instead.
   /// </summary>
+  /// <see cref="IModel{TModelBase}"/>
+  /// <see cref="Model{TModelBase}"/>
+  /// <see cref="Model{TModelBase, TArchetypeBase}"/>
+  /// <see cref="Model{TModelBase, TArchetypeBase}.IFromInterface"/>
   public interface IModel<TModelBase, TArchetypeBase>
     : IModel<TModelBase>
     where TModelBase : IModel<TModelBase, TArchetypeBase>
-    where TArchetypeBase : Archetype<TModelBase, TArchetypeBase>
-  {
+    where TArchetypeBase : Archetype<TModelBase, TArchetypeBase> {
 
     /// <summary>
     /// The archetype for this model
     /// </summary>
     public TArchetypeBase Archetype {
       get;
+      internal set;
     }
+
+    /// <summary>
+    /// For the base configure calls
+    /// </summary>
+    IModel IModel.Initialize(IBuilder builder) {
+      Archetype = builder?.Archetype as TArchetypeBase;
+      Universe
+        = builder.Archetype.Id.Universe;
+
+      return this;
+    }
+
+    /// <summary>
+    /// Turn the model into a serialized data object.
+    /// </summary>
+    JObject IModel.ToJson()
+      => Archetype.SerializeModelToJson(this);
 
     /// <summary>
     /// Deserialize a model from json as a TModelBase
@@ -134,33 +178,22 @@ namespace Meep.Tech.Data {
        JObject jObject,
        Type deserializeToTypeOverride = null,
        Universe universeOverride = null,
-      IBuilder withConfigurationParameters = null
+       params (string key, object value)[] withConfigurationParameters
      ) => IModel<TModelBase>.FromJson(jObject, deserializeToTypeOverride, universeOverride, withConfigurationParameters);
   }
 
   /// <summary>
   /// Extension methods for models
   /// </summary>
+  /// <see cref="IModel"/>
   public static class IModelExtensions {
 
     /// <summary>
     /// Turn the model into a serialized data object.
+    /// TODO: does this loop?
     /// </summary>
-    /*public static void Save(this IModel model)
-      => throw new System.NotImplementedException();*/
-
-    /// <summary>
-    /// Turn the model into a serialized data object.
-    /// </summary>
-    public static JObject ToJson(this IModel model, Universe universe = null) {
-      var json = JObject.FromObject(
-        model, 
-        (universe ?? model.Universe)
-          .ModelSerializer.JsonSerializer
-      );
-
-      return json;
-    }
+    public static JObject ToJson(this IModel model)
+      => model.ToJson();
 
     /// <summary>
     /// Copy the model by serializing and deserializing it.
