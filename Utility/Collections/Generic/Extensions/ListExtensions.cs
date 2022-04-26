@@ -11,7 +11,12 @@ namespace Meep.Tech.Collections.Generic {
     /// Get a random entry.
     /// </summary>
     public static T RandomEntry<T>(this IEnumerable<T> entries, Random randomGenerator = null)
-      => entries.Count() == 0 ? default : entries.ElementAt((randomGenerator ?? _random).Next(0, entries.Count() - 1));
+      => entries.Count() == 0 
+        ? default 
+        : (entries.Count() == 1 
+            ? entries.First() 
+            : entries.ElementAt((randomGenerator ?? _random)
+              .Next(0, entries.Count() - 1)));
 
     public static IReadOnlyList<T> AsReadOnly<T>(this IList<T> original) {
       if (original is null)

@@ -15,7 +15,7 @@ namespace Meep.Tech.Data {
     /// <summary>
     /// Internal holder for components data
     /// </summary>
-    internal Dictionary<string, IComponent> _componentsByBuilderKey {
+    internal protected Dictionary<string, IComponent> _componentsByBuilderKey {
       get;
     }
 
@@ -385,20 +385,21 @@ namespace Meep.Tech.Data {
     /// <summary>
     /// Add a new component, throws if the component key is taken already
     /// </summary>
-    public static void AddNewComponent<TComponent>(this IWriteableComponentStorage storage, IEnumerable<(string, object)> @params)
+    public static TComponent AddNewComponent<TComponent>(this IWriteableComponentStorage storage, IEnumerable<(string, object)> @params)
       where TComponent : Data.IComponent<TComponent> {
-      IComponent toAdd = Components<TComponent>.BuilderFactory.Make(@params);
+      TComponent toAdd = Components<TComponent>.BuilderFactory.Make(@params);
       if(toAdd is IModel.IComponent.IIsRestrictedToCertainTypes restrictedComponent && storage is IModel storageModel && !restrictedComponent.IsCompatableWith(storageModel)) {
         throw new System.ArgumentException($"Component of type {toAdd.Key} is not compatable with model of type {storage.GetType()}. The model must inherit from {restrictedComponent.RestrictedTo.FullName}.");
       }
 
       ReadableComponentStorageExtensions.AddComponent(storage, toAdd);
+      return toAdd;
     }
 
     /// <summary>
     /// Add a new component, throws if the component key is taken already
     /// </summary>
-    public static void AddNewComponent<TComponent>(this IWriteableComponentStorage storage, params (string, object)[] @params)
+    public static TComponent AddNewComponent<TComponent>(this IWriteableComponentStorage storage, params (string, object)[] @params)
       where TComponent : Data.IComponent<TComponent>
         => AddNewComponent<TComponent>(storage, @params.Cast<(string, object)>());
   }

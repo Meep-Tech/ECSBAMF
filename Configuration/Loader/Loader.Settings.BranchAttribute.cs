@@ -2,28 +2,26 @@
 
 namespace Meep.Tech.Data.Configuration {
   public partial class Loader {
-    public partial class Settings {
 
+    public partial class Settings {
       /// <summary>
-      /// Used to prevent this type of Model, Archetype or Component from being loaded by the Loader until all of the dependent types are successfully loaded first.   
+      /// Used as shorthand for an archetype that produces a different model via the Model constructor
+      /// This will just set the model constructor of the archetype to the basic activator for the parameterless ctor of TNewBaseModel, or the declaring type of the current type.     
       /// </summary>
-      [AttributeUsage(AttributeTargets.Class, Inherited = true, AllowMultiple = true)]
-      public class DependencyAttribute
+      [AttributeUsage(AttributeTargets.Class, Inherited = true)]
+      public class BranchAttribute
         : Attribute {
 
         /// <summary>
-        /// The type this is dependent on
+        /// The new base model this archetype branches for
         /// </summary>
-        public Type DependentOnType {
+        public Type NewBaseModelType {
           get;
           internal set;
         }
 
-        /// <summary>
-        /// Add a new dependency to this type.
-        /// </summary>
-        public DependencyAttribute(Type requiredType) {
-          DependentOnType = requiredType;
+        public BranchAttribute(Type newBaseModelType = null) {
+          NewBaseModelType = newBaseModelType;
         }
       }
     }
