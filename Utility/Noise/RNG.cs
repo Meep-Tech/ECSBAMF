@@ -4,6 +4,7 @@ namespace Meep.Tech.Noise {
 
   /// <summary>
   /// Simple Global Random Value Generation.
+  /// Mostly used for seedless random number generation.
   /// Should not be used for cryptography or multi-threading/specific seed based generation.
   /// </summary>
   public static class RNG {
@@ -13,6 +14,12 @@ namespace Meep.Tech.Noise {
     /// </summary>
     public static Func<string> GenerateNextGuid { get; set; }
       = () => Guid.NewGuid().ToString();
+
+    /// <summary>
+    /// Get the next globally unique string id.
+    /// </summary>
+    public static string NextGuid
+      => GenerateNextGuid();
 
     /// <summary>
     /// Used to get the seed for the static randoness function.
@@ -26,20 +33,6 @@ namespace Meep.Tech.Noise {
     public static System.Random Static {
       get;
     } = new Random(GenerateRandomessSeed());
-
-    /// <summary>
-    /// Get the next random int value between and including 0 and 100
-    /// </summary>
-    public static int NextPercent
-      => (int)Math.Round(Static.NextDouble() * 100);
-
-    /// <summary>
-    /// Get the next globally unique string id.
-    /// </summary>
-    public static string NextGuid
-      => GenerateNextGuid();
-
-    #region Random String Extensions
 
     /// <summary>
     /// Generate a sort of normal random new word.
@@ -63,6 +56,10 @@ namespace Meep.Tech.Noise {
       return word;
     }
 
-    #endregion
+    /// <summary>
+    /// Get the next random int value between and including 0 and 100
+    /// </summary>
+    public static int NextPercent(this System.Random random)
+      => (int)Math.Round(random.NextDouble() * 100);
   }
 }
