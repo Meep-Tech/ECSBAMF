@@ -13,9 +13,19 @@ namespace Meep.Tech.Collections.Generic {
     IEnumerable<TValue> this[TTag tag] { get; }
 
     /// <summary>
+    /// Fetch a set of values by tag.
+    /// </summary>
+    bool TryToGetAnyValuesFor(TTag tag, out IEnumerable<TValue> values);
+
+    /// <summary>
     /// Fetch all the tags for a given value
     /// </summary>
     IEnumerable<TTag> this[TValue value] { get; }
+
+    /// <summary>
+    /// Fetch a set of values by tag.
+    /// </summary>
+    bool TryToGetAnyTagsFor(TValue value, out IEnumerable<TTag> tags);
 
     /// <summary>
     /// All distinct tags

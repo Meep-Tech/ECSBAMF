@@ -244,7 +244,7 @@ namespace Meep.Tech.Data {
 
 #if DEBUG
         // Warns you if you've got Model Component settings in the Archetype but no Component Storage on the Model.
-        else if(Archetype.InitialUnlinkedModelComponentCtors.Any() || Archetype.InitialUnlinkedModelComponentTypes.Any() || Archetype.ModelLinkedComponents.Any()) {
+        else if(Archetype.InitialUnlinkedModelComponents.Any() || Archetype.ModelLinkedComponents.Any()) {
           Console.WriteLine($"The Archetype of Type: {Archetype}, provides components to set up on the produced model of type :{model.GetType()}, but this model does not inherit from the interface {nameof(IReadableComponentStorage)}. Maybe consider adding .WithComponents to the Model<[,]> base class you are inheriting from, or removing model components added to any of the Initial[Component...] properties of the Archetype");
 #warning An archetype with a Model Base Type that does not inherit from IReadableComponentStorage has been provided with InitialUnlinkedModelComponentCtors values. These components may never be applied to the desired model if it does not inhert from IReadableComponentStorage
         }
@@ -273,28 +273,33 @@ namespace Meep.Tech.Data {
       /// </summary>
       protected TModelBase _initializeModelComponents(IReadableComponentStorage model) {
         Parent = model as IModel;
-        foreach(Type componentType in Archetype.InitialUnlinkedModelComponentTypes) {
-          // Make a builder to match this component with the params from the parent:
-          IBuilder componentBuilder
-            = MakeNewBuilderAndCopyParams(
-                this,
-                (Archetype)Components.GetBuilderFactoryFor(componentType)
-            );
-
-          // build the component:
-          IModel.IComponent component = (Data.Components.GetBuilderFactoryFor(componentType) as Archetype)
-            .MakeDefaultWith(componentBuilder) as IModel.IComponent;
-
-          model.AddComponent(component);
-        }
 
         // add components built from a given ctor
-        foreach(Func<IBuilder, IModel.IComponent> ctor in Archetype.InitialUnlinkedModelComponentCtors) {
-          model.AddComponent(ctor(this)); 
+        foreach ((string key, Func<IBuilder, IModel.IComponent> ctor) in Archetype.InitialUnlinkedModelComponents) {
+          // no provided ctor, we need to get the default one.
+          if (ctor == null) {
+            // TOOD: cache this
+            var componentType = Components.DefaultUniverse.Components.Get(key);
+            // Make a builder to match this component with the params from the parent:
+            IBuilder componentBuilder
+              = MakeNewBuilderAndCopyParams(
+                  this,
+                  (Archetype)Components.GetBuilderFactory(componentType)
+              );
+
+            // build the component:
+            IModel.IComponent component = (Data.Components.GetBuilderFactory(componentType) as Archetype)
+              .MakeDefaultWith(componentBuilder) as IModel.IComponent;
+
+            model.AddComponent(component);
+          } // else use the provided ctor:
+          else {
+            model.AddComponent(ctor(this));
+          }
         }
 
         /// add link components from the archetype
-        foreach(Archetype.ILinkedComponent linkComponent in Archetype.ModelLinkedComponents) {
+        foreach(Archetype.IComponent.ILinkedComponent linkComponent in Archetype.ModelLinkedComponents) {
           model.AddComponent(linkComponent.BuildDefaultModelComponent(this, Archetype.Id.Universe));
         }
 

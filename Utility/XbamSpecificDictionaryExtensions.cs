@@ -20,6 +20,16 @@ namespace Meep.Tech.Data {
     /// <summary>
     /// Append a component to a dictionary and return the collection
     /// </summary>
+    /// <param name="overrideConstructor">(optional) an override constructor to use instead of the default one.</param>
+    public static Dictionary<string, Func<IBuilder, IModel.IComponent>> Append<TComponentBase>(this Dictionary<string, Func<IBuilder, IModel.IComponent>> current, Func<IBuilder, TComponentBase> overrideConstructor = null)
+      where TComponentBase : IModel.IComponent<TComponentBase> {
+      current.Add(Components<TComponentBase>.Key, overrideConstructor is not null ? builder => overrideConstructor(builder) : null);
+      return current;
+    }
+
+    /// <summary>
+    /// Append a component to a dictionary and return the collection
+    /// </summary>
     public static Dictionary<string, Archetype.IComponent> Append<TComponentBase>(this Dictionary<string, Archetype.IComponent> current, TComponentBase component)
       where TComponentBase : Archetype.IComponent {
       current.Add(component.Key, component);
@@ -50,6 +60,16 @@ namespace Meep.Tech.Data {
     public static Dictionary<string, IModel.IComponent> Update<TComponentBase>(this Dictionary<string, IModel.IComponent> current, Func<TComponentBase, TComponentBase> updateComponent)
       where TComponentBase : IModel.IComponent<TComponentBase> {
       current[Components<TComponentBase>.Key] = updateComponent((TComponentBase)current[Components<TComponentBase>.Key]);
+      return current;
+    }
+
+    /// <summary>
+    /// Update an existing component in the dictionary
+    /// </summary>
+    public static Dictionary<string, Func<IBuilder, IModel.IComponent>> Update<TComponentBase>(this Dictionary<string, Func<IBuilder, IModel.IComponent>> current, Func<TComponentBase, TComponentBase> updateComponent)
+      where TComponentBase : IModel.IComponent<TComponentBase> {
+      current[Components<TComponentBase>.Key] 
+        = builder => updateComponent((TComponentBase)current[Components<TComponentBase>.Key](builder));
       return current;
     }
 

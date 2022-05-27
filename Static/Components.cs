@@ -18,8 +18,15 @@ namespace Meep.Tech.Data {
     /// <summary>
     /// Get the builder for a given component by type.d
     /// </summary>
-    public static IComponent.IBuilderFactory GetBuilderFactoryFor(Type type)
+    public static IComponent.IBuilderFactory GetBuilderFactory(Type type)
       => DefaultUniverse.Components.GetBuilderFactoryFor(type);
+
+    /// <summary>
+    /// Get the builder for a given component by type.d
+    /// </summary>
+    public static IComponent.IBuilderFactory GetBuilderFactory<TComponent>()
+      where TComponent : Data.IComponent
+        => DefaultUniverse.Components.GetBuilderFactoryFor(typeof(TComponent));
 
     /// <summary>
     /// Get the base model type of this model type.

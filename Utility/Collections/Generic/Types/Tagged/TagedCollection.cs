@@ -1,4 +1,5 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 namespace Meep.Tech.Collections.Generic {
@@ -8,7 +9,7 @@ namespace Meep.Tech.Collections.Generic {
   /// </summary>
   /// <typeparam name="TTag">The tags to be used as multi-keys. Assumed to have a unique hash code</typeparam>
   /// <typeparam name="TValue">The stored values. Values should also have a unique hash code</typeparam>
-  public class TagedCollection<TTag, TValue> : ITagedCollection<TTag, TValue> {
+  public partial class TagedCollection<TTag, TValue> : ITagedCollection<TTag, TValue> {
     Dictionary<TTag, HashSet<TValue>> _valuesByTag
       = new();
     Dictionary<TValue, HashSet<TTag>> _tagsByValue
@@ -25,13 +26,31 @@ namespace Meep.Tech.Collections.Generic {
       => _valuesByTag.Keys;
 
     ///<summary><inheritdoc/></summary>
-    public IEnumerable<TValue> this[TTag tag] {
+    public virtual IEnumerable<TValue> this[TTag tag] {
       get => _valuesByTag[tag];
     }
 
     ///<summary><inheritdoc/></summary>
-    public IEnumerable<TTag> this[TValue value] {
+    public virtual IEnumerable<TTag> this[TValue value] {
       get => _tagsByValue[value];
+    }
+
+    public bool TryToGetAnyValuesFor(TTag tag, out IEnumerable<TValue> values) {
+      if(_valuesByTag.TryGetValue(tag, out var found)) {
+        return (((values = found)?.Any()) ?? false);
+      }
+       
+      values = default;
+      return false;
+    }
+
+    public bool TryToGetAnyTagsFor(TValue value, out IEnumerable<TTag> tags) {
+      if(_tagsByValue.TryGetValue(value, out var found)) {
+        return (((tags = found)?.Any()) ?? false);
+      }
+
+      tags = default;
+      return false;
     }
 
     #endregion
@@ -47,7 +66,7 @@ namespace Meep.Tech.Collections.Generic {
     /// <summary>
     /// Add a new value with multiple tags
     /// </summary>
-    public void Add(IEnumerable<TTag> tags, TValue value) {
+    public virtual void Add(IEnumerable<TTag> tags, TValue value) {
       if (tags.Any()) {
         tags.ForEach(tag => {
           _valuesByTag.AddToHashSet(tag, value);
@@ -65,7 +84,7 @@ namespace Meep.Tech.Collections.Generic {
     /// <summary>
     /// Remove a value
     /// </summary>
-    public bool Remove(TValue value) {
+    public virtual bool Remove(TValue value) {
       if (_tagsByValue.ContainsKey(value)) {
         _tagsByValue.Remove(value);
         _valuesByTag.Values.ForEach(values => values.Remove(value));
@@ -79,7 +98,7 @@ namespace Meep.Tech.Collections.Generic {
     /// <summary>
     /// Remove all values for the given tag
     /// </summary>
-    public bool RemoveValuesFor(TTag tag) {
+    public virtual bool RemoveValuesFor(TTag tag) {
       if (_valuesByTag.ContainsKey(tag)) {
         _valuesByTag.Remove(tag);
         _tagsByValue.Values.ForEach(values => values.Remove(tag));
@@ -95,7 +114,7 @@ namespace Meep.Tech.Collections.Generic {
       => RemoveTagsForItem(tags, value);
 
     ///<summary><inheritdoc/></summary>
-    public bool RemoveTagsForItem(IEnumerable<TTag> tags, TValue value) {
+    public virtual bool RemoveTagsForItem(IEnumerable<TTag> tags, TValue value) {
       bool anyRemoved = false;
       _tagsByValue.TryGetValue(value, out HashSet<TTag> currentTags);
       foreach (var tagToRemove in tags) {

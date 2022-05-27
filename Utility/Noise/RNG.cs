@@ -3,9 +3,22 @@
 namespace Meep.Tech.Noise {
 
   /// <summary>
-  /// Simple Random generation
+  /// Simple Global Random Value Generation.
+  /// Should not be used for cryptography or multi-threading/specific seed based generation.
   /// </summary>
   public static class RNG {
+
+    /// <summary>
+    /// Overrideable uniqe id function
+    /// </summary>
+    public static Func<string> GenerateNextGuid { get; set; }
+      = () => Guid.NewGuid().ToString();
+
+    /// <summary>
+    /// Used to get the seed for the static randoness function.
+    /// </summary>
+    public static int GenerateRandomessSeed()
+      => System.Security.Cryptography.RandomNumberGenerator.GetInt32(Int32.MinValue, Int32.MaxValue);
 
     /// <summary>
     /// Default static randomness generator
@@ -25,18 +38,6 @@ namespace Meep.Tech.Noise {
     /// </summary>
     public static string NextGuid
       => GenerateNextGuid();
-
-    /// <summary>
-    /// Overrideable uniqe id function
-    /// </summary>
-    public static Func<string> GenerateNextGuid { get; set; }
-      = () => Guid.NewGuid().ToString();
-
-    /// <summary>
-    /// Used to get the seed for the static randoness function.
-    /// </summary>
-    public static Func<int> GenerateRandomessSeed { get; set; }
-      = () => GenerateNextGuid().GetHashCode();
 
     #region Random String Extensions
 

@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using Meep.Tech.Data.Reflection;
+using System.Collections.Generic;
 using System.Linq;
 
 namespace Meep.Tech.Data {
@@ -58,6 +59,35 @@ namespace Meep.Tech.Data {
       /// </summary>
       public Enumeration Get(System.Type enumType, object externalId)
           => Get(enumType.FullName, externalId);
+
+      /// <summary>
+      /// Get the enumerations of the given type with the given external id
+      /// </summary>
+      public bool TryToGet(System.Type enumType, object externalId, out Enumeration found) {
+        if (_byType.TryGetValue(enumType.FullName, out var _found)) {
+          if (_found.TryGetValue(externalId, out found)) {
+            return true;
+          }
+        }
+
+        found = null;
+        return false;
+      }
+
+      /// <summary>
+      /// Get the enumerations of the given type with the given external id
+      /// </summary>
+      public bool TryToGet<TEnumeration>(object externalId, out TEnumeration found) where TEnumeration : Enumeration {
+        if (_byType.TryGetValue(typeof(TEnumeration).FullName, out var _found)) {
+          if (_found.TryGetValue(externalId, out var foundEnum)) {
+            found = foundEnum as TEnumeration;
+            return foundEnum is not null;
+          }
+        }
+
+        found = null;
+        return false;
+      }
 
       internal void _register(Enumeration enumeration) {
         if(_byType.TryGetValue(enumeration.GetType().FullName, out var found)) {

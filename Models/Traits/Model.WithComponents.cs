@@ -323,6 +323,20 @@ namespace Meep.Tech.Data {
       }
 
       /// <summary>
+      /// Get a component if this has a component of that given type
+      /// </summary>
+      public virtual bool TryToGetComponent<TComponent>(out TComponent component)
+        where TComponent : IComponent<TComponent> {
+        if(ReadableComponentStorageExtensions.TryToGetComponent<TComponent>(this, out var found)) {
+          component = found;
+          return true;
+        }
+
+        component = default;
+        return false;
+      }
+
+      /// <summary>
       /// Check if this has a given component by base type
       /// </summary>
       public virtual bool HasComponent(System.Type componentType)

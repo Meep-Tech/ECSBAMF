@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Meep.Tech.Data.Reflection;
+using System;
 
 namespace Meep.Tech.Data.Configuration {
   public partial class Loader {
@@ -119,7 +120,7 @@ namespace Meep.Tech.Data.Configuration {
     public class MissingDependencyException : InvalidOperationException {
       public MissingDependencyException(string message) : base(message) { }
       public MissingDependencyException(string message, Exception innerException) : base(message, innerException) { }
-      internal MissingDependencyException(string type, System.Type dependentType, System.Type missingDependency) : base(
+      internal MissingDependencyException(string type, Type dependentType, System.Type missingDependency) : base(
         $"Missing dependency: {missingDependency.ToFullHumanReadableNameString()} for {type}: {dependentType.ToFullHumanReadableNameString()}"
       ) { }
     }

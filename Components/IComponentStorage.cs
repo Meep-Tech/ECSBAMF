@@ -26,7 +26,7 @@ namespace Meep.Tech.Data {
     public static bool Equals(IReadableComponentStorage model, IReadableComponentStorage other) {
       foreach((_, IComponent dataComponent) in model._componentsByBuilderKey) {
         // check each child component that we need to:
-        if(Meep.Tech.Data.Components.GetBuilderFactoryFor(dataComponent.GetType()).IncludeInParentModelEqualityChecks) {
+        if(Meep.Tech.Data.Components.GetBuilderFactory(dataComponent.GetType()).IncludeInParentModelEqualityChecks) {
           // if the other item doesn't have any components, is missing this component, or the other component doesn't equal the one from this model, it's not ==
           if(!other.TryToGetComponent(dataComponent, out IComponent otherComponent)
             || !dataComponent.Equals(otherComponent)
@@ -163,7 +163,7 @@ namespace Meep.Tech.Data {
     /// Get a component if this has a component of that given type
     /// </summary>
     public static bool TryToGetComponent(this IReadableComponentStorage storage, System.Type componentType, out IComponent component)
-      => storage.TryToGetComponent(Components.GetBuilderFactoryFor(componentType).Key, out component);
+      => storage.TryToGetComponent(Components.GetBuilderFactory(componentType).Key, out component);
 
     /// <summary>
     /// Get a component if this has a component of that given type
@@ -211,6 +211,9 @@ namespace Meep.Tech.Data {
     internal static void AddComponent(this IReadableComponentStorage storage, IComponent toAdd) {
       _updateComponentUniverse(storage, toAdd);
       storage._componentsByBuilderKey.Add(toAdd.Key, toAdd);
+      if(toAdd is IModel.IComponent.IDoOnAdd doer) {
+        doer.ExecuteWhenAdded(storage as IModel);
+      }
     }
 
     /// <summary>
@@ -230,7 +233,13 @@ namespace Meep.Tech.Data {
     /// </summary>
     internal static void AddOrUpdateComponent(this IReadableComponentStorage storage, IComponent toSet) {
       _updateComponentUniverse(storage, toSet);
+      bool exists = storage._componentsByBuilderKey.ContainsKey(toSet.Key);
       storage._componentsByBuilderKey[toSet.Key] = toSet;
+      if(!exists) {
+        if(toSet is IModel.IComponent.IDoOnAdd doer) {
+          doer.ExecuteWhenAdded(storage as IModel);
+        }
+      }
     }
 
     /// <summary>
@@ -275,13 +284,13 @@ namespace Meep.Tech.Data {
     /// Remove an existing component
     /// </summary>
     internal static bool RemoveComponent(this IReadableComponentStorage storage, System.Type toRemove)
-      => storage.RemoveComponent(Components.GetBuilderFactoryFor(toRemove).Key);
+      => storage.RemoveComponent(Components.GetBuilderFactory(toRemove).Key);
 
     /// <summary>
     /// Remove an existing component
     /// </summary>
     internal static bool RemoveComponent(this IReadableComponentStorage storage, System.Type toRemove, out IComponent removedComponent)
-      => storage.RemoveComponent(Components.GetBuilderFactoryFor(toRemove).Key, out removedComponent);
+      => storage.RemoveComponent(Components.GetBuilderFactory(toRemove).Key, out removedComponent);
 
     /// <summary>
     /// Remove an existing component

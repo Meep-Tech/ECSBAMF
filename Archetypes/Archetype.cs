@@ -92,27 +92,17 @@ namespace Meep.Tech.Data {
       = new();
 
     /// <summary>
-    /// constructors to make default components on a model made by this Archetype,
-    /// Usually you'll want to use an Archetype.ILinkedComponent but this is here too.
+    /// Components by key, with optional constructors used to set up the default components on a model made by this Archetype,
+    /// Usually you'll want to use an Archetype.ILinkedComponent but this is here too for model components. not linked to an archetype component.
+    /// If the constructor function is left null, the default component ctor is used.
+    /// Override this field by using "_InitialIUnlinkedModelComponents ??= base.InitialUnlinkedModelComponents.Append...." syntax
     /// </summary>
-    protected internal virtual HashSet<Func<IBuilder, IModel.IComponent>> InitialUnlinkedModelComponentCtors {
-      get => _InitialIUnlinkedModelComponentConstructors ?? new();
+    protected internal virtual Dictionary<string, Func<IBuilder, IModel.IComponent>> InitialUnlinkedModelComponents {
+      get => _InitialIUnlinkedModelComponents ?? new();
     } /**<summary> The backing field used to initialize and override InitialIUnlinkedModelComponentConstructors </summary>**/
-    protected HashSet<Func<IBuilder, IModel.IComponent>> _InitialIUnlinkedModelComponentConstructors {
-      get => _initialIUnlinkedModelComponentConstructors; set => _initialIUnlinkedModelComponentConstructors = value;
-    } HashSet<Func<IBuilder, IModel.IComponent>> _initialIUnlinkedModelComponentConstructors;
-
-    /// <summary>
-    /// The default component types to initialize with default values on a new model made by this archetype
-    /// Usually you'll want to use an Archetype.ILinkedComponent but this is here too.
-    /// </summary>
-    protected internal virtual HashSet<System.Type> InitialUnlinkedModelComponentTypes {
-      get => _InitialUnlinkedModelComponentTypes ?? new();
-    } /**<summary> The backing field used to initialize and override InitialUnlinkedModelComponentTypes </summary>**/
-    protected HashSet<System.Type> _InitialUnlinkedModelComponentTypes {
-      get => _initialUnlinkedModelComponentTypes;
-      set => _initialUnlinkedModelComponentTypes = value;
-    } HashSet<System.Type> _initialUnlinkedModelComponentTypes;
+    protected Dictionary<string, Func<IBuilder, IModel.IComponent>> _InitialIUnlinkedModelComponents {
+      get => _initialIUnlinkedModelComponents; set => _initialIUnlinkedModelComponents = value;
+    } Dictionary<string, Func<IBuilder, IModel.IComponent>> _initialIUnlinkedModelComponents;
 
     /// <summary>
     /// If this is true, this Archetype can have it's component collection modified before load by mods and other libraries.
@@ -507,7 +497,7 @@ namespace Meep.Tech.Data {
     /// </summary>
     protected internal virtual JObject SerializeModelToJson(IModel model)
       => JObject.FromObject(
-        this,
+        model,
         Id.Universe.ModelSerializer.JsonSerializer
       );
   }
@@ -637,7 +627,7 @@ namespace Meep.Tech.Data {
     void _initializeInitialComponents() {
       foreach(Archetype.IComponent component in InitialComponents.Values) {
         AddComponent(component);
-        if(component is Archetype.ILinkedComponent linkedComponent) {
+        if(component is Archetype.IComponent.ILinkedComponent linkedComponent) {
           _modelLinkedComponents.Add(linkedComponent);
         }
       }
@@ -657,7 +647,7 @@ namespace Meep.Tech.Data {
     void _deInitializeInitialComponents() {
       foreach(Archetype.IComponent component in InitialComponents.Values) {
         RemoveComponent(component);
-        if(component is Archetype.ILinkedComponent linkedComponent) {
+        if(component is Archetype.IComponent.ILinkedComponent linkedComponent) {
           _modelLinkedComponents.Remove(linkedComponent);
         }
       }
@@ -675,9 +665,10 @@ namespace Meep.Tech.Data {
     public virtual Func<IBuilder<TModelBase>, TModelBase> ModelConstructor {
       get {
         if(_modelConstructor == null) {
-          _modelConstructor
-            = (builder) => Id.Universe.Models._getDefaultCtorFor(ModelBaseType)
-              .Invoke(builder);
+          /// setting to ModelConstructor guarentee's caching.
+          ModelConstructor = (builder) => (TModelBase)Id.Universe.Models.
+              _getDefaultCtorFor(ModelBaseType)
+                .Invoke(builder);
         }
 
         return (builder) 
@@ -687,17 +678,26 @@ namespace Meep.Tech.Data {
         _modelConstructor
           = builder => value.Invoke(builder);
 
+        /// get the model type produced
         Func<Archetype, Dictionary<string, object>, IBuilder> builderCtor
           = GetGenericBuilderConstructor();
         IBuilder builder = builderCtor.Invoke(
           this,
           DefaultTestParams ?? _emptyTestParams
         );
+        System.Type constructedModelType = _modelConstructor(
+          (IBuilder<TModelBase>)builder
+        ).GetType();
 
-        Id.Universe.Archetypes._rootArchetypeTypesByBaseModelType[_modelConstructor(
-         (IBuilder<TModelBase>)builder
-        ).GetType().FullName]
+        // register it
+        Id.Universe.Archetypes._rootArchetypeTypesByBaseModelType[constructedModelType.FullName]
           = GetType();
+
+        /// add auto builder properties based on the model type:
+        foreach(var autoBuilderPropApplier in Configuration.AutoBuildAttribute._generateAutoBuilderSteps(constructedModelType)) {
+          _modelConstructor += (builder) 
+            => autoBuilderPropApplier(_modelConstructor(builder), builder);
+        }
       }
     } Func<IBuilder<TModelBase>, IModel> _modelConstructor;
 

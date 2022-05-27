@@ -17,6 +17,10 @@ namespace Meep.Tech.Data {
       /// The default contract resolver class used for json serialization by ECSBAM
       /// </summary>
       public class DefaultContractResolver : Newtonsoft.Json.Serialization.DefaultContractResolver {
+        IFactory.JsonStringConverter _factoryToStringJsonConverter 
+          = new IFactory.JsonStringConverter();
+        IReadableComponentStorage.ComponentsToJsonConverter _componentsJsonConverter 
+          = new IReadableComponentStorage.ComponentsToJsonConverter();
 
         /// <summary>
         /// the universe this resolver is for
@@ -31,12 +35,6 @@ namespace Meep.Tech.Data {
         public IContractResolver _baseResolver {
           get;
         }
-
-        IFactory.JsonStringConverter _factoryToStringJsonConverter 
-          = new IFactory.JsonStringConverter();
-
-        IReadableComponentStorage.ComponentsToJsonConverter _componentsJsonConverter 
-          = new IReadableComponentStorage.ComponentsToJsonConverter();
 
         /// <summary>
         /// <inheritdoc/>

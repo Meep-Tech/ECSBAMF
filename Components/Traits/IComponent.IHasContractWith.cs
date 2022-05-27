@@ -26,14 +26,14 @@ namespace Meep.Tech.Data {
     /// A contract between two components.
     /// This is executed after both component types have been added to the same model or archetype.
     /// </summary>
-    public interface IContract<TComponentA, TComponentB>
+    public interface IHaveContract<TComponentA, TComponentB>
       where TComponentA : Data.IComponent
       where TComponentB : Data.IComponent {
 
       /// <summary>
       /// Called to execute the contract.
       /// </summary>
-      internal protected (TComponentA a, TComponentB b) _execute(TComponentA a, TComponentB b);
+      internal protected (TComponentA a, TComponentB b) ExecuteContract(TComponentA a, TComponentB b);
     }
   }
 
@@ -45,12 +45,12 @@ namespace Meep.Tech.Data {
       /// This is executed acter both component types have been added to the same model or archetype.
       /// </summary>
       public struct Contract<TComponentA, TComponentB>
-        : Data.IComponent.IContract<TComponentA, TComponentB>
+        : Data.IComponent.IHaveContract<TComponentA, TComponentB>
         where TComponentA : IComponent
         where TComponentB : IComponent {
         Func<TComponentA, TComponentB, (TComponentA a, TComponentB b)> _executor;
 
-        (TComponentA a, TComponentB b) IContract<TComponentA, TComponentB>._execute(TComponentA a, TComponentB b) 
+        (TComponentA a, TComponentB b) IHaveContract<TComponentA, TComponentB>.ExecuteContract(TComponentA a, TComponentB b) 
           => _executor(a, b);
       }
     }
@@ -71,13 +71,13 @@ namespace Meep.Tech.Data {
       /// This is executed acter both component types have been added to the same model or archetype.
       /// </summary>
       public struct Contract<TComponentA, TComponentB>
-        : Data.IComponent.IContract<TComponentA, TComponentB>
+        : Data.IComponent.IHaveContract<TComponentA, TComponentB>
         where TComponentA : Archetype.IComponent
         where TComponentB : Archetype.IComponent 
       {
         Func<TComponentA, TComponentB, (TComponentA a, TComponentB b)> _executor;
 
-        (TComponentA a, TComponentB b) IContract<TComponentA, TComponentB>._execute(TComponentA a, TComponentB b)
+        (TComponentA a, TComponentB b) IHaveContract<TComponentA, TComponentB>.ExecuteContract(TComponentA a, TComponentB b)
           => _executor(a, b);
       }
     }
