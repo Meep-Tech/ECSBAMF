@@ -659,6 +659,9 @@ namespace Meep.Tech.Data {
 
     #region Model Constructor Settings
 
+    DelegateCollection<Func<IModel, IBuilder, IModel>> 
+      _modelAutoBuilderSteps = new();
+
     /// <summary>
     /// Overrideable Model Constructor.
     /// </summary>
@@ -671,8 +674,12 @@ namespace Meep.Tech.Data {
                 .Invoke(builder);
         }
 
-        return (builder) 
-          => (TModelBase)_modelConstructor(builder);
+        return (builder) => {
+          var model = (TModelBase)_modelConstructor(builder);
+          _modelAutoBuilderSteps.ForEach(a => model = (TModelBase)a.Value(model, builder));
+
+          return model;
+        };
       }
       protected internal set {
         _modelConstructor
@@ -694,10 +701,11 @@ namespace Meep.Tech.Data {
           = GetType();
 
         /// add auto builder properties based on the model type:
-        foreach(var autoBuilderPropApplier in Configuration.AutoBuildAttribute._generateAutoBuilderSteps(constructedModelType)) {
-          _modelConstructor += (builder) 
-            => autoBuilderPropApplier(_modelConstructor(builder), builder);
-        }
+        _modelAutoBuilderSteps = Configuration.AutoBuildAttribute._generateAutoBuilderSteps(constructedModelType)
+          .ToDictionary(
+           e => e.name,
+           e => e.function
+          );
       }
     } Func<IBuilder<TModelBase>, IModel> _modelConstructor;
 

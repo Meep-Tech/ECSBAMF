@@ -735,6 +735,8 @@ namespace Meep.Tech.Data.Configuration {
             = Universe.Models._getDefaultCtorFor(branchAttribute.NewBaseModelType);
           (archetype as IFactory).ModelConstructor 
             = defaultModelConstructor;
+          // TODO: uncomment this and wrie test to see if you can make a Dog of type Snake.
+          // archetype.ModelBaseType = branchAttribute.NewBaseModelType;
         }
 
         IModel defaultModel = archetype.MakeDefaultWith(builder);

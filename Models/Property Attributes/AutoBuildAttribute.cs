@@ -93,31 +93,47 @@ namespace Meep.Tech.Data.Configuration {
     /// </summary>
     public AutoBuildAttribute() { }
 
-    internal static IEnumerable<Func<IModel, IBuilder, IModel>> _generateAutoBuilderSteps(System.Type modelType)
+    internal static IEnumerable<(string name, Func<IModel, IBuilder, IModel> function)> _generateAutoBuilderSteps(System.Type modelType)
       => modelType.GetProperties(System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)
         .Where(p => Attribute.IsDefined(p, typeof(AutoBuildAttribute), true))
         .Select(p => {
           AutoBuildAttribute attributeData = p.GetCustomAttributes(typeof(AutoBuildAttribute), true)
             .First() as AutoBuildAttribute;
 
-          return (order: attributeData.Order, func: new Func<IModel, IBuilder, IModel>((IModel m, IBuilder b) => {
-            System.Reflection.MethodInfo setter = p.GetSetMethod(true) 
-              ?? throw new AccessViolationException($"Can not find a setter for property: {p.Name}, on model: {p.DeclaringType.FullName}, for auto-builder property attribute setup");
-            
-            object value;
-            if(attributeData.IsRequiredAsAParameter) {
-              object defaultValue = _getDefaultValue(m, b, p, attributeData);
-              value = _getValueFromBuilder(b, p, attributeData, defaultValue);
+          return (order: attributeData.Order, name: attributeData.ParameterName ?? p.Name, func: new Func<IModel, IBuilder, IModel>((IModel m, IBuilder b) => {
+            System.Reflection.MethodInfo setter = p.GetSetMethod(true);
+            if(setter is null) {
+              System.Type baseType = p.DeclaringType;
+              while(setter is null && baseType is not null) {
+                PropertyInfo propertyInfo = baseType.GetProperty(
+                  p.Name,
+                  System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic
+                );
+
+                if(propertyInfo is null) {
+                  break;
+                }
+
+                setter = propertyInfo.GetSetMethod(true);
+                baseType = baseType.BaseType;
+              }
+
+              if(setter is null) throw new AccessViolationException($"Can not find a setter for property: {p.Name}, on model: {p.DeclaringType.FullName}, for auto-builder property attribute setup");
             }
-            else {
-              value = _getRequiredValueFromBuilder(b, p, attributeData);
-            }
+
+            object value = attributeData.IsRequiredAsAParameter
+              ? _getRequiredValueFromBuilder(b, p, attributeData)
+              : _getValueFromBuilderOrDefault(m, b, p, attributeData);
 
             if(attributeData.ValueValidatorName is not null) {
               // TODO: cache this
               ValueValidator validator = _generateValidator(attributeData.ValueValidatorName, m, p);
-              if(!validator.Invoke(value, b, m, out string message, out Exception exception)) {
-                throw new ArgumentException($"Invalid Value: {value}, tried to set to parameter/property: {attributeData.ParameterName ?? p.Name}, via auto builder: {message}", exception);
+              try {
+                if(!validator.Invoke(value, b, m, out string message, out Exception exception)) {
+                  throw new ArgumentException($"Invalid Value: {value}, tried to set to parameter/property: {attributeData.ParameterName ?? p.Name}, via auto builder: {message}", exception);
+                }
+              } catch(Exception e) {
+                throw new ArgumentException($"Value caused Exception during Validation: {value?.ToString() ?? "null"}, tried to set to parameter/property: {attributeData.ParameterName ?? p.Name}, via auto builder", e);
               }
             }
 
@@ -130,7 +146,7 @@ namespace Meep.Tech.Data.Configuration {
             return m;
           })); }
         ).OrderBy(e => e.order)
-        .Select(e => e.func);
+        .Select(e => (e.name, e.func));
 
     static ValueValidator _generateValidator(string valueValidatorName, IModel model, PropertyInfo property) {
       var @delegate = property.DeclaringType.GetMembers(System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)
@@ -187,7 +203,6 @@ namespace Meep.Tech.Data.Configuration {
     }
 
     static object _getDefaultValue(IModel model, IBuilder builder, PropertyInfo property, AutoBuildAttribute attributeData) {
-      object defaultValue = null;
       /// get via default attribute box value.
       // TODO: instead of an overall override, this should be able to be deferred then used if the cached functions provide null in the end.
       var defaultValueAttributeData = property.GetCustomAttributes(typeof(DefaultValueAttribute), true).FirstOrDefault() as DefaultValueAttribute;
@@ -200,16 +215,16 @@ namespace Meep.Tech.Data.Configuration {
         var @delegate = property.DeclaringType.GetMembers(System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)
           .FirstOrDefault(m => m.Name == attributeData.DefaultValueGetterDelegateName
             && (
-              (m is PropertyInfo p) 
+              (m is PropertyInfo p)
                 && p.PropertyType == typeof(AutoBuildAttribute.DefaultValueGetter)
-              || (m is FieldInfo f) 
+              || (m is FieldInfo f)
                 && f.FieldType == typeof(AutoBuildAttribute.DefaultValueGetter)
-              || (m is MethodInfo l) 
-                && (l.ReturnType == typeof(object) || l.ReturnType == property.PropertyType) 
+              || (m is MethodInfo l)
+                && (l.ReturnType == typeof(object) || l.ReturnType == property.PropertyType)
                 && l.GetParameters().Select(p => p.GetType()).SequenceEqual(new System.Type[] {
                   typeof(IBuilder),
                   typeof(IModel)
-                }) 
+                })
             ));
 
         if(@delegate is null) {
@@ -239,12 +254,12 @@ namespace Meep.Tech.Data.Configuration {
             && (
               (m is PropertyInfo p) && p.PropertyType == property.PropertyType
               || (m is FieldInfo f) && f.FieldType == property.PropertyType
-              || (m is MethodInfo l) 
-                && (l.ReturnType == typeof(object) || l.ReturnType == property.PropertyType) 
+              || (m is MethodInfo l)
+                && (l.ReturnType == typeof(object) || l.ReturnType == property.PropertyType)
                 && l.GetParameters().Select(p => p.GetType()).SequenceEqual(new System.Type[] {
                   typeof(IBuilder),
                   typeof(IModel)
-                }) 
+                })
             ));
 
         if(archetypeDefaultProvider is null) {
@@ -256,11 +271,11 @@ namespace Meep.Tech.Data.Configuration {
           return method.Invoke(builder.Archetype, new object[] { model, builder });
         } else {
           DefaultValueGetter defaultGetterDelegate = (archetypeDefaultProvider is PropertyInfo p
-              ? p.GetValue(builder.Archetype)
-              : archetypeDefaultProvider is FieldInfo f
-                ? f.GetValue(builder.Archetype)
-                : throw new Exception($"Unknown member type for default builder attribute default value")
-            ) as AutoBuildAttribute.DefaultValueGetter;
+            ? new DefaultValueGetter((b, m) => p.GetValue(builder.Archetype))
+            : archetypeDefaultProvider is FieldInfo f
+              ? new((b, m) => f.GetValue(builder.Archetype))
+              : throw new Exception($"Unknown member type for default builder attribute default value")
+          );
 
           // TODO: cache this
           return defaultGetterDelegate.Invoke(builder, model);
@@ -269,7 +284,7 @@ namespace Meep.Tech.Data.Configuration {
 
       /// try to find the standard default property:
       PropertyInfo archetypeDefaultProperty = builder.Archetype.GetType().GetProperties(System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)
-        .FirstOrDefault(p => 
+        .FirstOrDefault(p =>
           ((p.Name == "Default" + (attributeData.ParameterName ?? property.Name))
             || (p.Name.Trim('_').ToLower() == ("Default" + (attributeData.ParameterName ?? property.Name)).ToLower()))
           && p.PropertyType == property.PropertyType
@@ -280,15 +295,22 @@ namespace Meep.Tech.Data.Configuration {
         return archetypeDefaultProperty.GetValue(builder.Archetype);
       }
 
-      return defaultValue;
+      return property.GetValue(model);
     }
 
-    static object _getValueFromBuilder(IBuilder builder, PropertyInfo property, AutoBuildAttribute attributeData, object defaultValue) {
-      var getter = typeof(BuilderExtensions).GetMethod(nameof(BuilderExtensions.GetParam));
+    static object _getValueFromBuilderOrDefault(IModel model, IBuilder builder, PropertyInfo property, AutoBuildAttribute attributeData) {
+      var getter = typeof(BuilderExtensions).GetMethod(nameof(BuilderExtensions.TryToGetParam));
       getter = getter.MakeGenericMethod(property.PropertyType);
 
       // TODO: cache this
-      return getter.Invoke(builder, new[] { attributeData.ParameterName ?? property.Name, defaultValue });
+      object[] parameters = new object[] { builder, attributeData.ParameterName ?? property.Name, null, default };
+      try {
+        if((bool)getter.Invoke(null, parameters)) {
+          return parameters[2];
+        } else return _getDefaultValue(model, builder, property, attributeData);
+      } catch(TargetInvocationException e) {
+        throw e.InnerException;
+      }
     }
 
     static object _getRequiredValueFromBuilder(IBuilder builder, PropertyInfo property, AutoBuildAttribute attributeData) {
@@ -296,7 +318,11 @@ namespace Meep.Tech.Data.Configuration {
       getter = getter.MakeGenericMethod(property.PropertyType);
 
       // TODO: cache this
-      return getter.Invoke(builder, new[] { attributeData.ParameterName ?? property.Name });
+      try {
+        return getter.Invoke(null, new object[] { builder, attributeData.ParameterName ?? property.Name });
+      } catch(TargetInvocationException e) {
+        throw e.InnerException;
+      }
     }
   }
 }
