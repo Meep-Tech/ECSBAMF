@@ -16,18 +16,10 @@ namespace Meep.Tech.Data {
       where TOtherComponent : Data.IComponent<TOtherComponent> 
     {
 
-      string IHaveContract._aKey
-        => Components<TComponentBase>.Key;
-      string IHaveContract._bKey
-        => Components<TOtherComponent>.Key;
-
       /// <summary>
       /// Executed when both of these components are added to the same object
       /// </summary>
       internal protected (TComponentBase @this, TOtherComponent other) ExecuteContractWith(TOtherComponent otherComponent);
-
-      /*(Data.IComponent @this, Data.IComponent other) IHaveContract.ExecuteContractWith(Data.IComponent otherComponent) 
-        => ExecuteContractWith((TOtherComponent)otherComponent);*/
     }
   }
 
@@ -41,52 +33,10 @@ namespace Meep.Tech.Data {
 
       internal static Dictionary<System.Type, Dictionary<System.Type, Func<Data.IComponent, Data.IComponent, (Data.IComponent a, Data.IComponent b)>>> _contracts
         = new();
-
-      internal string _aKey {
-        get;
-      }
-      internal string _bKey {
-        get;
-      }
-
-      /// <summary>
-      /// Executed when both of these components are added to the same object
-      /// </summary>
-      //internal (Data.IComponent @this, Data.IComponent other) ExecuteContractWith(Data.IComponent otherComponent);
     }
-
-    /*/// <summary>
-    /// A contract between two components.
-    /// This is executed after both component types have been added to the same model or archetype.
-    /// </summary>
-    public interface IContract<TComponentA, TComponentB> 
-      where TComponentA : Data.IComponent
-      where TComponentB : Data.IComponent {
-
-      /// <summary>
-      /// Called to execute the contract.
-      /// </summary>
-      internal protected (TComponentA a, TComponentB b) ExecuteContract(TComponentA a, TComponentB b);
-    }*/
   }
 
   public partial interface IModel {
-   /* public partial interface IComponent {
-
-      /// <summary>
-      /// A contract between two components.
-      /// This is executed acter both component types have been added to the same model or archetype.
-      /// </summary>
-      public struct Contract<TComponentA, TComponentB>
-        : Data.IComponent.IContract<TComponentA, TComponentB>
-        where TComponentA : IComponent
-        where TComponentB : IComponent {
-        Func<TComponentA, TComponentB, (TComponentA a, TComponentB b)> _executor;
-
-        (TComponentA a, TComponentB b) IContract<TComponentA, TComponentB>.ExecuteContract(TComponentA a, TComponentB b) 
-          => _executor(a, b);
-      }
-    }*/
 
     public partial interface IComponent<TComponentBase> {
 
@@ -97,23 +47,6 @@ namespace Meep.Tech.Data {
   }
 
   public partial class Archetype {
-    /*public partial interface IComponent {
-
-      /// <summary>
-      /// A contract between two components.
-      /// This is executed acter both component types have been added to the same model or archetype.
-      /// </summary>
-      public struct Contract<TComponentA, TComponentB>
-        : Data.IComponent.IContract<TComponentA, TComponentB>
-        where TComponentA : Archetype.IComponent
-        where TComponentB : Archetype.IComponent 
-      {
-        Func<TComponentA, TComponentB, (TComponentA a, TComponentB b)> _executor;
-
-        (TComponentA a, TComponentB b) IContract<TComponentA, TComponentB>.ExecuteContract(TComponentA a, TComponentB b)
-          => _executor(a, b);
-      }
-    }*/
 
     public partial interface IComponent<TComponentBase> {
 

@@ -278,7 +278,7 @@ namespace Meep.Tech.Data {
     /// <summary>
     /// The accessor for the default Icomponents implimentation
     /// </summary>
-    Dictionary<string, ICollection<Data.IComponent>> IReadableComponentStorage._componentsWithWaitingContracts { get; }
+    Dictionary<System.Type, ICollection<Data.IComponent>> IReadableComponentStorage._componentsWithWaitingContracts { get; }
       = new();
 
     /// <summary>

@@ -23,7 +23,7 @@ namespace Meep.Tech.Data {
     /// <summary>
     /// Internal holder for components data
     /// </summary>
-    internal protected Dictionary<string, ICollection<IComponent>> _componentsWithWaitingContracts {
+    internal protected Dictionary<System.Type, ICollection<IComponent>> _componentsWithWaitingContracts {
       get;
     }
 
@@ -228,14 +228,14 @@ namespace Meep.Tech.Data {
       }
 
       /// execute waiting contracts where toAdd is b
-      if (storage._componentsWithWaitingContracts.TryGetValue(toAdd.Key, out var componentsWithContractsWaitingForThisComponent)) {
+      if (storage._componentsWithWaitingContracts.TryGetValue(toAdd.GetType(), out var componentsWithContractsWaitingForThisComponent)) {
         foreach(IComponent waitingComponent in componentsWithContractsWaitingForThisComponent) {
           IComponent a = storage.GetComponent(waitingComponent.Key);
           (a, toAdd) = IComponent.IHaveContract._contracts[a.GetType()][toAdd.GetType()](a, toAdd);
           storage.UpdateComponent(a);
           storage.UpdateComponent(toAdd);
         }
-        storage._componentsWithWaitingContracts.Remove(toAdd.Key);
+        storage._componentsWithWaitingContracts.Remove(toAdd.GetType());
       }
 
       /// execute contracts where toAdd is a
@@ -247,7 +247,7 @@ namespace Meep.Tech.Data {
             storage.UpdateComponent(b);
           }
           else
-            storage._componentsWithWaitingContracts.AddToValueCollection(contractedComponent._bKey, contractedComponent);
+            storage._componentsWithWaitingContracts.AddToValueCollection(bType, contractedComponent);
         }
       }
     }

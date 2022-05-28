@@ -41,7 +41,7 @@ namespace Meep.Tech.Data {
       /// <summary>
       /// The accessor for the default Icomponents implimentation
       /// </summary>
-      Dictionary<string, ICollection<IComponent>> IReadableComponentStorage._componentsWithWaitingContracts { get; }
+      Dictionary<System.Type, ICollection<IComponent>> IReadableComponentStorage._componentsWithWaitingContracts { get; }
         = new();
 
       ///<summary><inheritdoc/></summary>
@@ -294,7 +294,7 @@ namespace Meep.Tech.Data {
       /// <summary>
       /// The accessor for the default Icomponents implimentation
       /// </summary>
-      Dictionary<string, ICollection<IComponent>> IReadableComponentStorage._componentsWithWaitingContracts { get; }
+      Dictionary<System.Type, ICollection<IComponent>> IReadableComponentStorage._componentsWithWaitingContracts { get; }
         = new();
 
       #region Default Component Implimentations
