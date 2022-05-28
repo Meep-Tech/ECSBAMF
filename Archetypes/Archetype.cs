@@ -274,6 +274,12 @@ namespace Meep.Tech.Data {
     /// </summary>
     Dictionary<string, Data.IComponent> IReadableComponentStorage._componentsByBuilderKey
       => _components;
+    
+    /// <summary>
+    /// The accessor for the default Icomponents implimentation
+    /// </summary>
+    Dictionary<string, ICollection<Data.IComponent>> IReadableComponentStorage._componentsWithWaitingContracts { get; }
+      = new();
 
     /// <summary>
     /// Internally stored components

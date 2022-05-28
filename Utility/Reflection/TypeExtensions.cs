@@ -95,7 +95,7 @@ namespace Meep.Tech.Data.Reflection {
     /// <summary>
     /// Get the generic arguments from a type this inherits from
     /// </summary>
-    public static IEnumerable<Type> GetInheritedGenericTypes(this Type type, Type genericParentType) {
+    public static IEnumerable<Type> GetFirstInheritedGenericTypes(this Type type, Type genericParentType) {
       List<Type> inheritedGenericTypes = new List<Type>();
       foreach(Type intType in type.GetParentTypes()) {
         if(intType.IsGenericType && intType.GetGenericTypeDefinition() == genericParentType) {
@@ -104,6 +104,17 @@ namespace Meep.Tech.Data.Reflection {
       }
 
       return inheritedGenericTypes;
+    }
+
+    /// <summary>
+    /// Get the generic arguments from a type this inherits from
+    /// </summary>
+    public static IEnumerable<IEnumerable<Type>> GetAllInheritedGenericTypes(this Type type, Type genericParentType) {
+      foreach(Type intType in type.GetParentTypes()) {
+        if(intType.IsGenericType && intType.GetGenericTypeDefinition() == genericParentType) {
+          yield return intType.GetGenericArguments();
+        }
+      }
     }
 
     /// <summary>

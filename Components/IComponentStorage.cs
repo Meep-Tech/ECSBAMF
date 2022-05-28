@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using Meep.Tech.Collections.Generic;
 
 namespace Meep.Tech.Data {
 
@@ -16,6 +17,13 @@ namespace Meep.Tech.Data {
     /// Internal holder for components data
     /// </summary>
     internal protected Dictionary<string, IComponent> _componentsByBuilderKey {
+      get;
+    }
+
+    /// <summary>
+    /// Internal holder for components data
+    /// </summary>
+    internal protected Dictionary<string, ICollection<IComponent>> _componentsWithWaitingContracts {
       get;
     }
 
@@ -210,9 +218,37 @@ namespace Meep.Tech.Data {
     /// </summary>
     internal static void AddComponent(this IReadableComponentStorage storage, IComponent toAdd) {
       _updateComponentUniverse(storage, toAdd);
+
+      /// add
       storage._componentsByBuilderKey.Add(toAdd.Key, toAdd);
-      if(toAdd is IModel.IComponent.IDoOnAdd doer) {
-        doer.ExecuteWhenAdded(storage as IModel);
+
+      /// do on add
+      if(toAdd is IComponent.IDoOnAdd doer) {
+        doer.ExecuteWhenAdded(storage);
+      }
+
+      /// execute waiting contracts where toAdd is b
+      if (storage._componentsWithWaitingContracts.TryGetValue(toAdd.Key, out var componentsWithContractsWaitingForThisComponent)) {
+        foreach(IComponent waitingComponent in componentsWithContractsWaitingForThisComponent) {
+          IComponent a = storage.GetComponent(waitingComponent.Key);
+          (a, toAdd) = IComponent.IHaveContract._contracts[a.GetType()][toAdd.GetType()](a, toAdd);
+          storage.UpdateComponent(a);
+          storage.UpdateComponent(toAdd);
+        }
+        storage._componentsWithWaitingContracts.Remove(toAdd.Key);
+      }
+
+      /// execute contracts where toAdd is a
+      if(toAdd is IComponent.IHaveContract contractedComponent) {
+        foreach((Type bType, Func<IComponent, IComponent, (IComponent a, IComponent b)> contract) in IComponent.IHaveContract._contracts[toAdd.GetType()]) {
+          if(storage.TryToGetComponent(bType, out IComponent foundB)) {
+            (IComponent a, IComponent b) = contract(toAdd, foundB);
+            storage.UpdateComponent(a);
+            storage.UpdateComponent(b);
+          }
+          else
+            storage._componentsWithWaitingContracts.AddToValueCollection(contractedComponent._bKey, contractedComponent);
+        }
       }
     }
 
@@ -233,12 +269,11 @@ namespace Meep.Tech.Data {
     /// </summary>
     internal static void AddOrUpdateComponent(this IReadableComponentStorage storage, IComponent toSet) {
       _updateComponentUniverse(storage, toSet);
-      bool exists = storage._componentsByBuilderKey.ContainsKey(toSet.Key);
-      storage._componentsByBuilderKey[toSet.Key] = toSet;
-      if(!exists) {
-        if(toSet is IModel.IComponent.IDoOnAdd doer) {
-          doer.ExecuteWhenAdded(storage as IModel);
-        }
+      if(!storage._componentsByBuilderKey.ContainsKey(toSet.Key)) {
+        storage.AddComponent(toSet);
+      }
+      else {
+        storage._componentsByBuilderKey[toSet.Key] = toSet;
       }
     }
 

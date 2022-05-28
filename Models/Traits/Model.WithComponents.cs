@@ -38,6 +38,12 @@ namespace Meep.Tech.Data {
       Dictionary<string, Data.IComponent> IReadableComponentStorage._componentsByBuilderKey
         => _components;
 
+      /// <summary>
+      /// The accessor for the default Icomponents implimentation
+      /// </summary>
+      Dictionary<string, ICollection<IComponent>> IReadableComponentStorage._componentsWithWaitingContracts { get; }
+        = new();
+
       ///<summary><inheritdoc/></summary>
       public override bool Equals(object obj) {
         return base.Equals(obj) 
@@ -284,6 +290,12 @@ namespace Meep.Tech.Data {
       /// </summary>
       Dictionary<string, Data.IComponent> IReadableComponentStorage._componentsByBuilderKey
         => _components;
+
+      /// <summary>
+      /// The accessor for the default Icomponents implimentation
+      /// </summary>
+      Dictionary<string, ICollection<IComponent>> IReadableComponentStorage._componentsWithWaitingContracts { get; }
+        = new();
 
       #region Default Component Implimentations
 

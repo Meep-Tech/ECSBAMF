@@ -6,8 +6,9 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Runtime.CompilerServices;
 using System.Text;
-using static Meep.Tech.Data.Configuration.Loader.Settings;
+using Meep.Tech.Data.Configuration;
 
 namespace Meep.Tech.Data.Configuration {
 
@@ -437,7 +438,7 @@ namespace Meep.Tech.Data.Configuration {
 
       // assign root archetype references
       if(systemType.IsAssignableToGeneric(typeof(IModel<,>))) {
-        var types = systemType.GetInheritedGenericTypes(typeof(IModel<,>));
+        var types = systemType.GetFirstInheritedGenericTypes(typeof(IModel<,>));
         if(!typeof(IModel.IBuilderFactory).IsAssignableFrom(types.Last())) {
           Universe.Archetypes._rootArchetypeTypesByBaseModelType[systemType.FullName] 
             = types.Last();
@@ -448,8 +449,8 @@ namespace Meep.Tech.Data.Configuration {
       try {
         Universe.Models._baseTypes.Add(
           systemType.FullName,
-          systemType.GetInheritedGenericTypes(typeof(IModel<>)).FirstOrDefault()
-            ?? systemType.GetInheritedGenericTypes(typeof(IModel<,>)).First()
+          systemType.GetFirstInheritedGenericTypes(typeof(IModel<>)).FirstOrDefault()
+            ?? systemType.GetFirstInheritedGenericTypes(typeof(IModel<,>)).First()
         );
       } catch(Exception e) {
         throw new NotImplementedException($"Could not find IModel<> Base Type for {systemType}, does it inherit from IModel instead of IModel<T> by mistake?", e);
@@ -482,12 +483,42 @@ namespace Meep.Tech.Data.Configuration {
       try {
         Universe.Components._baseTypes.Add(
           systemType.FullName,
-          systemType.GetInheritedGenericTypes(typeof(IComponent<>)).First()
+          systemType.GetFirstInheritedGenericTypes(typeof(IComponent<>)).First()
         );
       } catch (Exception e) {
         throw new NotImplementedException($"Could not find IComponent<> Base Type for {systemType}, does it inherit from IComponent instead of IComponent<T> by mistake?", e);
       }
+
+      if(typeof(IComponent.IHaveContract).IsAssignableFrom(systemType)) {
+        _cacheContractsForComponentType(systemType);
+      }
     }
+
+    void _cacheContractsForComponentType(Type systemType) { 
+      foreach(var contractTypeSets in systemType.GetAllInheritedGenericTypes(typeof(IComponent<>.IHaveContractWith<>))) {
+        (Type a, Type b, _) = contractTypeSets.ToList();
+        MethodInfo contract = systemType.GetInterfaceMap(typeof(IComponent<>.IHaveContractWith<>).MakeGenericType(a, b)).TargetMethods.First(m => {
+          if(m.Name.EndsWith("ExecuteContractWith"))
+            if(m.GetParameters().Length == 1)
+              if(m.GetParameters().First().ParameterType == b)
+                if(m.ReturnType == typeof(ValueTuple<,>).MakeGenericType(a, b))
+                  return true;
+          return false;
+        });
+
+        if(IComponent.IHaveContract._contracts.TryGetValue(a, out var existingDic)) {
+          existingDic.Add(b, _buildContractExecutor(contract));
+        }
+        else IComponent.IHaveContract._contracts[a] = new() {
+          {b, _buildContractExecutor(contract)}
+        };
+      }
+    }
+
+    static Func<IComponent, IComponent, (IComponent a, IComponent b)> _buildContractExecutor(MethodInfo contract) => (a, b) => {
+      var @return = (ITuple)contract.Invoke(a, new[] { b });
+      return ((Data.IComponent)@return[0], (Data.IComponent)@return[1]);
+    };
 
     HashSet<System.Type> _staticallyInitializedTypes
       = new ();
@@ -735,8 +766,7 @@ namespace Meep.Tech.Data.Configuration {
             = Universe.Models._getDefaultCtorFor(branchAttribute.NewBaseModelType);
           (archetype as IFactory).ModelConstructor 
             = defaultModelConstructor;
-          // TODO: uncomment this and wrie test to see if you can make a Dog of type Snake.
-          // archetype.ModelBaseType = branchAttribute.NewBaseModelType;
+          archetype.ModelBaseType = branchAttribute.NewBaseModelType;
         }
 
         IModel defaultModel = archetype.MakeDefaultWith(builder);
