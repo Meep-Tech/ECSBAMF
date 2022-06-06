@@ -84,10 +84,22 @@ namespace Meep.Tech.Data {
       Type deserializeToTypeOverride = null,
       Universe universeOverride = null,
       params (string key, object value)[] withConfigurationParameters
+    ) => FromJson(jObject, ontoParent, deserializeToTypeOverride, universeOverride, (IEnumerable<(string key, object value)>)withConfigurationParameters);
+
+    /// <summary>
+    /// Make a component from a jobject
+    /// </summary>
+    /// TODO: This change should propogate to the parent type to somehow. Fix the new!.
+    public static Data.IComponent FromJson(
+      JObject jObject,
+      IModel ontoParent,
+      Type deserializeToTypeOverride = null,
+      Universe universeOverride = null,
+      IEnumerable<(string key, object value)> withConfigurationParameters = null
     ) {
       var component = FromJson(jObject, deserializeToTypeOverride, universeOverride);
 
-      if (withConfigurationParameters.Any()) {
+      if (withConfigurationParameters?.Any() ?? false) {
         IBuilder builder = (component.Factory as Archetype)
           .GetGenericBuilderConstructor()((component.Factory as Archetype), withConfigurationParameters.ToDictionary(p => p.key, p => p.value));
         builder.Parent = ontoParent;
@@ -101,12 +113,22 @@ namespace Meep.Tech.Data {
     /// <summary>
     /// Make a component from a jobject
     /// </summary>
-    /// TODO: This change should propogate to the parent type to somehow. Fix the new!.
     public new static Data.IComponent FromJson(
       JObject jObject,
       Type deserializeToTypeOverride = null,
       Universe universeOverride = null,
       params (string key, object value)[] withConfigurationParameters
+    ) => FromJson(jObject, deserializeToTypeOverride, universeOverride, withConfigurationParameters as IEnumerable<(string, object)>);
+
+    /// <summary>
+    /// Make a component from a jobject
+    /// </summary>
+    /// TODO: This change should propogate to the parent type to somehow. Fix the new!.
+    public static Data.IComponent FromJson(
+      JObject jObject,
+      Type deserializeToTypeOverride = null,
+      Universe universeOverride = null,
+      IEnumerable<(string key, object value)> withConfigurationParameters = null
     ) {
       string key;
       Universe universe = universeOverride;
@@ -136,7 +158,7 @@ namespace Meep.Tech.Data {
 
       component.Universe = universe ?? Components.DefaultUniverse ?? universeOverride;
       // default init and configure.
-      if (withConfigurationParameters.Any()) {
+      if (withConfigurationParameters?.Any() ?? false) {
         IBuilder builder = (component.Factory as Archetype)
           .GetGenericBuilderConstructor()((component.Factory as Archetype), withConfigurationParameters.ToDictionary(p => p.key, p => p.value));
         component = (IComponent)component.Initialize(builder);

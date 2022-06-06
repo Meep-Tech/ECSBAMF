@@ -14,5 +14,16 @@
       }
       return withElipsies ? value + "..." : value;
     }
-  }
+
+    /// <summary>
+    /// Converts this pascal case string to sentence case with spaced words.
+    /// From: https://www.codeproject.com/Articles/108996/Splitting-Pascal-Camel-Case-with-RegEx-Enhancement
+    /// </summary>
+    public static string ToSentenceCase(this string PascalCaseString)
+      =>  System.Text.RegularExpressions.Regex.Replace(
+        PascalCaseString,
+        "(?<!^)([A-Z][a-z]|(?<=[a-z])[A-Z])",
+        " $1",
+        System.Text.RegularExpressions.RegexOptions.Compiled).Trim();
+      };
 }

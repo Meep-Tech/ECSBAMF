@@ -57,6 +57,29 @@ namespace Meep.Tech.Collections.Generic {
         @do(value, index++);
       }
     }
+    
+    /// <summary>
+    /// do on each
+    /// </summary>
+    public static void ForEach<T>(this IEnumerable<T> enumeration, Func<T, bool> @doUntilFalse) {
+      foreach(T @value in enumeration) {
+        if(!@doUntilFalse(value)) {
+          break;
+        }
+      }
+    }
+
+    /// <summary>
+    /// do on each with an index too
+    /// </summary>
+    public static void ForEach<T>(this IEnumerable<T> enumeration, Func<T, int, bool> @doUntilFalse) {
+      int index = 0;
+      foreach(T @value in enumeration) {
+        if(!@doUntilFalse(value, index++)) {
+          break;
+        }
+      }
+    }
 
     /// <summary>
     /// append a value if the condition is true

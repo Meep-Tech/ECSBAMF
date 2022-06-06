@@ -109,6 +109,10 @@ namespace Meep.Tech.Data {
         get;
       }
 
+      ///<summary><inheritdoc/></summary>
+      public IEnumerable<(string name, object value)> Parameters 
+        => @params.Select(e => (e.Key, e.Value));
+
       public LiteBuilder(Archetype forArchetype, IModel parent = null, Universe universe = null) {
         Archetype = forArchetype;
         InitializeModel =

@@ -8,7 +8,6 @@ using System.Linq;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Text;
-using Meep.Tech.Data.Configuration;
 
 namespace Meep.Tech.Data.Configuration {
 
@@ -139,6 +138,7 @@ namespace Meep.Tech.Data.Configuration {
     /// </summary>
     public void Initialize(Universe universe = null) {
       Universe = universe ?? Universe ?? new Universe(this, Options.UniverseName);
+      Universe._extraContexts.ToList().ForEach(context => context.Value.OnLoaderInitialize());
       _initializeModelSerializerSettings();
       _initalizeCompatableArchetypeData();
       _initializeTypesByAssembly();
@@ -149,9 +149,11 @@ namespace Meep.Tech.Data.Configuration {
         _tryToCompleteAllComponentsInitialization();
       }
 
+      Universe._extraContexts.ToList().ForEach(context => context.Value.OnAllTypesInitializationComplete());
+
       _applyModificationsToAllTypesByAssemblyLoadOrder();
 
-      Universe._extraContexts.ForEach(context => context.Value.OnLoaderInitialize());
+      Universe._extraContexts.ToList().ForEach(context => context.Value.OnModificationsComplete());
 
       while(_remainingFinalizationAttempts-- > 0 && _initializedArchetypes.Count > 0) {
         _tryToFinishAllInitalizedTypes();
@@ -384,6 +386,9 @@ namespace Meep.Tech.Data.Configuration {
       }
 
       _initializedTypes.Add(systemType);
+      Universe._extraContexts
+        .ForEach(context => context.Value.OnModelTypeInitialized(systemType));
+
       e = null;
       return true;
     }
@@ -453,7 +458,7 @@ namespace Meep.Tech.Data.Configuration {
             ?? systemType.GetFirstInheritedGenericTypes(typeof(IModel<,>)).First()
         );
       } catch(Exception e) {
-        throw new NotImplementedException($"Could not find IModel<> Base Type for {systemType}, does it inherit from IModel instead of IModel<T> by mistake?", e);
+        throw new NotImplementedException($"Could not find IModel<> Base Type for {systemType}, does it inherit from IModel by mistake instead of Model<T>?", e);
       }
 
       Universe._extraContexts
@@ -652,7 +657,7 @@ namespace Meep.Tech.Data.Configuration {
           systemType =>
             // ... if it doesn't have a disqualifying attribute
             !Attribute.IsDefined(systemType, typeof(Settings.DoNotBuildInInitialLoadAttribute))
-            && !Attribute.IsDefined(systemType, typeof(Settings.DoNotBuildThisOrChildrenInInitialLoadAttribute))
+            && !Attribute.IsDefined(systemType, typeof(Settings.DoNotBuildThisOrChildrenInInitialLoadAttribute), true)
         )) {
           if (!systemType.IsAbstract) {
              // ... if it extends Archetype<,> 
@@ -910,7 +915,7 @@ namespace Meep.Tech.Data.Configuration {
     void _finalize() {
       _reportOnFailedTypeInitializations();
       _finalizeModelSerializerSettings();
-      Universe._extraContexts
+      Universe._extraContexts.ToList()
         .ForEach(context => context.Value.OnLoaderFinalize());
 
       _uninitializedArchetypes = null;

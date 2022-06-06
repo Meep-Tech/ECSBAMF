@@ -90,21 +90,31 @@ namespace Meep.Tech.Data {
       }
 
       internal void _register(Enumeration enumeration) {
-        if(_byType.TryGetValue(enumeration.GetType().FullName, out var found)) {
-          found.Add(
-            enumeration.ExternalId,
-            enumeration
-          );
+        var enumType = enumeration.GetType();
+        while (enumType.IsAssignableToGeneric(typeof(Enumeration<>)) && (!enumType.IsGenericType || (enumType.GetGenericTypeDefinition() != typeof(Enumeration<>)))) {
+          if(_byType.TryGetValue(enumType.FullName, out var found)) {
+            found.Add(
+              enumeration.ExternalId,
+             enumeration
+            );
+          }
+          else
+            _byType[enumType.FullName] = new Dictionary<object, Enumeration> {
+              {enumeration.ExternalId, enumeration }
+            };
+
+          enumType = enumType.BaseType;
         }
-        else
-          _byType[enumeration.GetType().FullName] = new Dictionary<object, Enumeration> {
-            {enumeration.ExternalId, enumeration }
-          };
       }
 
       internal void _deRegister(Enumeration enumeration) {
-        if(_byType.TryGetValue(enumeration.GetType().FullName, out var found)) {
-          found.Remove(enumeration.ExternalId);
+        var enumType = enumeration.GetType();
+        while (enumType.IsAssignableToGeneric(typeof(Enumeration<>)) && (!enumType.IsGenericType || (enumType.GetGenericTypeDefinition() != typeof(Enumeration<>)))) {
+          if(_byType.TryGetValue(enumType.FullName, out var found)) {
+            found.Remove(enumeration.ExternalId);
+          }
+
+          enumType = enumType.BaseType;
         }
       }
     }

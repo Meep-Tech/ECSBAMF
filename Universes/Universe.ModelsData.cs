@@ -27,6 +27,12 @@ namespace Meep.Tech.Data {
           = new();
 
       /// <summary>
+      /// Stores simple access to all model types that can be produced.
+      /// </summary>
+      public IEnumerable<System.Type> All
+        => _baseTypes.Values;
+
+      /// <summary>
       /// Cached model base types
       /// </summary>
       internal Dictionary<string, System.Type> _baseTypes

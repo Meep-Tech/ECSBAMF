@@ -39,6 +39,10 @@ namespace Meep.Tech.Data {
         internal protected set;
       }
 
+      ///<summary><inheritdoc/></summary>
+      public IEnumerable<(string name, object value)> Parameters
+        => this.Select(e => (e.Key, e.Value));
+
       /// <summary>
       /// If this builder can be modified
       /// </summary>

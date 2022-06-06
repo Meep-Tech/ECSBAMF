@@ -4,24 +4,47 @@
 
     /// <summary>
     /// A Type that can be added as context to a universe.
-    /// TODO: can this be an interface?
     /// </summary>
     public class ExtraContext {
 
       /// <summary>
-      /// Code that's executed on initialization of the loader
+      /// The universe this context is for.
+      /// </summary>
+      public Universe Universe {
+        get;
+        internal set;
+      }
+
+      /// <summary>
+      /// Code that's executed on initialization of the loader, before any types are loaded
       /// </summary>
       internal protected virtual void OnLoaderInitialize() { }
 
       /// <summary>
-      /// Code that's executed on finalization of the loader.
+      /// Code that's executed on finalization of a new type of model.
       /// </summary>
-      internal protected virtual void OnLoaderFinalize() { }
+      internal protected virtual void OnModelTypeInitialized(System.Type modelType) { }
+
+      /// <summary>
+      /// Code that's executed when the initialization of all models, components, enums, and archetypes is complete.
+      /// This happens before modifications.
+      /// </summary>
+      internal protected virtual void OnAllTypesInitializationComplete() { }
+
+      /// <summary>
+      /// Code that's executed when modifications are done loading, before all types are finalized.
+      /// </summary>
+      internal protected virtual void OnModificationsComplete() { }
 
       /// <summary>
       /// Code that's executed on finalization of a new type of model.
       /// </summary>
       internal protected virtual void OnModelTypeRegistered(System.Type modelType, IModel defaultModel) { }
+
+      /// <summary>
+      /// Code that's executed on finalization of the loader, after all types are already finalized and before the loader is sealed.
+      /// </summary>
+      internal protected virtual void OnLoaderFinalize() { }
 
       /// <summary>
       /// Occurs when an archetype is un-loaded.

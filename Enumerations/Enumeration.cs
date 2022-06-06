@@ -147,6 +147,18 @@ namespace Meep.Tech.Data {
       => Archetypes.DefaultUniverse.Enumerations.GetAllByType<TEnumBase>().Cast<TEnumBase>();
 
     /// <summary>
+    /// Readonly list of all items from the default or given universe
+    /// </summary>
+    public static IEnumerable<TEnumBase> GetAll(Universe universe = null)
+      => (universe ?? Archetypes.DefaultUniverse).Enumerations.GetAllByType<TEnumBase>().Cast<TEnumBase>();
+
+    /// <summary>
+    /// Get the enum of this type with the given id from the default or provided universe
+    /// </summary>
+    public static TEnumBase Get(object externalId, Universe universe = null)
+      => (universe ?? Archetypes.DefaultUniverse).Enumerations.Get<TEnumBase>(externalId);
+
+    /// <summary>
     /// The base type of this enumeration
     /// </summary>
     public override Type EnumBaseType

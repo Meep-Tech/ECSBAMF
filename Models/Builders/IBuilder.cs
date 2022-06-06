@@ -1,5 +1,6 @@
 ﻿using Meep.Tech.Data.Reflection;
 using System;
+using System.Collections.Generic;
 
 namespace Meep.Tech.Data {
 
@@ -25,6 +26,13 @@ namespace Meep.Tech.Data {
     IModel Parent {
       get;
       internal set;
+    }
+
+    /// <summary>
+    /// The parameters contained in this builder as a list.
+    /// </summary>
+    IEnumerable<(string name, object value)> Parameters {
+      get;
     }
 
     /// <summary>

@@ -13,12 +13,19 @@ namespace Meep.Tech.Collections.Generic {
     public static TValue TryToGet<TKey, TValue>(this IReadOnlyDictionary<TKey, TValue> dictionary, TKey key)
       => dictionary.TryGetValue(key, out var found) ? found : default;
 
-    #region ValueCollectionManipulation
 
     /// <summary>
-    /// Add an item to a ICollection within a dictionary at the given key
+    /// Try tho get a value. Returns default on failure.
     /// </summary>
-    public static void AddToValueCollection<TKey, TValue>(this IDictionary<TKey, ICollection<TValue>> dictionary, TKey key, TValue value) {
+    public static TValue TryToGet<TKey, TValue>(this Dictionary<TKey, TValue> dictionary, TKey key, TValue @default)
+      => dictionary.TryGetValue(key, out var found) ? found : (dictionary[key] = @default);
+
+    #region ValueCollectionManipulation
+
+        /// <summary>
+        /// Add an item to a ICollection within a dictionary at the given key
+        /// </summary>
+        public static void AddToValueCollection<TKey, TValue>(this IDictionary<TKey, ICollection<TValue>> dictionary, TKey key, TValue value) {
       if(dictionary.TryGetValue(key, out ICollection<TValue> valueCollection)) {
         valueCollection.Add(value);
       }

@@ -97,6 +97,7 @@ namespace Meep.Tech.Data {
       if(Loader.IsFinished) {
         throw new Exception($"Must add extra context before the loader for the universe has finished.");
       }
+      extraContext.Universe = this;
       _extraContexts[typeof(TExtraContext)] = extraContext;
     }
 
