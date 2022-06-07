@@ -2,7 +2,7 @@ Archetypes are the heart and soul of [[XBam]]. They are [[Flyweight Data]] Store
 
 By default, Archetypes act like Singletons; Only one archetype of each Class Type is allowed to exist at any given time.
 
-For an aternative to Archetypes that don't need to produce Models, See [[Concepts/Enumeration|Enumeration]]s
+For an aternative to Archetypes that don't need to produce Models, See [[Concepts/Enumerations/Enumeration|Enumeration]]s
 # Features and Rules
 - All Archetypes Must Inherit from [[Archetype+2]].
 -  Each archetype has a unique [[Archetype Identity]].
@@ -17,8 +17,9 @@ For an aternative to Archetypes that don't need to produce Models, See [[Concept
 	- This behavior can be overriden [[#Allowing Runtime Loading and Unloading|via a virtual boolean]], and Archetypes that extend that Archetype can be loaded and un-loaded from allowed sourced during runtime.
 ## Traits
 There are a number of built in special 'Traits' that you can give to archetypes
-- [[Splayable]]: Used to build an Archetype for each member of an [[Concepts/Enumeration|Enumeration]].
-- [[Archetype Classes With Exposed Builders]]: There are 3 Extension classes to [[Archetype+2]], Inheriting from these classes instead of [[Archetype+2]] exposes the desired built in [[Model Builder Method]]s which are Protected by default.
+- [[Splayable]]: Used to build an Archetype for each member of an [[Concepts/Enumerations/Enumeration|Enumeration]].
+- [[Expose Builders]]: There are 3 Extension classes to [[Archetype+2]], Inheriting from these classes instead of [[Archetype+2]] exposes the desired built in [[Model Builder Method]]s which are Protected by default.
+- [[#Branch Attribute|Branching]]: This trait makes this or any [[Child Archetype]] with a Class Declaration that is inside of a Model Class Declaration (as a Nested Type) produce that type of Model.
 # The Archetype Build Proccess
 By default, Archetypes are built by the [[Loader]] when it is run to initialize a [[Universe]].
 This should usually be done at Start-up.

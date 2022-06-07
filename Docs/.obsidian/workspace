@@ -9,8 +9,8 @@
         "state": {
           "type": "markdown",
           "state": {
-            "file": "Concepts/Archetype.md",
-            "mode": "source"
+            "file": "Concepts/Archetypes/Traits/Archetype Classes With Exposed Builders.md",
+            "mode": "preview"
           }
         }
       }
@@ -76,7 +76,7 @@
             "state": {
               "type": "backlink",
               "state": {
-                "file": "Concepts/Archetype.md",
+                "file": "Concepts/Archetypes/Traits/Archetype Classes With Exposed Builders.md",
                 "collapseAll": true,
                 "extraContext": false,
                 "sortOrder": "alphabetical",
@@ -93,7 +93,7 @@
             "state": {
               "type": "outgoing-link",
               "state": {
-                "file": "Concepts/Archetype.md",
+                "file": "Concepts/Archetypes/Traits/Archetype Classes With Exposed Builders.md",
                 "linksCollapsed": false,
                 "unlinkedCollapsed": true
               }
@@ -116,7 +116,7 @@
             "state": {
               "type": "outline",
               "state": {
-                "file": "Concepts/Archetype.md"
+                "file": "Concepts/Archetypes/Traits/Archetype Classes With Exposed Builders.md"
               }
             }
           }
@@ -129,15 +129,15 @@
   },
   "active": "065ad034f4eeed1b",
   "lastOpenFiles": [
-    "Concepts/Archetype.md",
-    "Splayable.md",
+    "Concepts/Archetypes/Traits/Archetype Classes With Exposed Builders.md",
+    "Concepts/XBam.md",
+    "Concepts/Archetypes/Archetype.md",
+    "Concepts/Models/Parameter.md",
+    "Concepts/Archetypes/Traits/Splayable.md",
     "Code/Enumeration.md",
     "Code/Archetype+2.md",
     "Code/Archetype+2.Identity.md",
     "Code/Enumeration+1.md",
-    "Concepts/XBam.md",
-    "README.md",
-    "Concepts/Archetype Classes With Exposed Builders.md",
-    "Concepts/Model Builder Method.md"
+    "README.md"
   ]
 }

@@ -1,4 +1,4 @@
-A Trait of an [[Archetype]] used to build a [[Child Archetype]] for each member of an [[Concepts/Enumeration]].
+A Trait of an [[Archetype]] used to build a [[Child Archetype]] for each member of an [[Concepts/Enumerations/Enumeration]].
 
 To use this Trait, implement the Interface: [[Archetype+2.IBuildOneForEach+1]], on the desired Archetype, providing the desired Enumeration type.
 

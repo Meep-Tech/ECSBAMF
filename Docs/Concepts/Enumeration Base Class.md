@@ -1,1 +1,0 @@
-An [[Concepts/Enumeration|Enumeration]] Base Class is the base class that all [[Enumeration Value]]s within an Enumeration Set inheit from.
