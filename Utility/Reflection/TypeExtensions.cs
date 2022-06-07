@@ -227,7 +227,9 @@ namespace Meep.Tech.Data.Reflection {
       }
 
       if (!type.IsGenericType) {
-        return type.FullName;
+        return withNamespace 
+          ? type.FullName 
+          : type.FullName[(type.Namespace.Length + 1)..];
       }
 
       System.Text.StringBuilder builder
@@ -255,7 +257,7 @@ namespace Meep.Tech.Data.Reflection {
         if (!first) {
           builder.Append(',');
         }
-        builder.Append(genericTypeArgument.ToFullHumanReadableNameString());
+        builder.Append(genericTypeArgument.ToFullHumanReadableNameString(withNamespace));
         first = false;
       }
       builder.Append('>');

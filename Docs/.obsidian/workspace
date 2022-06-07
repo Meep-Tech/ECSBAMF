@@ -10,7 +10,7 @@
           "type": "markdown",
           "state": {
             "file": "Concepts/Archetype.md",
-            "mode": "preview"
+            "mode": "source"
           }
         }
       }
@@ -130,14 +130,14 @@
   "active": "065ad034f4eeed1b",
   "lastOpenFiles": [
     "Concepts/Archetype.md",
-    "Concepts/Enumeration.md",
-    "Concepts/Archetype Identity.md",
-    "Concepts/Factory.md",
-    "Concepts/Enumeration Value.md",
-    "Concepts/Enumeration Base Class.md",
-    "Concepts/Where T Extends Itself.md",
+    "Splayable.md",
+    "Code/Enumeration.md",
+    "Code/Archetype+2.md",
+    "Code/Archetype+2.Identity.md",
     "Code/Enumeration+1.md",
-    "Code/IFactory.md",
-    "Concepts/Universe.md"
+    "Concepts/XBam.md",
+    "README.md",
+    "Concepts/Archetype Classes With Exposed Builders.md",
+    "Concepts/Model Builder Method.md"
   ]
 }

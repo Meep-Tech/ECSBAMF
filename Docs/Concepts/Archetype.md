@@ -1,10 +1,11 @@
-Archetypes are the heart and soul of [[XBam]]. They are [[Flyweight Data]] Stores and [[Factory|Factories]] that produce [[Model]]s. An Archetype's purpose is to hold Static/Immutable data and logic, and to produce Models using a provided collection of [[Parameter]]s.
+Archetypes are the heart and soul of [[XBam]]. They are [[Flyweight Data]] Stores and [[Factory|Factories]] that produce [[Model]]s. An Archetype's purpose is to hold Static/Immutable data and logic, and to produce Models via [[Builder]]s using a provided collection of [[Parameter]]s.
 
 By default, Archetypes act like Singletons; Only one archetype of each Class Type is allowed to exist at any given time.
 
 For an aternative to Archetypes that don't need to produce Models, See [[Concepts/Enumeration|Enumeration]]s
 # Features and Rules
-- Each archetype has a unique [[Archetype Identity]].
+- All Archetypes Must Inherit from [[Archetype+2]].
+-  Each archetype has a unique [[Archetype Identity]].
 - Each Archetype acts like a Factory that can produce a Model based on the [[Base Model Type]].
 - Archetypes can be extended into [[Archetype Tree]]s via inheritance.
 	- The Child Archetypes have the potential to produce different types of Models that inherit from the [[Base Model Type]]. 
@@ -16,7 +17,8 @@ For an aternative to Archetypes that don't need to produce Models, See [[Concept
 	- This behavior can be overriden [[#Allowing Runtime Loading and Unloading|via a virtual boolean]], and Archetypes that extend that Archetype can be loaded and un-loaded from allowed sourced during runtime.
 ## Traits
 There are a number of built in special 'Traits' that you can give to archetypes
-- [[Splayable|IBuildOneForEach+2]]: Used to build an Archetype for each member of an [[Concepts/Enumeration|Enumeration]].
+- [[Splayable]]: Used to build an Archetype for each member of an [[Concepts/Enumeration|Enumeration]].
+- [[Archetype Classes With Exposed Builders]]: There are 3 Extension classes to [[Archetype+2]], Inheriting from these classes instead of [[Archetype+2]] exposes the desired built in [[Model Builder Method]]s which are Protected by default.
 # The Archetype Build Proccess
 By default, Archetypes are built by the [[Loader]] when it is run to initialize a [[Universe]].
 This should usually be done at Start-up.

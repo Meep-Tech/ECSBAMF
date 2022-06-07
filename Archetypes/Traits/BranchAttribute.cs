@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace Meep.Tech.Data.Configuration {
+namespace Meep.Tech.Data {
 
   /// <summary>
   /// Used as shorthand for an archetype that produces a different model via the Model constructor

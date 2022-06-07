@@ -2,7 +2,7 @@
 
 namespace Meep.Tech.Data {
 
-  public partial class Archetype {
+  public partial class Archetype<TModelBase, TArchetypeBase> {
 
     /// <summary>
     /// This is a trait that dictates that one of these archetypes should be produced for each item in a given enumeration.
@@ -10,9 +10,8 @@ namespace Meep.Tech.Data {
     /// This will extend to types that inherit from this archetype, inheriting further from this archetype is not suggested.
     /// The archetype fetched via the System.Type that extends this will be the "splayed" Archetype. You must call ".For()" on it to get a specific sub-archetype specific to one of the enumerations.
     /// </summary>
-    public interface IBuildOneForEach<TArchetypeBase, TEnumeration> 
+    public interface IBuildOneForEach<TEnumeration> 
       : IFactory
-        where TArchetypeBase : Archetype, IBuildOneForEach<TArchetypeBase, TEnumeration>
         where TEnumeration : Enumeration
     {
       internal static Dictionary<TEnumeration, TArchetypeBase> _values
@@ -43,9 +42,11 @@ namespace Meep.Tech.Data {
       /// <summary>
       /// Get the specific Archetype for an enum value.
       /// </summary>
-      public static TArchetypeBase For<TArchetypeBase, TEnumeration>(this Archetype.IBuildOneForEach<TArchetypeBase, TEnumeration> splayedArchetype, TEnumeration enumeration)
-        where TArchetypeBase : Archetype, Archetype.IBuildOneForEach<TArchetypeBase, TEnumeration>
+      public static TArchetypeBase For<TArchetype, TArchetypeBase, TModelBase, TEnumeration>(this TArchetype splayedArchetype, TEnumeration enumeration)
+        where TArchetype : Archetype<TModelBase, TArchetypeBase>.IBuildOneForEach<TEnumeration>
+        where TArchetypeBase : Archetype<TModelBase, TArchetypeBase>
+        where TModelBase : IModel<TModelBase>
         where TEnumeration : Enumeration
-          => Archetype.IBuildOneForEach<TArchetypeBase, TEnumeration>._values[enumeration];
+          => Archetype<TModelBase, TArchetypeBase>.IBuildOneForEach<TEnumeration>._values[enumeration];
   }
 }
