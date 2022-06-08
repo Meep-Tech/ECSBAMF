@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Meep.Tech.Data.Configuration;
+using System;
 
 namespace Meep.Tech.Data {
 
@@ -8,7 +9,13 @@ namespace Meep.Tech.Data {
   /// </summary>
   [AttributeUsage(AttributeTargets.Class, Inherited = true)]
   public class BranchAttribute
-    : Attribute {
+    : Attribute, ITrait<BranchAttribute> {
+
+    string ITrait<BranchAttribute>.TraitName
+      => "Branching";
+
+    string ITrait<BranchAttribute>.TraitDescription
+      => $"Makes this or any Child Archetype with a Class Declaration that is inside of a Model Class Declaration (as a Nested Type) produce that type of Model";
 
     /// <summary>
     /// The new base model this archetype branches for

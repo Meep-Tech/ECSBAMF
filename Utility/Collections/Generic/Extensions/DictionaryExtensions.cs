@@ -20,6 +20,12 @@ namespace Meep.Tech.Collections.Generic {
     public static TValue TryToGet<TKey, TValue>(this Dictionary<TKey, TValue> dictionary, TKey key, TValue @default)
       => dictionary.TryGetValue(key, out var found) ? found : (dictionary[key] = @default);
 
+    /// <summary>
+    /// Add an item inline without needing to make it if it contains it's own key
+    /// </summary>
+    public static void Add<TKey, TValue>(this IDictionary<TKey, TValue> dictionary, TValue value, Func<TValue, TKey> getKey)
+      => dictionary.Add(getKey(value), value);
+
     #region ValueCollectionManipulation
 
         /// <summary>

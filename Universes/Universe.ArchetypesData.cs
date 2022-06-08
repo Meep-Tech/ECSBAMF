@@ -1,4 +1,5 @@
-﻿using Meep.Tech.Data.Reflection;
+﻿using Meep.Tech.Data.Configuration;
+using Meep.Tech.Data.Reflection;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -57,7 +58,8 @@ namespace Meep.Tech.Data {
       /// </summary>
       public IEnumerable<Archetype.Collection> RootCollections {
         get => _collectionsByRootArchetype.Values;
-      } internal readonly Dictionary<string, Archetype.Collection> _collectionsByRootArchetype
+      }
+      internal readonly Dictionary<string, Archetype.Collection> _collectionsByRootArchetype
         = new();
 
       /// <summary>
@@ -65,7 +67,8 @@ namespace Meep.Tech.Data {
       /// </summary>
       public IEnumerable<Archetype.Collection> Collections {
         get => RootCollections.Concat(_branchedCollectionsByBranchArchetype.Values);
-      } readonly Dictionary<string, Archetype.Collection> _branchedCollectionsByBranchArchetype
+      }
+      readonly Dictionary<string, Archetype.Collection> _branchedCollectionsByBranchArchetype
         = new();
 
       internal ArchetypesData(Universe universe) {
@@ -87,11 +90,11 @@ namespace Meep.Tech.Data {
       /// Get a collection registered to an archetype root:
       /// </summary>
       public bool _tryToGetCollectionFor(System.Type root, out Archetype.Collection found) {
-        if(_collectionsByRootArchetype.TryGetValue(root?.FullName, out Archetype.Collection collection)) {
+        if (_collectionsByRootArchetype.TryGetValue(root?.FullName, out Archetype.Collection collection)) {
           found = collection;
           return true;
         } // stop if we reached the base
-        else if(root.Equals(typeof(object)) || root?.BaseType is null) {
+        else if (root.Equals(typeof(object)) || root?.BaseType is null) {
           found = null;
           return false;
         }
@@ -105,10 +108,24 @@ namespace Meep.Tech.Data {
       /// Get a collection registered to an archetype type:
       /// </summary>
       public Archetype.Collection GetCollectionFor(System.Type root)
-        => _collectionsByRootArchetype.TryGetValue(root?.FullName ?? "", out Archetype.Collection collection)
-          ? collection
-          // recurse until it's found. This should throw a null exception eventually if one isn't found.
-          : GetCollectionFor(root.BaseType);
+        => root is not null
+          ? _collectionsByRootArchetype.TryGetValue(root?.FullName ?? "", out Archetype.Collection collection)
+            ? collection
+            // recurse until it's found. This should throw a null exception eventually if one isn't found.
+            : GetCollectionFor(root.BaseType)
+          : throw new Exception($"Invalid Archetype Base Type Provided.");
+
+      /// <summary>
+      /// Get a collection registered to an archetype type.
+      /// returns null if not found
+      /// </summary>
+      public Archetype.Collection TryToGetCollectionFor(System.Type root)
+        => root is not null
+          ? _collectionsByRootArchetype.TryGetValue(root?.FullName ?? "", out Archetype.Collection collection)
+            ? collection
+            // recurse until it's found. This should throw a null exception eventually if one isn't found.
+            : TryToGetCollectionFor(root.BaseType)
+          : null;
 
       /// <summary>
       /// Get the "default" archetype or factory for a given model type.
@@ -135,24 +152,67 @@ namespace Meep.Tech.Data {
             }
             if ((archetype = collection.FirstOrDefault()) != null) {
               return archetype;
-            } else {
+            }
+            else {
               throw new KeyNotFoundException($"Could not find a default archetype for the model Type: {modelBaseType}, in collection: {GetCollectionFor(_rootArchetypeTypesByBaseModelType[modelBaseType.FullName]).GetType().ToFullHumanReadableNameString()}");
             }
-          } else throw new KeyNotFoundException($"Could not find a Root Archetype for the Base Model Type: {modelBaseType}");
-        } else {
+          }
+          else throw new KeyNotFoundException($"Could not find a Root Archetype for the Base Model Type: {modelBaseType}");
+        }
+        else {
           return _universe.Models.GetBuilderFactoryFor(modelBaseType) as Archetype;
         }
       }
 
       /// <summary>
-      /// Get the "default" archetype or factory for a given model type.
+      /// Get the traits attached to the given archetype.
       /// </summary>
-      /*public Archetype GetDefaultForModelOfType(System.Type modelBaseType)
-        => modelBaseType.IsAssignableToGeneric(typeof(IModel<,>))
-          ? _rootArchetypeTypesByBaseModelType[modelBaseType.FullName].TryToGetAsArchetype()
-            ?? GetCollectionFor(_rootArchetypeTypesByBaseModelType[modelBaseType.FullName]).FirstOrDefault()
-              ?? throw new KeyNotFoundException($"Could not find a default archetype for the model Type: {modelBaseType}, in collection:{GetCollectionFor(_rootArchetypeTypesByBaseModelType[modelBaseType.FullName])}")
-          : _universe.Models.GetBuilderFactoryFor(modelBaseType) as Archetype;*/
+      public IEnumerable<(string name, string description)> GetTraits(Archetype archetype) {
+        foreach (System.Type interfaceTrait in archetype.Type.GetAllInheritedGenericTypes(typeof(ITrait<>))) {
+          Type splayedInterfaceType;
+          if (typeof(Archetype.ISplayed).IsAssignableFrom(splayedInterfaceType = interfaceTrait.GetGenericArguments().First())) {
+            Enumeration @enum = null;
+            try {
+              @enum = (Enumeration)splayedInterfaceType.GetProperty("AssociatedEnum").GetValue(archetype);
+            } catch {
+              continue;
+            }
+
+            if (splayedInterfaceType.GetGenericArguments().First() != @enum?.EnumBaseType) {
+              continue;
+            }
+          }
+
+          yield return (
+            (string)interfaceTrait.GetProperty(nameof(ITrait<BranchAttribute>.TraitName)).GetValue(archetype),
+            (string)interfaceTrait.GetProperty(nameof(ITrait<BranchAttribute>.TraitDescription)).GetValue(archetype)
+          );
+        }
+
+        foreach (Attribute attributeTrait in archetype.GetType().GetCustomAttributes(true).Where(a => a.GetType().IsAssignableToGeneric(typeof(ITrait<>)))) {
+          if (attributeTrait is Loader.Settings.DoNotBuildInInitialLoadAttribute) {
+            if (Attribute.GetCustomAttribute(
+              archetype.Type,
+              typeof(Loader.Settings.DoNotBuildInInitialLoadAttribute),
+              false
+            ) == null) {
+              continue;
+            }
+            if (typeof(Archetype.ISplayed).IsAssignableFrom(archetype.Type)) {
+              if (!typeof(Archetype.ISplayedLazily).IsAssignableFrom(attributeTrait.GetType())) {
+                continue;
+              }
+            }
+          }
+
+          foreach (System.Type interfaceTrait in attributeTrait.GetType().GetAllInheritedGenericTypes(typeof(ITrait<>))) {
+            yield return (
+              (string)interfaceTrait.GetProperty(nameof(ITrait<BranchAttribute>.TraitName)).GetValue(attributeTrait),
+              (string)interfaceTrait.GetProperty(nameof(ITrait<BranchAttribute>.TraitDescription)).GetValue(attributeTrait)
+            );
+          }
+        }
+      }
 
       internal void _registerArchetype(Archetype archetype, Archetype.Collection collection) {
         // Register to it's id

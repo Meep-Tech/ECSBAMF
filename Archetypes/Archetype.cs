@@ -39,6 +39,14 @@ namespace Meep.Tech.Data {
     }
 
     /// <summary>
+    /// The Base type of model that this archetype family produces.
+    /// </summary>
+    public Type ModelTypeProduced {
+      get => _modelTypeProduced ??= ModelBaseType;
+      internal set => _modelTypeProduced = value;
+    } Type _modelTypeProduced;
+
+    /// <summary>
     /// <inheritdoc/>
     /// </summary>
     Func<IBuilder, IModel> IFactory.ModelConstructor {
@@ -676,15 +684,14 @@ namespace Meep.Tech.Data {
         if(_modelConstructor == null) {
           /// setting to ModelConstructor guarentee's caching.
           ModelConstructor = (builder) => (TModelBase)Id.Universe.Models.
-              _getDefaultCtorFor(ModelBaseType)
+              _getDefaultCtorFor(ModelTypeProduced)
                 .Invoke(builder);
         }
 
         return (builder) => {
           var model = (TModelBase)_modelConstructor(builder);
           _modelAutoBuilderSteps.ForEach(a => model = (TModelBase)a.Value(model, builder));
-
-          return model;
+          return DoAfterAutoBuildSteps(model, builder);
         };
       }
       protected internal set {
@@ -707,13 +714,21 @@ namespace Meep.Tech.Data {
           = GetType();
 
         /// add auto builder properties based on the model type:
-        _modelAutoBuilderSteps = Configuration.AutoBuildAttribute._generateAutoBuilderSteps(constructedModelType)
+        _modelAutoBuilderSteps = AutoBuildAttribute._generateAutoBuilderSteps(constructedModelType)
           .ToDictionary(
            e => e.name,
            e => e.function
           );
       }
-    } Func<IBuilder<TModelBase>, IModel> _modelConstructor;
+    }
+
+    /// <summary>
+    /// An overrideable function allowing a user to modify a model after auto builder has run.
+    /// </summary>
+    protected virtual TModelBase DoAfterAutoBuildSteps(TModelBase model, IBuilder<TModelBase> builder)
+      => model;
+
+    Func<IBuilder<TModelBase>, IModel> _modelConstructor;
 
     /// <summary>
     /// <inheritdoc/>

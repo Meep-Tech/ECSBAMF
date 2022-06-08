@@ -7,7 +7,9 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Runtime.CompilerServices;
+using System.Runtime.Serialization;
 using System.Text;
+using static Meep.Tech.Data.Archetype;
 
 namespace Meep.Tech.Data.Configuration {
 
@@ -337,9 +339,14 @@ namespace Meep.Tech.Data.Configuration {
         }
       }
 
+      bool isSplayed = typeof(ISplayed).IsAssignableFrom(systemType);
+
       try {
-        _constructArchetypeFromSystemType(systemType);
-        _uninitializedArchetypes.Remove(systemType);
+        if (!isSplayed || (!Attribute.IsDefined(systemType, typeof(Settings.DoNotBuildInInitialLoadAttribute))
+              && !Attribute.IsDefined(systemType, typeof(Settings.DoNotBuildThisOrChildrenInInitialLoadAttribute), true))) {
+          _constructArchetypeFromSystemType(systemType);
+          _uninitializedArchetypes.Remove(systemType);
+        }
       } catch (CannotInitializeArchetypeException ce) {
         if (Options.FatalOnCannotInitializeType) {
           throw ce;
@@ -350,6 +357,20 @@ namespace Meep.Tech.Data.Configuration {
       } catch (FailedToConfigureNewArchetypeException fe) {
         e = fe;
         return false;
+      }
+
+      if (isSplayed) {
+        object dummy = FormatterServices.GetUninitializedObject(systemType);
+        foreach (var splayType in systemType.GetAllInheritedGenericTypes(typeof(Archetype.IBuildOneForEach<,>))) {
+          if(!typeof(ISplayedLazily).IsAssignableFrom(splayType)) {
+            foreach(var @enum in Universe.Enumerations.GetAllByType(splayType.GetGenericArguments().First())) {
+              MethodInfo getMethod 
+                = splayType.GetMethod("ConstructArchetypeFor", BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance);
+
+              getMethod.Invoke(dummy, new[] { @enum });
+            }
+          }
+        }
       }
 
       _initializedTypes.Add(systemType);
@@ -443,7 +464,7 @@ namespace Meep.Tech.Data.Configuration {
 
       // assign root archetype references
       if(systemType.IsAssignableToGeneric(typeof(IModel<,>))) {
-        var types = systemType.GetFirstInheritedGenericTypes(typeof(IModel<,>));
+        var types = systemType.GetFirstInheritedGenericTypeParameters(typeof(IModel<,>));
         if(!typeof(IModel.IBuilderFactory).IsAssignableFrom(types.Last())) {
           Universe.Archetypes._rootArchetypeTypesByBaseModelType[systemType.FullName] 
             = types.Last();
@@ -454,8 +475,8 @@ namespace Meep.Tech.Data.Configuration {
       try {
         Universe.Models._baseTypes.Add(
           systemType.FullName,
-          systemType.GetFirstInheritedGenericTypes(typeof(IModel<>)).FirstOrDefault()
-            ?? systemType.GetFirstInheritedGenericTypes(typeof(IModel<,>)).First()
+          systemType.GetFirstInheritedGenericTypeParameters(typeof(IModel<>)).FirstOrDefault()
+            ?? systemType.GetFirstInheritedGenericTypeParameters(typeof(IModel<,>)).First()
         );
       } catch(Exception e) {
         throw new NotImplementedException($"Could not find IModel<> Base Type for {systemType}, does it inherit from IModel by mistake instead of Model<T>?", e);
@@ -488,7 +509,7 @@ namespace Meep.Tech.Data.Configuration {
       try {
         Universe.Components._baseTypes.Add(
           systemType.FullName,
-          systemType.GetFirstInheritedGenericTypes(typeof(IComponent<>)).First()
+          systemType.GetFirstInheritedGenericTypeParameters(typeof(IComponent<>)).First()
         );
       } catch (Exception e) {
         throw new NotImplementedException($"Could not find IComponent<> Base Type for {systemType}, does it inherit from IComponent instead of IComponent<T> by mistake?", e);
@@ -500,7 +521,7 @@ namespace Meep.Tech.Data.Configuration {
     }
 
     void _cacheContractsForComponentType(Type systemType) { 
-      foreach(var contractTypeSets in systemType.GetAllInheritedGenericTypes(typeof(IComponent<>.IHaveContractWith<>))) {
+      foreach(var contractTypeSets in systemType.GetAllInheritedGenericTypeParameters(typeof(IComponent<>.IHaveContractWith<>))) {
         (Type a, Type b, _) = contractTypeSets.ToList();
         MethodInfo contract = systemType.GetInterfaceMap(typeof(IComponent<>.IHaveContractWith<>).MakeGenericType(a, b)).TargetMethods.First(m => {
           if(m.Name.EndsWith("ExecuteContractWith"))
@@ -656,8 +677,9 @@ namespace Meep.Tech.Data.Configuration {
           // ... abstract types can't be built
           systemType =>
             // ... if it doesn't have a disqualifying attribute
-            !Attribute.IsDefined(systemType, typeof(Settings.DoNotBuildInInitialLoadAttribute))
-            && !Attribute.IsDefined(systemType, typeof(Settings.DoNotBuildThisOrChildrenInInitialLoadAttribute), true)
+            (!Attribute.IsDefined(systemType, typeof(Settings.DoNotBuildInInitialLoadAttribute))
+              && !Attribute.IsDefined(systemType, typeof(Settings.DoNotBuildThisOrChildrenInInitialLoadAttribute), true))
+            || typeof(ISplayed).IsAssignableFrom(systemType)
         )) {
           if (!systemType.IsAbstract) {
              // ... if it extends Archetype<,> 
@@ -695,7 +717,10 @@ namespace Meep.Tech.Data.Configuration {
           }
 
           // if this type's got enums we want:
-          if (systemType.GetCustomAttribute<BuildAllDeclaredEnumValuesOnInitialLoadAttribute>() != null || systemType.IsAssignableToGeneric(typeof(Enumeration<>))) {
+          if (systemType.GetCustomAttribute<BuildAllDeclaredEnumValuesOnInitialLoadAttribute>() != null 
+            || systemType.IsAssignableToGeneric(typeof(Enumeration<>))
+            || systemType.IsAssignableToGeneric(typeof(Archetype<,>))
+          ) {
             _validateAssemblyCollectionExists(_assemblyTypesToBuild, assembly);
             foreach (PropertyInfo staticEnumProperty in systemType.GetProperties(BindingFlags.Static | BindingFlags.Public).Where(p => p.PropertyType.IsAssignableToGeneric(typeof(Enumeration<>)))) {
               _assemblyTypesToBuild[assembly].Enumerations.Add(staticEnumProperty);
@@ -771,14 +796,16 @@ namespace Meep.Tech.Data.Configuration {
             = Universe.Models._getDefaultCtorFor(branchAttribute.NewBaseModelType);
           (archetype as IFactory).ModelConstructor 
             = defaultModelConstructor;
-          archetype.ModelBaseType = branchAttribute.NewBaseModelType;
         }
 
         IModel defaultModel = archetype.MakeDefaultWith(builder);
         if(!Universe.Archetypes._rootArchetypeTypesByBaseModelType.ContainsKey(defaultModel.GetType().FullName)) {
           Universe.Archetypes._rootArchetypeTypesByBaseModelType[defaultModel.GetType().FullName] = archetype.GetType();
         }
-        Universe.Models._modelTypesProducedByArchetypes[archetype] = defaultModel.GetType();
+
+        archetype.ModelTypeProduced
+          = Universe.Models._modelTypesProducedByArchetypes[archetype] 
+          = defaultModel.GetType();
 
         // success:
         _initializedArchetypes.Add(archetype);

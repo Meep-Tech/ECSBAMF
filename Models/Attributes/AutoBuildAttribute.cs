@@ -4,7 +4,7 @@ using System.ComponentModel;
 using System.Linq;
 using System.Reflection;
 
-namespace Meep.Tech.Data.Configuration {
+namespace Meep.Tech.Data {
 
   /// <summary>
   /// An attribute signifying that this field should be auto incluided in the builder constructor for this model.
@@ -31,16 +31,18 @@ namespace Meep.Tech.Data.Configuration {
     /// </summary>
     public bool NotNull {
       get;
-      init;
+      set;
     } = false;
+    internal bool _checkedNotNull;
 
     /// <summary>
     /// If this field's parameter must be provided to the builder
     /// </summary>
     public bool IsRequiredAsAParameter {
       get;
-      init;
+      set;
     } = false;
+    internal bool _checkedRequired;
 
     /// <summary>
     /// Optional override name for the parameter expected by the builder to build this property with.
@@ -121,7 +123,12 @@ namespace Meep.Tech.Data.Configuration {
               if(setter is null) throw new AccessViolationException($"Can not find a setter for property: {p.Name}, on model: {p.DeclaringType.FullName}, for auto-builder property attribute setup");
             }
 
-            object value = attributeData.IsRequiredAsAParameter
+            if (!attributeData._checkedRequired) {
+              attributeData.IsRequiredAsAParameter = attributeData.IsRequiredAsAParameter || p.GetCustomAttributes().Where(a => a.GetType().Name == "Required").Any();
+              attributeData._checkedRequired = true;
+            }
+
+            object value = attributeData.IsRequiredAsAParameter 
               ? _getRequiredValueFromBuilder(b, p, attributeData)
               : _getValueFromBuilderOrDefault(m, b, p, attributeData);
 
@@ -137,7 +144,15 @@ namespace Meep.Tech.Data.Configuration {
               }
             }
 
-            if(attributeData.NotNull && value is null) {
+            if (!attributeData._checkedNotNull) {
+              attributeData.NotNull = attributeData.NotNull 
+                || p.GetCustomAttributes()
+                  .Where(a => a.GetType().Name == "NotNull")
+                  .Any();
+              attributeData._checkedNotNull = true;
+            }
+
+            if (attributeData.NotNull && value is null) {
               throw new ArgumentNullException(attributeData.ParameterName ?? p.Name);
             }
 
