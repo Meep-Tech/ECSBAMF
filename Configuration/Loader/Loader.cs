@@ -363,10 +363,9 @@ namespace Meep.Tech.Data.Configuration {
         object dummy = FormatterServices.GetUninitializedObject(systemType);
         foreach (var splayType in systemType.GetAllInheritedGenericTypes(typeof(Archetype.IBuildOneForEach<,>))) {
           if(!typeof(ISplayedLazily).IsAssignableFrom(splayType)) {
+            MethodInfo getMethod 
+              = splayType.GetMethod("ConstructArchetypeFor", BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance);
             foreach(var @enum in Universe.Enumerations.GetAllByType(splayType.GetGenericArguments().First())) {
-              MethodInfo getMethod 
-                = splayType.GetMethod("ConstructArchetypeFor", BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance);
-
               getMethod.Invoke(dummy, new[] { @enum });
             }
           }

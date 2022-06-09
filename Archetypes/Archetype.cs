@@ -537,14 +537,14 @@ namespace Meep.Tech.Data {
     /// <summary>
     /// The base archetype that all of the ones like it are based on.
     /// </summary>
-    public override System.Type BaseArchetype
+    public sealed override System.Type BaseArchetype
       => typeof(TArchetypeBase);
 
     /// <summary>
     /// The most basic model that this archetype can produce.d
     /// This is used to generat the default model constructor.
     /// </summary>
-    public override System.Type ModelBaseType {
+    public sealed override System.Type ModelBaseType {
       get => _ModelBaseType;
       internal set => _ModelBaseType = value;
     } System.Type _ModelBaseType
@@ -679,7 +679,7 @@ namespace Meep.Tech.Data {
     /// <summary>
     /// Overrideable Model Constructor.
     /// </summary>
-    public virtual Func<IBuilder<TModelBase>, TModelBase> ModelConstructor {
+    protected internal virtual Func<IBuilder<TModelBase>, TModelBase> ModelConstructor {
       get {
         if(_modelConstructor == null) {
           /// setting to ModelConstructor guarentee's caching.
@@ -694,7 +694,7 @@ namespace Meep.Tech.Data {
           return DoAfterAutoBuildSteps(model, builder);
         };
       }
-      protected internal set {
+      set {
         _modelConstructor
           = builder => value.Invoke(builder);
 

@@ -18,20 +18,25 @@ namespace Meep.Tech.Data {
         /// <summary>
         /// Helper function to set the default json serializer settings for models.
         /// </summary>
-        public Func<DefaultContractResolver, IEnumerable<Newtonsoft.Json.JsonConverter>, JsonSerializerSettings> ConfigureJsonSerializerSettings {
+        public Func<DefaultContractResolver, IEnumerable<Newtonsoft.Json.JsonConverter>, JsonSerializerSettings> ConstructJsonSerializerSettings {
           get;
           set;
         } = DefaultJsonSerializerSettingsConfigurationLogic;
 
         /// <summary>
+        /// Helper function to configure the json serialization settings for models after it's constructed.
+        /// </summary>
+        public Action<JsonSerializerSettings> ConfigureJsonSerializerSettings {
+          get;
+          set;
+        } = e => { };
+
+        /// <summary>
         /// Compiled model serializer from the settings config function
         /// </summary>
         public JsonSerializerSettings JsonSerializerSettings {
-          get => _modelJsonSerializerSettings 
-            ??= ConfigureJsonSerializerSettings(
-              new DefaultContractResolver(_universe),
-              DefaultJsonCoverters
-            );
+          get => _modelJsonSerializerSettings
+            ??= BuildJsonSerializationSettings();
         } JsonSerializerSettings _modelJsonSerializerSettings;
 
         /// <summary>
@@ -44,9 +49,9 @@ namespace Meep.Tech.Data {
           new Enumeration.JsonConverter()
         };
 
-      /// <summary>
-      /// If true, properies need to opt out to avoid being serialized into json using JsonIgnore. Even private properties.
-      /// </summary>
+        /// <summary>
+        /// If true, properies need to opt out to avoid being serialized into json using JsonIgnore. Even private properties.
+        /// </summary>
         public bool PropertiesMustOptOutForJsonSerialization {
           get;
           set;
@@ -66,10 +71,23 @@ namespace Meep.Tech.Data {
 #if DEBUG
           ,
           DifferenceCallback = x => {
-            Console.WriteLine("$fgsdfgsdfgsdgf");
+            Console.WriteLine("Comparison Failed");
           }
 #endif
         };
+
+        /// <summary>
+        /// Can be used to build and configure copies of the built in json serializer settings.
+        /// </summary>
+        public JsonSerializerSettings BuildJsonSerializationSettings(Action<JsonSerializerSettings> configure = null, Func<DefaultContractResolver, IEnumerable<Newtonsoft.Json.JsonConverter>, JsonSerializerSettings> construct = null) {
+          var settings = (construct ?? ConstructJsonSerializerSettings).Invoke(
+            new DefaultContractResolver(_universe),
+            DefaultJsonCoverters
+          );
+          (configure ?? ConfigureJsonSerializerSettings).Invoke(settings);
+
+          return settings;
+        }
 
         /// <summary>
         /// The default logic for ConfigureJsonSerializerSettings
