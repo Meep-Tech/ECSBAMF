@@ -78,6 +78,7 @@ namespace Meep.Tech.Data {
     public Universe(Loader loader, string nameKey = null) {
       Key = nameKey ?? Key;
       Loader = loader;
+      Loader.Universe = this;
       Archetypes = new(this);
       Models = new(this);
       Components = new(this);

@@ -59,7 +59,7 @@ namespace Meep.Tech.Data {
         Archetype<TModelBase, TBuilderFactoryBase>.IExposeDefaultModelBuilderMakeMethods.Fully,
         IBuilderFactory 
       where TBuilderFactoryBase : BuilderFactory<TBuilderFactoryBase>
-      {
+    {
 
       /// <summary>
       /// Used for Buidler Factories to easily change the base type
@@ -96,7 +96,7 @@ namespace Meep.Tech.Data {
       /// </summary>
       public new virtual Func<Archetype, Dictionary<string, object>, Universe, IBuilder<TModelBase>> BuilderConstructor {
         get => _defaultBuilderCtor ??= (archetype, @params, universe) => base.BuilderConstructor(archetype, @params, universe) as Builder;
-        set => _defaultBuilderCtor = value;
+        init => _defaultBuilderCtor = value;
       }
 
       internal protected BuilderFactory(

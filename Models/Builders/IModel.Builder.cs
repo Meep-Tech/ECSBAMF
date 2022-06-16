@@ -317,7 +317,7 @@ namespace Meep.Tech.Data {
       protected TModelBase _finalizeModelComponents(IReadableComponentStorage model) {
         Parent = model as IModel;
         foreach (IModel.IComponent component in model._componentsByBuilderKey.Values) {
-          component.FinalizeComponentAfterParent(model as IModel, this);
+          component.FinalizeAfterParent(model as IModel, this);
         }
 
         Parent = null;

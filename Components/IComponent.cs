@@ -43,9 +43,10 @@ namespace Meep.Tech.Data {
       => this;
 
     /// <summary>
-    /// optional finalization logic for components after the model has been finalized
+    /// optional finalization logic for components pre-attached to models after the model has been finalized
+    /// TODO: this should be in an interface probably.
     /// </summary>
-    public Data.IComponent FinalizeComponentAfterParent(IModel parent, IBuilder builder)
+    public Data.IComponent FinalizeAfterParent(IModel parent, IBuilder builder)
       => this;
 
     internal static void _setUniverse(ref Data.IComponent component, Universe universe) {

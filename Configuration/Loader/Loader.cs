@@ -3,6 +3,7 @@ using Meep.Tech.Data.Reflection;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Reflection;
@@ -30,7 +31,7 @@ namespace Meep.Tech.Data.Configuration {
     /// </summary>
     public Universe Universe {
       get;
-      private set;
+      internal set;
     }
 
     /// <summary>
@@ -45,10 +46,18 @@ namespace Meep.Tech.Data.Configuration {
     /// <summary>
     /// Types that failed to initialize and their exceptions.
     /// </summary>
-    public IReadOnlyList<(string xbamType, System.Type systemType, Exception exception)> Failures {
+    public IReadOnlyList<Failure> Failures {
       get;
       private set;
     }
+
+    /// <summary>
+    /// Assembled mod load order.
+    /// </summary>
+    public IReadOnlyList<Assembly> AssemblyLoadOrder
+      => _assemblyLoadOrder;
+    internal List<Assembly> _assemblyLoadOrder
+        = new List<Assembly>();
 
     /// <summary>
     /// Types that failed to initialize and their exceptions.
@@ -67,19 +76,25 @@ namespace Meep.Tech.Data.Configuration {
     /// </summary>
     Dictionary<System.Type, Exception> _uninitializedArchetypes
         = new();
-    
+
     /// <summary>
     /// The types that failed entirely
     /// </summary>
     Dictionary<System.Type, Exception> _failedArchetypes
         = new();
-    
+
+    /// <summary>
+    /// The types that failed entirely
+    /// </summary>
+    Dictionary<MemberInfo, Exception> _failedEnumerations
+        = new();
+
     /// <summary>
     /// The types that failed entirely
     /// </summary>
     Dictionary<System.Type, Exception> _failedModels
         = new();
-    
+
     /// <summary>
     /// The types that failed entirely
     /// </summary>
@@ -145,7 +160,7 @@ namespace Meep.Tech.Data.Configuration {
       _initalizeCompatableArchetypeData();
       _initializeTypesByAssembly();
 
-      while(_remainingInitializationAttempts-- > 0 && _uninitializedArchetypes.Count + _uninitializedModels.Count + _uninitializedComponents.Count > 0) {
+      while (_remainingInitializationAttempts-- > 0 && _uninitializedArchetypes.Count + _uninitializedModels.Count + _uninitializedComponents.Count > 0) {
         _tryToCompleteAllModelsInitialization();
         _tryToCompleteAllArchetypesInitialization();
         _tryToCompleteAllComponentsInitialization();
@@ -157,7 +172,7 @@ namespace Meep.Tech.Data.Configuration {
 
       Universe._extraContexts.ToList().ForEach(context => context.Value.OnModificationsComplete());
 
-      while(_remainingFinalizationAttempts-- > 0 && _initializedArchetypes.Count > 0) {
+      while (_remainingFinalizationAttempts-- > 0 && _initializedArchetypes.Count > 0) {
         _tryToFinishAllInitalizedTypes();
       }
 
@@ -183,7 +198,7 @@ namespace Meep.Tech.Data.Configuration {
     /// Initialize the model serializer
     /// </summary>
     void _initializeModelSerializerSettings() {
-      Universe.ModelSerializer 
+      Universe.ModelSerializer
         = new Model.Serializer(Options.ModelSerializerOptions, Universe);
     }
 
@@ -192,9 +207,9 @@ namespace Meep.Tech.Data.Configuration {
     /// </summary>
     void _loadModLoadOrderFromJson() {
       _orderedAssemblyFiles = Options.PreOrderedAssemblyFiles;
-      string loadOrderFile = Path.Combine(Options.ModsRootFolderLocation, "order.json");
-      if(File.Exists(loadOrderFile)) {
-        foreach(LoadOrderItem loadOrderItem
+      string loadOrderFile = Path.Combine(Options.DataFolderParentFolderLocation, "order.json");
+      if (File.Exists(loadOrderFile)) {
+        foreach (LoadOrderItem loadOrderItem
           in JsonConvert.DeserializeObject<List<LoadOrderItem>>(
            File.ReadAllText(loadOrderFile))
         ) {
@@ -208,43 +223,48 @@ namespace Meep.Tech.Data.Configuration {
     /// Collect all assemblies that could have archetypes into _unorderedAssembliesToLoad
     /// </summary>
     void _loadValidAssemblies() {
-      // get built ins.
-      List<Assembly> externalAssemblies = new();
-      if(File.Exists(Options.ModsRootFolderLocation)) {
-        foreach(string compatableAssemblyFileName in Directory.GetFiles(
-          Options.ModsRootFolderLocation,
-          $"{Options.ArchetypeAssembliesPrefix}*",
-          SearchOption.AllDirectories
-        )) {
-          externalAssemblies
-            .Add(Assembly.LoadFile(compatableAssemblyFileName));
-        }
-      }
-
       // load internal assemblies
       List<Assembly> defaultAssemblies = AppDomain.CurrentDomain.GetAssemblies().ToList();
       if (Options.PreLoadAllReferencedAssemblies) {
         var moreAssemblies = defaultAssemblies.SelectMany(
           a => a.GetReferencedAssemblies()
             .Where(assembly => assembly.FullName.StartsWith(Options.ArchetypeAssembliesPrefix)
-              && !Options.ArchetypeAssemblyPrefixesToIgnore
+              && !Options.AssemblyPrefixesToIgnore
                 .Where(assemblyPrefix => assembly.FullName.StartsWith(assemblyPrefix))
                 .Any())
-            .Select((item) => Assembly.Load(item))).ToList();
+            .Select((item) => {
+              try {
+                return Assembly.Load(item);
+              } catch (Exception e) {
+                throw new Exception($"Could not load assembly:{item.FullName}", e);
+              }
+            })).ToList();
 
         defaultAssemblies.AddRange(moreAssemblies);
       }
 
+      // get ones added to the load order.
+      List<Assembly> externalAssemblies = new();
+      var externalAssemblyLocations = Options.PreOrderedAssemblyFiles.Forward.Values.Except(
+          defaultAssemblies.Where(a => !a.IsDynamic).Select(a => a.Location)
+      );
+      if (externalAssemblyLocations.Any()) {
+        foreach (var compatableAssemblyFileName in externalAssemblyLocations) {
+          externalAssemblies
+            .Add(Assembly.LoadFrom(compatableAssemblyFileName));
+        }
+      }
+
       // combine and filter them
       _unorderedAssembliesToLoad = defaultAssemblies.Concat(externalAssemblies)
-        .Except(Options.IgnoredAssemblies)
-        // ... that is not dynamic, and that matches any naming requirements
-        .Where(assembly =>  !assembly.IsDynamic
-          && (Options.PreLoadAssemblies.Contains(assembly) 
-            || (assembly.GetName().FullName.StartsWith(Options.ArchetypeAssembliesPrefix)
-              && !Options.ArchetypeAssemblyPrefixesToIgnore
-                .Where(assemblyPrefix => assembly.GetName().FullName.StartsWith(assemblyPrefix))
-                .Any()))
+      .Except(Options.IgnoredAssemblies)
+      // ... that is not dynamic, and that matches any naming requirements
+      .Where(assembly => !assembly.IsDynamic
+        && (Options.PreLoadAssemblies.Contains(assembly)
+          || (assembly.GetName().FullName.StartsWith(Options.ArchetypeAssembliesPrefix)
+            && !Options.AssemblyPrefixesToIgnore
+              .Where(assemblyPrefix => assembly.GetName().FullName.StartsWith(assemblyPrefix))
+              .Any()))
       ).ToHashSet().ToList();
     }
 
@@ -275,7 +295,7 @@ namespace Meep.Tech.Data.Configuration {
 
     void _orderAssembliesByModLoadOrder() {
       if(_orderedAssemblyFiles.Forward.Any()) {
-        Options._assemblyLoadOrder
+        _assemblyLoadOrder
           = _unorderedAssembliesToLoad.OrderBy(
             assembly => _orderedAssemblyFiles.Reverse
               .TryGetValue(assembly.FullName.Split(',')[0], out ushort foundPriority)
@@ -284,7 +304,7 @@ namespace Meep.Tech.Data.Configuration {
         ).ToList();
       } // Random order by default:
       else {
-        Options._assemblyLoadOrder
+        _assemblyLoadOrder
           = _unorderedAssembliesToLoad;
       }
     }
@@ -341,10 +361,11 @@ namespace Meep.Tech.Data.Configuration {
 
       bool isSplayed = typeof(ISplayed).IsAssignableFrom(systemType);
 
+      Archetype archetype = null;
       try {
         if (!isSplayed || (!Attribute.IsDefined(systemType, typeof(Settings.DoNotBuildInInitialLoadAttribute))
               && !Attribute.IsDefined(systemType, typeof(Settings.DoNotBuildThisOrChildrenInInitialLoadAttribute), true))) {
-          _constructArchetypeFromSystemType(systemType);
+          archetype = _constructArchetypeFromSystemType(systemType);
           _uninitializedArchetypes.Remove(systemType);
         }
       } catch (CannotInitializeArchetypeException ce) {
@@ -366,13 +387,20 @@ namespace Meep.Tech.Data.Configuration {
             MethodInfo getMethod 
               = splayType.GetMethod("ConstructArchetypeFor", BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance);
             foreach(var @enum in Universe.Enumerations.GetAllByType(splayType.GetGenericArguments().First())) {
-              getMethod.Invoke(dummy, new[] { @enum });
+              var newType = getMethod.Invoke(dummy, new[] { @enum });
+              Universe._extraContexts
+                .ForEach(context => context.Value.OnArchetypeWasInitialized(systemType, (Archetype)newType));
             }
           }
         }
       }
 
       _initializedTypes.Add(systemType);
+      if (archetype is not null) {
+        Universe._extraContexts
+          .ForEach(context => context.Value.OnArchetypeWasInitialized(systemType, archetype));
+      }
+
       e = null;
       return true;
     }
@@ -407,7 +435,7 @@ namespace Meep.Tech.Data.Configuration {
 
       _initializedTypes.Add(systemType);
       Universe._extraContexts
-        .ForEach(context => context.Value.OnModelTypeInitialized(systemType));
+        .ForEach(context => context.Value.OnModelTypeWasInitialized(systemType));
 
       e = null;
       return true;
@@ -482,11 +510,15 @@ namespace Meep.Tech.Data.Configuration {
       }
 
       Universe._extraContexts
-        .ForEach(context => context.Value.OnModelTypeRegistered(systemType, defaultModel));
+        .ForEach(context => context.Value.OnModelTypeWasRegistered(systemType, defaultModel));
     }
 
     void _registerEnumValue(PropertyInfo prop) {
-      prop.GetValue(null);
+      try {
+        prop.GetValue(null);
+      } catch (Exception e) {
+        _failedEnumerations.Add(prop, e);
+      }
     }
 
     /// <summary>
@@ -591,15 +623,21 @@ namespace Meep.Tech.Data.Configuration {
         throw new Exception($"Could not make a default model for model of type: {systemType.FullName}. Could not fine a default BuilderFactory or Archetype to build it with.");
       }
 
-      IModel defaultModel = null;
+      IModel defaultModel;
       try {
+        defaultModel
+          = Configuration.Loader.TestBuildModel(
+              defaultFactory,
+              systemType
+          );
+        /*
         Func<Archetype, Dictionary<string, object>, IBuilder> builderCtor
           = defaultFactory.GetGenericBuilderConstructor();
         IBuilder builder = builderCtor.Invoke(
           defaultFactory,
-          defaultFactory.DefaultTestParams ?? Archetype._emptyTestParams
+          _loadTestParams(defaultFactory, systemType)
         );
-        defaultModel = defaultFactory.MakeDefaultWith(builder);
+        defaultModel = defaultFactory.MakeDefaultWith(builder);*/
         Universe.Models._modelTypesProducedByArchetypes[defaultFactory] = defaultModel.GetType();
       }
       catch (Exception e) {
@@ -617,14 +655,20 @@ namespace Meep.Tech.Data.Configuration {
         throw new Exception($"Could not make a default component model of type: {systemType.FullName}. Could not fine a default BuilderFactory to build it with.");
       }
 
-      try {
+      try {/*
         Func<Archetype, Dictionary<string, object>, IBuilder> builderCtor 
           = defaultFactory.GetGenericBuilderConstructor();
         IBuilder builder = builderCtor.Invoke(
           defaultFactory,
-          defaultFactory.DefaultTestParams ?? Archetype._emptyTestParams
+          _loadTestParams(defaultFactory, systemType)
         );
-        defaultFactory.MakeDefaultWith(builder);
+        defaultFactory.MakeDefaultWith(builder);*/
+
+        IModel defaultComponent
+          = Configuration.Loader.TestBuildModel(
+             defaultFactory,
+             systemType
+          );
 
         /// Register component key
         Universe.Components.
@@ -634,6 +678,131 @@ namespace Meep.Tech.Data.Configuration {
       catch (Exception e) {
         throw new Exception($"Could not make a default component model of type: {systemType.FullName}, using default archeytpe of type: {defaultFactory}. Make sure you have propper default test parameters set for the archetype", e);
       }
+    }
+
+    /// <summary>
+    /// A function that can be used to test build models.
+    /// </summary>
+    public static IModel TestBuildModel(Archetype factory, System.Type modelBase) {
+			IModel defaultModel;
+			Dictionary<string, object> testParams 
+        = _loadTestParams(factory, modelBase);
+			IBuilder builder 
+        = _makeTestBuilder(factory, testParams);
+
+			try {
+				defaultModel = factory.MakeDefaultWith(builder);
+			}
+			catch (Exception e) {
+        // try to re-target via the called constructor.
+        if (e is IModel.Builder.Param.IException) {
+					StackTrace stackTrace = new(e);
+					StackFrame lastFrame = stackTrace.GetFrame(1);
+          Console.WriteLine(lastFrame);
+					MethodBase method = lastFrame.GetMethod();
+          System.Type accurateTargetType;
+          if (method.Name == "ctor") {
+            accurateTargetType = lastFrame.GetMethod().DeclaringType;
+          }
+          else {
+            lastFrame = stackTrace.GetFrames().First(f => {
+				      method = f.GetMethod();
+              bool nameMatch = method.Name == "ctor";
+              bool typeMatch = modelBase.IsAssignableFrom(method.DeclaringType);
+              return nameMatch && typeMatch;
+            });
+            accurateTargetType = lastFrame.GetMethod().DeclaringType;
+          }
+
+          testParams = _loadTestParams(factory, accurateTargetType);
+          builder = _makeTestBuilder(factory, testParams);
+          defaultModel = factory.MakeDefaultWith(builder);
+        }
+        else throw e;
+			}
+
+			return defaultModel;
+		}
+
+		static IBuilder _makeTestBuilder(Archetype factory, Dictionary<string, object> testParams) {
+			Func<Archetype, Dictionary<string, object>, IBuilder> builderCtor
+					= factory.GetGenericBuilderConstructor();
+			IBuilder builder = builderCtor.Invoke(
+			  factory,
+			  testParams
+			);
+			return builder;
+		}
+
+		// TODO: clear from memory when loading is done.
+		static HashSet<Archetype> _loadedTestParams
+      = new();
+
+    internal static Dictionary<string, object> _loadTestParams(Archetype factoryType, System.Type modelType) {
+      if (!_loadedTestParams.Contains(factoryType)) {
+        Dictionary<string, object> @params = factoryType.DefaultTestParams ?? new();
+        foreach ((PropertyInfo property, TestValueAttribute attribute) in modelType
+          .GetProperties(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)
+          .Select(p => (p, a: p.GetCustomAttribute<TestValueAttribute>(true)))
+          .Where(e => e.a is not null)
+        ) {
+          if (attribute is TestValueIsNewAttribute) {
+            attribute._value ??= Activator.CreateInstance(property.PropertyType);
+          }
+          else if (attribute is TestValueIsEmptyEnumerableAttribute) {
+            attribute._value ??= typeof(Enumerable).GetMethod(nameof(Enumerable.Empty), BindingFlags.Static | BindingFlags.Public)
+              .MakeGenericMethod(property.PropertyType.GetGenericArguments().First()).Invoke(null, new object[0] );
+          } else if (attribute is GetTestValueFromMemberAttribute memberAttribute && memberAttribute.Value is null) {
+            try {
+              System.Type currentModelType = modelType;
+              MemberInfo[] members = new MemberInfo[0];
+              MemberInfo member;
+              while (!members.Any() && typeof(IModel).IsAssignableFrom(currentModelType)) {
+                members = currentModelType.GetMember(memberAttribute.MethodName, BindingFlags.Public | BindingFlags.FlattenHierarchy | BindingFlags.NonPublic | BindingFlags.Static);
+                currentModelType = currentModelType.BaseType;
+              }
+
+              member = members.First();
+              if (member is MethodInfo method) {
+                var methodParams = method.GetParameters();
+                if (methodParams.Any()) {
+                  if (methodParams.Length > 1 || !typeof(Archetype).IsAssignableFrom(methodParams.First().ParameterType)) {
+                    throw new ArgumentException($"GetTestValueFromMemberAttribute requires a static property, field, or method (with 0 or 1 parameter(s)). If 1 parameter is provided for a method it must be of type Archetype.");
+                  }
+                  attribute._value = method.Invoke(null, new object[] {
+                    factoryType
+                  });
+                } else {
+                  attribute._value = method.Invoke(null, new object[0]);
+                }
+
+              } else if (member is PropertyInfo prop) {
+                attribute._value = prop.GetValue(null);
+              } else if (member is FieldInfo field) {
+                attribute._value = field.GetValue(null);
+              }
+            } catch (Exception e) {
+              throw new MissingMemberException($"Member {memberAttribute.MethodName} not found, or {memberAttribute.MethodName} is not a static property, field, or method (with 0 or 1 parameter(s)). If 1 parameter is provided for a method it must be of type Archetype.", e);
+            }
+          }
+
+          AutoBuildAttribute autoBuildData;
+          string fieldName = property.Name;
+          if ((autoBuildData = property.GetCustomAttribute<AutoBuildAttribute>(true)) != null) {
+            fieldName = autoBuildData.ParameterName ?? fieldName;
+          }
+
+          @params[fieldName] = attribute.Value;
+        }
+
+        _loadedTestParams.Add(factoryType);
+
+        return @params.Any() 
+          ? (factoryType._defaultTestParams = @params) 
+          : (factoryType._defaultTestParams = null);
+      }
+
+      return factoryType.DefaultTestParams ?? null;
     }
 
     class AssemblyBuildableTypesCollection {
@@ -670,7 +839,7 @@ namespace Meep.Tech.Data.Configuration {
       // after that we should also get the Archetype.Modifier classes from each assembly if they exist.
 
       // For each loaded assembly
-      foreach(Assembly assembly in Options.AssemblyLoadOrder) {
+      foreach(Assembly assembly in AssemblyLoadOrder) {
         // For each type in these assemblies
         foreach (Type systemType in assembly.GetExportedTypes().Where(
           // ... abstract types can't be built
@@ -748,7 +917,7 @@ namespace Meep.Tech.Data.Configuration {
     /// TODO: change this so if we are missing a dependency archetype, then this tries to load that one by name, and then adds +1 to a depth parameter (default 0) on this function.
     /// Maybe this could be done more smoothly by pre-emptively registering all ids?
     /// </summary>
-    void _constructArchetypeFromSystemType(System.Type archetypeSystemType, int depth = 0) {
+    Archetype _constructArchetypeFromSystemType(System.Type archetypeSystemType, int depth = 0) {
       // Get ctor
       ConstructorInfo archetypeConstructor = archetypeSystemType.GetConstructor(
           BindingFlags.Instance | BindingFlags.NonPublic,
@@ -775,14 +944,6 @@ namespace Meep.Tech.Data.Configuration {
       try {
          archetype = (Archetype)archetypeConstructor.Invoke(ctorArgs);
 
-        // Try to make the default model, and register what that is:
-        Func<Archetype, Dictionary<string, object>, IBuilder> builderCtor
-          = archetype.GetGenericBuilderConstructor();
-
-        IBuilder builder = builderCtor.Invoke(
-          archetype,
-          archetype.DefaultTestParams ?? Archetype._emptyTestParams
-        );
 
         // load branch attribute and set the new model ctor if there is one
         BranchAttribute branchAttribute;
@@ -791,14 +952,40 @@ namespace Meep.Tech.Data.Configuration {
           branchAttribute.NewBaseModelType
             // Defaults to decalring type (surrounding type) if one wasn't specified.
             ??= GetFirstDeclaringParent(archetypeSystemType);
+
+          // set it to the produced type for now
+          archetype.ModelTypeProduced = branchAttribute.NewBaseModelType;
+
           Func<IBuilder, IModel> defaultModelConstructor
             = Universe.Models._getDefaultCtorFor(branchAttribute.NewBaseModelType);
           (archetype as IFactory).ModelConstructor 
             = defaultModelConstructor;
         }
 
-        IModel defaultModel = archetype.MakeDefaultWith(builder);
-        if(!Universe.Archetypes._rootArchetypeTypesByBaseModelType.ContainsKey(defaultModel.GetType().FullName)) {
+        // Try to make the default model, and register what that is:
+        /*Func<Archetype, Dictionary<string, object>, IBuilder> builderCtor
+          = archetype.GetGenericBuilderConstructor();
+
+        Dictionary<string, object> testParams;
+        try {
+          testParams = _loadTestParams(archetype, archetype.ModelTypeProduced);
+        } catch (Exception e) {
+          throw e;
+				}
+
+        IBuilder builder = builderCtor.Invoke(
+          archetype,
+          testParams
+        );
+
+        IModel defaultModel = archetype.MakeDefaultWith(builder);*/
+        IModel defaultModel
+          = Configuration.Loader.TestBuildModel(
+              archetype,
+              archetype.ModelTypeProduced
+          );
+
+        if (!Universe.Archetypes._rootArchetypeTypesByBaseModelType.ContainsKey(defaultModel.GetType().FullName)) {
           Universe.Archetypes._rootArchetypeTypesByBaseModelType[defaultModel.GetType().FullName] = archetype.GetType();
         }
 
@@ -824,6 +1011,8 @@ namespace Meep.Tech.Data.Configuration {
         string fatalMessage = $"Cannot initialize archetype of type: {archetypeSystemType?.FullName ?? "NULLTYPE"} Due to unknown inner exception. \n ---------- \n Will Not Retry \n ---------- \n.";
         throw new CannotInitializeArchetypeException(fatalMessage, e);
       }
+
+      return archetype;
     }
 
     /// <summary>
@@ -889,13 +1078,13 @@ namespace Meep.Tech.Data.Configuration {
         .Where(v => !(v is null))
       ) {
         Modifications modifier
-            = Activator.CreateInstance(
-              modifierType,
-              BindingFlags.NonPublic | BindingFlags.Instance,
-              null,
-              new object[] { Universe },
-              null
-            ) as Modifications;
+          = Activator.CreateInstance(
+            modifierType,
+            BindingFlags.NonPublic | BindingFlags.Instance,
+            null,
+            new object[] { Universe },
+            null
+          ) as Modifications;
 
         modifier.Initialize();
       }
@@ -976,51 +1165,87 @@ namespace Meep.Tech.Data.Configuration {
     }
 
     void _reportOnFailedTypeInitializations() {
-      List<(string xbamType, System.Type systemType, Exception exception)> failures = new();
+      List<Failure> failures = new();
       foreach((System.Type componentType, Exception ex) in _uninitializedComponents.Merge(_failedComponents)) {
         Console.Error.WriteLine($"Could not initialize Component Type: {componentType}, due to Internal Exception:\n\n{ex}");
-        failures.Add(("Component", componentType, ex));
+        failures.Add(new("Component", componentType, ex));
       }
       foreach((System.Type modelType, Exception ex) in _uninitializedModels.Merge(_failedModels)) {
         Console.Error.WriteLine($"Could not initialize Model Type: {modelType}, due to Internal Exception:\n\n{ex}");
-        failures.Add(("Model", modelType, ex));
+        failures.Add(new("Model", modelType, ex));
       }
       foreach((System.Type archetypeType, Exception ex) in _uninitializedArchetypes.Merge(_failedArchetypes)) {
         Console.Error.WriteLine($"Could not initialize Archetype Type: {archetypeType}, due to Internal Exception:\n\n{ex}");
-        failures.Add(("Archetype", archetypeType, ex));
+        failures.Add(new("Archetype", archetypeType, ex));
+      }
+      foreach ((MemberInfo enumProp, Exception ex) in _failedEnumerations) {
+        Console.Error.WriteLine($"Could not initialize Enum of Type: {(enumProp is PropertyInfo p ? p.PropertyType : "unknown")} on property with name:{enumProp.Name} on type: {enumProp.DeclaringType.FullName} due to Internal Exception:\n\n{ex}");
+        failures.Add(new("Enumeration", (enumProp as PropertyInfo).PropertyType, ex));
       }
 
       Failures = failures;
       if((Options.FatalOnCannotInitializeType || Options.FatalDuringFinalizationOnCouldNotInitializeTypes) && Failures.Any()) {
         throw new InvalidOperationException("Failed to initialize several types in the ECSBAM Loader:\n"
-          + string.Join('\n', Failures.Select(_failureToString)));
+          + string.Join('\n', Failures));
       }
     }
 
-    string _failureToString((string xbamType, Type systemType, Exception exception) failure) {
-      StringBuilder builder = new();
-      builder.Append($"\n====:{failure.xbamType}::{failure.systemType.ToFullHumanReadableNameString()}:====");
-      builder.Append($"\n\t==Exception:==");
-      builder.Append(failure.exception.Message?.Replace("\r\n", "\n").Replace("\r", "\n").Replace("\n", "\n\t\t\t\t"));
-      builder.Append($"\n\t\t====Stack Trace:==");
-      builder.Append(failure.exception.StackTrace?.Replace("\r\n", "\n").Replace("\r", "\n").Replace("\n", "\n\t\t\t\t"));
-      builder.Append($"\n\t\t======");
+    /// <summary>
+    /// Represents a failed type that wasn't loaded during XBAM initialization
+    /// </summary>
+    public struct Failure {
 
-      var ie = failure.exception.InnerException;
-      while(ie is not null) {
-        builder.Append($"\n\n\t\t====Inner Exception:==");
-        builder.Append(ie.Message?.Replace("\r\n", "\n").Replace("\r", "\n").Replace("\n", "\n\t\t\t\t"));
-        builder.Append($"\n\t\t\t======Stack Trace:==");
-        builder.Append(ie.StackTrace?.Replace("\r\n", "\n").Replace("\r", "\n").Replace("\n", "\n\t\t\t\t"));
-        builder.Append($"\n\t\t\t========");
-        builder.Append($"\n\t\t======");
-        ie = ie.InnerException;
+      /// <summary>
+      /// The XBam Type of the failure.
+      /// Buit in options are: Archetype, Model, Enumeration and Component.
+      /// </summary>
+      public string XbamType { get; }
+
+      /// <summary>
+      /// The system type of the failed type
+      /// </summary>
+      public Type SystemType { get; }
+
+      /// <summary>
+      /// The exception that was thrown.
+      /// </summary>
+      public Exception Exception { get; }
+
+      /// <summary>
+      /// Make a new failure for reporting.
+      /// </summary>
+      public Failure(string xbamType, Type systemType, Exception exception) {
+        XbamType = xbamType;
+        SystemType = systemType;
+        Exception = exception;
       }
 
-      builder.Append($"\n\t====");
-      builder.Append($"========");
+      ///<summary><inheritdoc/></summary>
+      public override string ToString() {
+        StringBuilder builder = new();
+        builder.Append($"\n====:{XbamType}::{SystemType.ToFullHumanReadableNameString()}:====");
+        builder.Append($"\n\t==Exception:==");
+        builder.Append(Exception.Message?.Replace("\r\n", "\n").Replace("\r", "\n").Replace("\n", "\n\t\t\t\t"));
+        builder.Append($"\n\t\t====Stack Trace:==");
+        builder.Append(Exception.StackTrace?.Replace("\r\n", "\n").Replace("\r", "\n").Replace("\n", "\n\t\t\t\t"));
+        builder.Append($"\n\t\t======");
 
-      return builder.ToString();
+        var ie = Exception.InnerException;
+        while (ie is not null) {
+          builder.Append($"\n\n\t\t====Inner Exception:==");
+          builder.Append(ie.Message?.Replace("\r\n", "\n").Replace("\r", "\n").Replace("\n", "\n\t\t\t\t"));
+          builder.Append($"\n\t\t\t======Stack Trace:==");
+          builder.Append(ie.StackTrace?.Replace("\r\n", "\n").Replace("\r", "\n").Replace("\n", "\n\t\t\t\t"));
+          builder.Append($"\n\t\t\t========");
+          builder.Append($"\n\t\t======");
+          ie = ie.InnerException;
+        }
+
+        builder.Append($"\n\t====");
+        builder.Append($"========");
+
+        return builder.ToString();
+      }
     }
   }
 }

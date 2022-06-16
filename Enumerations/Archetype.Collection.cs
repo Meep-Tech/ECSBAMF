@@ -384,8 +384,8 @@ namespace Meep.Tech.Data {
       IEnumerator IEnumerable.GetEnumerator()
         => GetEnumerator();
 
-      #endregion
-    }
+			#endregion
+		}
 
     /// <summary>
     /// Quick link to the collection for the default universe

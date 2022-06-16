@@ -8,9 +8,8 @@ namespace Meep.Tech.Data {
 
   /// <summary>
   /// An attribute signifying that this field should be auto incluided in the builder constructor for this model.
-  /// <para>Works with DefaultAttribute</para>
+  /// <para>Works with DefaultAttribute, RequiredAttribute, and NotNullAttribute</para>
   /// </summary>
-
   [AttributeUsage(AttributeTargets.Property, Inherited = true)]
   public class AutoBuildAttribute : Attribute {
 
@@ -97,10 +96,10 @@ namespace Meep.Tech.Data {
 
     internal static IEnumerable<(string name, Func<IModel, IBuilder, IModel> function)> _generateAutoBuilderSteps(System.Type modelType)
       => modelType.GetProperties(System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)
-        .Where(p => Attribute.IsDefined(p, typeof(AutoBuildAttribute), true))
-        .Select(p => {
-          AutoBuildAttribute attributeData = p.GetCustomAttributes(typeof(AutoBuildAttribute), true)
-            .First() as AutoBuildAttribute;
+        .Select(p => (p, a: p.GetCustomAttribute<AutoBuildAttribute>(true)))
+        .Where(e => e.a is not null)
+        .Select(e => {
+          (PropertyInfo p, AutoBuildAttribute attributeData) = e;
 
           return (order: attributeData.Order, name: attributeData.ParameterName ?? p.Name, func: new Func<IModel, IBuilder, IModel>((IModel m, IBuilder b) => {
             System.Reflection.MethodInfo setter = p.GetSetMethod(true);

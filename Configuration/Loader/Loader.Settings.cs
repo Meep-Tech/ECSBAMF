@@ -1,4 +1,5 @@
 ﻿using Meep.Tech.Collections.Generic;
+using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -17,6 +18,7 @@ namespace Meep.Tech.Data.Configuration {
       /// Assemblies that should be included in the loading that are built in.
       /// This helps prevent assemblies from not being loaded yet on initial searches
       /// </summary>
+      [JsonIgnore]
       public List<Assembly> PreLoadAssemblies {
         get;
         set;
@@ -25,6 +27,7 @@ namespace Meep.Tech.Data.Configuration {
       /// <summary>
       /// Assemblies that should be ignored in the loading 
       /// </summary>
+      [JsonIgnore]
       public List<Assembly> IgnoredAssemblies {
         get;
         set;
@@ -57,12 +60,13 @@ namespace Meep.Tech.Data.Configuration {
       /// <summary>
       /// The assembly name prefixes to ignore when loading types from assemblies
       /// </summary>
-      public List<string> ArchetypeAssemblyPrefixesToIgnore {
+      public List<string> AssemblyPrefixesToIgnore {
         get;
         set;
       } = new List<string> {
         "System.",
         "Microsoft.",
+        "WinRT.Runtime",
         "Newtonsoft.",
         "netstandard",
         "NuGet.",
@@ -111,12 +115,12 @@ namespace Meep.Tech.Data.Configuration {
       } = true;
 
       /// <summary>
-      /// The location of archetype librararies, plugins, and mod extensions
+      /// The folder containing the /data/ folder.
       /// </summary>
-      public string ModsRootFolderLocation {
+      public string DataFolderParentFolderLocation {
         get;
         set;
-      } = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "mods");
+      } = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
 
       /// <summary>
       /// The name to configure for the current universe.
@@ -131,22 +135,16 @@ namespace Meep.Tech.Data.Configuration {
       /// A pre-settable setting for specifying how to order certain mods for loading.
       /// This will throw if there's a conflict with order.json
       /// </summary>
+      [JsonIgnore]
       public Map<ushort, string> PreOrderedAssemblyFiles {
         get;
         set;
       } = new Map<ushort, string>();
 
       /// <summary>
-      /// Assembled mod load order.
-      /// </summary>
-      public IReadOnlyList<Assembly> AssemblyLoadOrder
-        => _assemblyLoadOrder;
-      internal List<Assembly> _assemblyLoadOrder
-          = new List<Assembly>();
-
-      /// <summary>
       /// The default model serializer options
       /// </summary>
+      [JsonIgnore]
       public Model.Serializer.Settings ModelSerializerOptions {
         get;
         set;

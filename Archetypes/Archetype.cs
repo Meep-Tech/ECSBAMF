@@ -11,9 +11,6 @@ namespace Meep.Tech.Data {
   /// A singleton data store and factory.
   /// </summary>
   public abstract partial class Archetype : IFactory, IReadableComponentStorage, IEquatable<Archetype> {
-    internal static readonly Dictionary<string, object> _emptyTestParams
-      = new();
-
     #region Archetype Data Members
 
     /// <summary>
@@ -130,9 +127,9 @@ namespace Meep.Tech.Data {
     /// Default params for testing
     /// </summary>
     internal protected virtual Dictionary<string, object> DefaultTestParams {
-      get;
-      init;
-    } = null;
+      get => _defaultTestParams;
+      init => _defaultTestParams = value;
+    } internal Dictionary<string, object> _defaultTestParams = null;
 
     /// <summary>
     /// Finish setting this up
@@ -698,18 +695,32 @@ namespace Meep.Tech.Data {
         _modelConstructor
           = builder => value.Invoke(builder);
 
+        // TODO: cache these test models while the loader is still running so we don't need to make them multiple times
+        IModel model 
+          = Configuration.Loader.TestBuildModel(
+              this,
+              ModelTypeProduced
+          );
         /// get the model type produced
-        Func<Archetype, Dictionary<string, object>, IBuilder> builderCtor
+        /*Func<Archetype, Dictionary<string, object>, IBuilder> builderCtor
           = GetGenericBuilderConstructor();
         IBuilder builder = builderCtor.Invoke(
           this,
-          DefaultTestParams ?? _emptyTestParams
+          Configuration.Loader._loadTestParams(this, ModelTypeProduced)
         );
-        System.Type constructedModelType = _modelConstructor(
-          (IBuilder<TModelBase>)builder
-        ).GetType();
+        IModel model;
+        try {
+          model = _modelConstructor(
+            (IBuilder<TModelBase>)builder
+          );
+        } catch (Exception ex) {
+          throw ex;
+				}*/
+
+				System.Type constructedModelType = model.GetType();
 
         // register it
+        ModelTypeProduced = constructedModelType;
         Id.Universe.Archetypes._rootArchetypeTypesByBaseModelType[constructedModelType.FullName]
           = GetType();
 

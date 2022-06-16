@@ -79,7 +79,7 @@ namespace Meep.Tech.Data {
       /// </summary>
       public override Func<Archetype, Dictionary<string, object>, Universe, IBuilder<TComponentBase>> BuilderConstructor {
         get => _defaultBuilderCtor ??= (archetype, @params, universe) => new IModel<TComponentBase>.Builder(archetype, @params, universe);
-        set => _defaultBuilderCtor = value;
+        init => _defaultBuilderCtor = value;
       }
 
       public BuilderFactory(
