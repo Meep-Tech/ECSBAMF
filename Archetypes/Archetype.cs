@@ -11,6 +11,9 @@ namespace Meep.Tech.Data {
   /// A singleton data store and factory.
   /// </summary>
   public abstract partial class Archetype : IFactory, IReadableComponentStorage, IEquatable<Archetype> {
+    internal DelegateCollection<Func<IModel, IBuilder, IModel>>
+      _modelAutoBuilderSteps;
+
     #region Archetype Data Members
 
     /// <summary>
@@ -670,56 +673,37 @@ namespace Meep.Tech.Data {
 
     #region Model Constructor Settings
 
-    DelegateCollection<Func<IModel, IBuilder, IModel>> 
-      _modelAutoBuilderSteps = new();
-
     /// <summary>
-    /// Overrideable Model Constructor.
+    /// Overrideable Model Construction logic.
+    /// Make sure to set overrides using "base.ModelConstructor ??= " in order to maintain auto-builder functionality.
     /// </summary>
     protected internal virtual Func<IBuilder<TModelBase>, TModelBase> ModelConstructor {
-      get {
-        if(_modelConstructor == null) {
-          /// setting to ModelConstructor guarentee's caching.
-          ModelConstructor = (builder) => (TModelBase)Id.Universe.Models.
-              _getDefaultCtorFor(ModelTypeProduced)
-                .Invoke(builder);
-        }
-
-        return (builder) => {
+      get => _modelConstructor is not null 
+        ? (builder) => {
           var model = (TModelBase)_modelConstructor(builder);
-          _modelAutoBuilderSteps.ForEach(a => model = (TModelBase)a.Value(model, builder));
+          if (Id.Name.Contains("Jelly")) {
+            Console.WriteLine("");
+          }
+          _modelAutoBuilderSteps?.ForEach(a => model = (TModelBase)a.Value(model, builder));
           return DoAfterAutoBuildSteps(model, builder);
-        };
-      }
+        } : null;
       set {
         _modelConstructor
           = builder => value.Invoke(builder);
 
-        // TODO: cache these test models while the loader is still running so we don't need to make them multiple times
-        IModel model 
-          = Configuration.Loader.TestBuildModel(
+        IModel model
+          = Configuration.Loader.GetOrBuildTestModel(
               this,
               ModelTypeProduced
           );
-        /// get the model type produced
-        /*Func<Archetype, Dictionary<string, object>, IBuilder> builderCtor
-          = GetGenericBuilderConstructor();
-        IBuilder builder = builderCtor.Invoke(
-          this,
-          Configuration.Loader._loadTestParams(this, ModelTypeProduced)
-        );
-        IModel model;
-        try {
-          model = _modelConstructor(
-            (IBuilder<TModelBase>)builder
-          );
-        } catch (Exception ex) {
-          throw ex;
-				}*/
 
-				System.Type constructedModelType = model.GetType();
+
+        if (Id.Name.Contains("Jelly")) {
+          Console.WriteLine("");
+        }
 
         // register it
+        System.Type constructedModelType = model.GetType();
         ModelTypeProduced = constructedModelType;
         Id.Universe.Archetypes._rootArchetypeTypesByBaseModelType[constructedModelType.FullName]
           = GetType();
@@ -745,7 +729,9 @@ namespace Meep.Tech.Data {
     /// <inheritdoc/>
     /// </summary>
     Func<IBuilder, IModel> IFactory.ModelConstructor {
-      get => builder => ModelConstructor((IBuilder<TModelBase>)builder);
+      get => ModelConstructor is null 
+        ? null 
+        : builder => ModelConstructor((IBuilder<TModelBase>)builder);
       set => ModelConstructor = builder => (TModelBase)value(builder);
     }
 

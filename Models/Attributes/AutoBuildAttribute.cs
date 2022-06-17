@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
 using System.Reflection;
+using static Meep.Tech.Data.AutoBuildAttribute;
 
 namespace Meep.Tech.Data {
 
@@ -23,7 +24,7 @@ namespace Meep.Tech.Data {
     /// Validates the final value.
     /// </summary>
     /// <param name="validationError">(optional returnable exception)</param>
-    public delegate bool ValueValidator(object value, IBuilder builder, IModel model, out string message, out Exception validationError);
+    public delegate bool ValueValidator(object value, IBuilder builder, IModel model, out string message, out System.Exception validationError);
 
     /// <summary>
     /// If this field must not be null before being returned by the auto build step.
@@ -94,101 +95,120 @@ namespace Meep.Tech.Data {
     /// </summary>
     public AutoBuildAttribute() { }
 
+    /// <summary>
+    /// An exception thrown by the auto-builder.
+    /// </summary>
+    public class Exception : System.ArgumentException {
+      public System.Type ModelTypeBeingBuilt { get; }
+      public Exception(System.Type modelType, string message, System.Exception innerException) 
+        : base(message, innerException) { ModelTypeBeingBuilt = modelType; }
+    }
+
     internal static IEnumerable<(string name, Func<IModel, IBuilder, IModel> function)> _generateAutoBuilderSteps(System.Type modelType)
       => modelType.GetProperties(System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)
         .Select(p => (p, a: p.GetCustomAttribute<AutoBuildAttribute>(true)))
         .Where(e => e.a is not null)
-        .Select(e => {
-          (PropertyInfo p, AutoBuildAttribute attributeData) = e;
-
-          return (order: attributeData.Order, name: attributeData.ParameterName ?? p.Name, func: new Func<IModel, IBuilder, IModel>((IModel m, IBuilder b) => {
-            System.Reflection.MethodInfo setter = p.GetSetMethod(true);
-            if(setter is null) {
-              System.Type baseType = p.DeclaringType;
-              while(setter is null && baseType is not null) {
-                PropertyInfo propertyInfo = baseType.GetProperty(
-                  p.Name,
-                  System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic
-                );
-
-                if(propertyInfo is null) {
-                  break;
-                }
-
-                setter = propertyInfo.GetSetMethod(true);
-                baseType = baseType.BaseType;
-              }
-
-              if(setter is null) throw new AccessViolationException($"Can not find a setter for property: {p.Name}, on model: {p.DeclaringType.FullName}, for auto-builder property attribute setup");
-            }
-
-            if (!attributeData._checkedRequired) {
-              attributeData.IsRequiredAsAParameter = attributeData.IsRequiredAsAParameter || p.GetCustomAttributes().Where(a => a.GetType().Name == "Required").Any();
-              attributeData._checkedRequired = true;
-            }
-
-            object value = attributeData.IsRequiredAsAParameter 
-              ? _getRequiredValueFromBuilder(b, p, attributeData)
-              : _getValueFromBuilderOrDefault(m, b, p, attributeData);
-
-            if(attributeData.ValueValidatorName is not null) {
-              // TODO: cache this
-              ValueValidator validator = _generateValidator(attributeData.ValueValidatorName, m, p);
-              try {
-                if(!validator.Invoke(value, b, m, out string message, out Exception exception)) {
-                  throw new ArgumentException($"Invalid Value: {value}, tried to set to parameter/property: {attributeData.ParameterName ?? p.Name}, via auto builder: {message}", exception);
-                }
-              } catch(Exception e) {
-                throw new ArgumentException($"Value caused Exception during Validation: {value?.ToString() ?? "null"}, tried to set to parameter/property: {attributeData.ParameterName ?? p.Name}, via auto builder", e);
-              }
-            }
-
-            if (!attributeData._checkedNotNull) {
-              attributeData.NotNull = attributeData.NotNull 
-                || p.GetCustomAttributes()
-                  .Where(a => a.GetType().Name == "NotNull")
-                  .Any();
-              attributeData._checkedNotNull = true;
-            }
-
-            if (attributeData.NotNull && value is null) {
-              throw new ArgumentNullException(attributeData.ParameterName ?? p.Name);
-            }
-
-            // TODO: cache this
-            setter.Invoke(m, new object[] { value });
-            return m;
-          })); }
-        ).OrderBy(e => e.order)
+        .Select(e => (
+          order: e.a.Order, 
+          name: e.a.ParameterName ?? e.p.Name, 
+          func: new Func<IModel, IBuilder, IModel>((m, b) => _buildField(m, b, e.p, e.a, modelType))
+        )).OrderBy(e => e.order)
         .Select(e => (e.name, e.func));
+
+    /// <summary>
+    /// TODO: this needs to be heavily optomized.
+    /// </summary>
+    static IModel _buildField(IModel m, IBuilder b, PropertyInfo p, AutoBuildAttribute attributeData, System.Type modelType) {
+      try {
+        System.Reflection.MethodInfo setter = p.GetSetMethod(true);
+        if (setter is null) {
+          System.Type baseType = p.DeclaringType;
+          while (setter is null && baseType is not null) {
+            PropertyInfo propertyInfo = baseType.GetProperty(
+              p.Name,
+              System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic
+            );
+
+            if (propertyInfo is null) {
+              break;
+            }
+
+            setter = propertyInfo.GetSetMethod(true);
+            baseType = baseType.BaseType;
+          }
+
+          if (setter is null) throw new AccessViolationException($"Can not find a setter for property: {p.Name}, on model: {p.DeclaringType.FullName}, for auto-builder property attribute setup");
+        }
+
+        if (!attributeData._checkedRequired) {
+          attributeData.IsRequiredAsAParameter = attributeData.IsRequiredAsAParameter || p.GetCustomAttributes().Where(a => a.GetType().Name == "Required").Any();
+          attributeData._checkedRequired = true;
+        }
+
+        object value = attributeData.IsRequiredAsAParameter
+          ? _getRequiredValueFromBuilder(b, p, attributeData)
+          : _getValueFromBuilderOrDefault(m, b, p, attributeData);
+
+        if (attributeData.ValueValidatorName is not null) {
+          // TODO: cache this
+          ValueValidator validator = _generateValidator(attributeData.ValueValidatorName, m, p);
+          try {
+            if (!validator.Invoke(value, b, m, out string message, out System.Exception exception)) {
+              throw new ArgumentException($"Invalid Value: {value}, tried to set to parameter/property: {attributeData.ParameterName ?? p.Name}, via auto builder: {message}", exception);
+            }
+          }
+          catch (Exception e) {
+            throw new ArgumentException($"Value caused Exception during Validation: {value?.ToString() ?? "null"}, tried to set to parameter/property: {attributeData.ParameterName ?? p.Name}, via auto builder", e);
+          }
+        }
+
+        if (!attributeData._checkedNotNull) {
+          attributeData.NotNull = attributeData.NotNull
+            || p.GetCustomAttributes()
+              .Where(a => a.GetType().Name == "NotNull")
+              .Any();
+          attributeData._checkedNotNull = true;
+        }
+
+        if (attributeData.NotNull && value is null) {
+          throw new ArgumentNullException(attributeData.ParameterName ?? p.Name);
+        }
+
+        // TODO: cache this
+        setter.Invoke(m, new object[] { value });
+        return m;
+      } catch (System.Exception e) {
+        throw new Exception(modelType, $"Field: {p.Name} on Model Type: {modelType}, could not be auto-built due to an inner exception.", e);
+      }
+    }
 
     static ValueValidator _generateValidator(string valueValidatorName, IModel model, PropertyInfo property) {
       var @delegate = property.DeclaringType.GetMembers(System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)
-          .FirstOrDefault(m => m.Name == valueValidatorName
-            && (
-              (m is PropertyInfo p)
-                && p.PropertyType == typeof(AutoBuildAttribute.ValueValidator)
-              || (m is FieldInfo f)
-                && f.FieldType == typeof(AutoBuildAttribute.ValueValidator)
-              || (m is MethodInfo l)
-                && (l.ReturnType == typeof(bool))
-                && (l.GetParameters().Select(p => p.ParameterType).SequenceEqual(new System.Type[] {
-                  typeof(object),
-                  typeof(IBuilder),
-                  typeof(IModel),
-                  typeof(string),
-                  typeof(Exception)
-                }) || l.GetParameters().Select(p => p.ParameterType).SequenceEqual(new System.Type[] {
-                  property.PropertyType,
-                  typeof(IBuilder),
-                  typeof(IModel),
-                  typeof(string),
-                  typeof(Exception)
-                }))
+        .FirstOrDefault(m => m.Name == valueValidatorName
+          && (
+            (m is PropertyInfo p)
+              && p.PropertyType == typeof(AutoBuildAttribute.ValueValidator)
+            || (m is FieldInfo f)
+              && f.FieldType == typeof(AutoBuildAttribute.ValueValidator)
+            || (m is MethodInfo l)
+              && (l.ReturnType == typeof(bool))
+              && (l.GetParameters().Select(p => p.ParameterType).SequenceEqual(new System.Type[] {
+                typeof(object),
+                typeof(IBuilder),
+                typeof(IModel),
+                typeof(string),
+                typeof(Exception)
+              }) || l.GetParameters().Select(p => p.ParameterType).SequenceEqual(new System.Type[] {
+                property.PropertyType,
+                typeof(IBuilder),
+                typeof(IModel),
+                typeof(string),
+                typeof(Exception)
+              }))
             ));
 
       if(@delegate is MethodInfo method) {
-        return new ValueValidator((object v, IBuilder b, IModel m, out string t, out Exception x) => {
+        return new ValueValidator((object v, IBuilder b, IModel m, out string t, out System.Exception x) => {
           object[] parameters = new object[] { v, b, b, null, null };
           if((bool)method.Invoke(b, parameters)) {
             t = parameters[3] as string;
@@ -209,7 +229,7 @@ namespace Meep.Tech.Data {
             ? p.GetValue(model)
             : @delegate is FieldInfo f
               ? f.GetValue(model)
-              : throw new Exception($"Unknown member type for default builder attribute default value")
+              : throw new System.Exception($"Unknown member type for default builder attribute default value")
           ) as AutoBuildAttribute.ValueValidator;
 
         return defaultValidatorDelegate;
@@ -253,7 +273,7 @@ namespace Meep.Tech.Data {
               ? p.GetValue(model)
               : @delegate is FieldInfo f
                 ? f.GetValue(model)
-                : throw new Exception($"Unknown member type for default builder attribute default value")
+                : throw new System.Exception($"Unknown member type for default builder attribute default value")
             ) as AutoBuildAttribute.DefaultValueGetter;
 
           // TODO: cache this
@@ -288,7 +308,7 @@ namespace Meep.Tech.Data {
             ? new DefaultValueGetter((b, m) => p.GetValue(builder.Archetype))
             : archetypeDefaultProvider is FieldInfo f
               ? new((b, m) => f.GetValue(builder.Archetype))
-              : throw new Exception($"Unknown member type for default builder attribute default value")
+              : throw new System.Exception($"Unknown member type for default builder attribute default value")
           );
 
           // TODO: cache this

@@ -73,7 +73,9 @@ namespace Meep.Tech.Data {
       /// <inheritdoc/>
       /// </summary>
       Func<IBuilder, IModel> IFactory.ModelConstructor {
-        get => builder => base.ModelConstructor((IBuilder<TModelBase>)builder);
+        get => base.ModelConstructor is null 
+          ? null 
+          : builder => base.ModelConstructor((IBuilder<TModelBase>)builder);
         set => base.ModelConstructor = 
           builder => (TModelBase)value(builder);
       }
