@@ -681,9 +681,6 @@ namespace Meep.Tech.Data {
       get => _modelConstructor is not null 
         ? (builder) => {
           var model = (TModelBase)_modelConstructor(builder);
-          if (Id.Name.Contains("Jelly")) {
-            Console.WriteLine("");
-          }
           _modelAutoBuilderSteps?.ForEach(a => model = (TModelBase)a.Value(model, builder));
           return DoAfterAutoBuildSteps(model, builder);
         } : null;
@@ -696,11 +693,6 @@ namespace Meep.Tech.Data {
               this,
               ModelTypeProduced
           );
-
-
-        if (Id.Name.Contains("Jelly")) {
-          Console.WriteLine("");
-        }
 
         // register it
         System.Type constructedModelType = model.GetType();

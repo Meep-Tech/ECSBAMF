@@ -239,6 +239,7 @@ namespace Meep.Tech.Data {
       }
 
       /// execute contracts where toAdd is a
+      /// TODO, we need an ignore internal value to pass into updateComponent to prevent recursion
       if(toAdd is IComponent.IHaveContract contractedComponent) {
         foreach((Type bType, Func<IComponent, IComponent, (IComponent a, IComponent b)> contract) in IComponent.IHaveContract._contracts[toAdd.GetType()]) {
           if(storage.TryToGetComponent(bType, out IComponent foundB)) {

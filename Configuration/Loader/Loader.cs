@@ -359,10 +359,7 @@ namespace Meep.Tech.Data.Configuration {
       if (Options.PreLoadAllReferencedAssemblies) {
         var moreAssemblies = defaultAssemblies.SelectMany(
           a => a.GetReferencedAssemblies()
-            .Where(assembly => assembly.FullName.StartsWith(Options.ArchetypeAssembliesPrefix)
-              && !Options.AssemblyPrefixesToIgnore
-                .Where(assemblyPrefix => assembly.FullName.StartsWith(assemblyPrefix))
-                .Any())
+            .Where(assembly => _validateAssemblyByName(assembly))
             .Select((item) => {
               try {
                 return Assembly.Load(item);
@@ -389,16 +386,19 @@ namespace Meep.Tech.Data.Configuration {
 
       // combine and filter them
       _unorderedAssembliesToLoad = defaultAssemblies.Concat(externalAssemblies)
-      .Except(Options.IgnoredAssemblies)
-      // ... that is not dynamic, and that matches any naming requirements
-      .Where(assembly => !assembly.IsDynamic
-        && (Options.PreLoadAssemblies.Contains(assembly)
-          || (assembly.GetName().FullName.StartsWith(Options.ArchetypeAssembliesPrefix)
-            && !Options.AssemblyPrefixesToIgnore
-              .Where(assemblyPrefix => assembly.GetName().FullName.StartsWith(assemblyPrefix))
-              .Any()))
-      ).ToHashSet().ToList();
+        .Except(Options.IgnoredAssemblies)
+        // ... that is not dynamic, and that matches any naming requirements
+        .Where(assembly => !assembly.IsDynamic
+          && (Options.PreLoadAssemblies.Contains(assembly)
+            || _validateAssemblyByName(assembly.GetName()))
+        ).ToHashSet().ToList();
     }
+
+    bool _validateAssemblyByName(AssemblyName assembly) 
+      => assembly.FullName.StartsWith(Options.ArchetypeAssembliesPrefix)
+        && !Options.AssemblyPrefixesToIgnore
+          .Where(assemblyPrefix => assembly.FullName.StartsWith(assemblyPrefix))
+          .Any();
 
     /// <summary>
     /// Get all types that this loader knows how to build from the loaded assemblies.

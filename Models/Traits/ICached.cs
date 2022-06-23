@@ -17,10 +17,16 @@ namespace Meep.Tech.Data {
     /// <summary>
     /// Try to load an item fro mthe cache by id.
     /// </summary>
-    public static IUnique FromCache(string modelId) 
+    public static IUnique TryToGetFromCache(string modelId) 
       => _cache.TryGetValue(modelId, out IUnique fetchedModel)
         ? fetchedModel
         : null;
+
+    /// <summary>
+    ///  load an item from the cache by id.
+    /// </summary>
+    public static IUnique GetFromCache(string modelId)
+      => _cache[modelId];
   }
 
   /// <summary>
@@ -33,14 +39,26 @@ namespace Meep.Tech.Data {
     /// <summary>
     /// Try to load an item fro mthe cache by id.
     /// </summary>
-    public static new T FromCache(string modelId) {
+    public static new T TryToGetFromCache(string modelId) {
       IUnique fetched = null;
       try { 
-        return (fetched = ICached.FromCache(modelId)) as T; 
+        return (fetched = ICached.TryToGetFromCache(modelId)) as T; 
       } catch (InvalidCastException e) {
         throw new InvalidCastException($"Fetched Model From Cache with ID {modelId} is likely not of type {typeof(T).FullName}. Actual type: {fetched?.GetType().FullName ?? "NULL"}", e);
       };
     }
+
+    /// <summary>
+    /// Load an item from the cache by id.
+    /// </summary>
+    public new static T GetFromCache(string modelId) 
+      => (T)ICached.GetFromCache(modelId);
+
+    /// <summary>
+    /// Try to load an item from the cache by id
+    /// </summary>
+    public static bool TryToGetFromCache(string modelId, out T found)
+      => (found = TryToGetFromCache(modelId)) != null;
 
     /// <summary>
     /// Cache an item of the given type.

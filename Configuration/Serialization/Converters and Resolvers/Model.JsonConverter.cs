@@ -6,6 +6,7 @@ using Newtonsoft.Json.Linq;
 namespace Meep.Tech.Data {
 
   public partial class Model {
+
     /// <summary>
     /// Defalt converter for any type of model.
     /// This isn't added to the settings by default because the contract resolver handles it.

@@ -6,6 +6,7 @@ using System.Linq;
 using System.Reflection;
 using System.Diagnostics.CodeAnalysis;
 using Newtonsoft.Json.Linq;
+using Meep.Tech.Collections.Generic;
 
 namespace Meep.Tech.Data {
 
@@ -99,7 +100,8 @@ namespace Meep.Tech.Data {
               baseProperty.Writable = true;
             }
           }
-          
+
+          Universe._extraContexts.ForEach(c => c.Value.OnModelJsonPropertyCreated(member, baseProperty));
           return baseProperty;
         }
       }

@@ -1,4 +1,7 @@
-﻿namespace Meep.Tech.Data {
+﻿using Newtonsoft.Json.Serialization;
+using System.Reflection;
+
+namespace Meep.Tech.Data {
 
   public partial class Universe {
 
@@ -45,6 +48,11 @@
       /// Code that's executed when modifications are done loading, before all types are finalized.
       /// </summary>
       internal protected virtual void OnModificationsComplete() { }
+
+      /// <summary>
+      /// Executed once for each json property created when scanning models with the default contract resolver.
+      /// </summary>
+      internal protected virtual void OnModelJsonPropertyCreated(MemberInfo memberInfo, JsonProperty defaultJsonProperty) { }
 
       /// <summary>
       /// Code that's executed on finalization of the loader, after all types are already finalized and before the loader is sealed.

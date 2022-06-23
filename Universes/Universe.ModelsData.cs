@@ -385,16 +385,23 @@ namespace Meep.Tech.Data {
       /// </summary>
       IModel.IBuilderFactory _makeDefaultFactoryFor(Type modelType) {
         Type builderType = null;
-        Type builderIdType = null;
         System.Reflection.ConstructorInfo ctor;
 
+        Type builderIdType;
         // component
         if (modelType.IsAssignableToGeneric(typeof(IComponent<>))) {
           try {
             builderType = typeof(IComponent<>.BuilderFactory).MakeGenericType(modelType);
             builderIdType = typeof(IComponent<>.BuilderFactory.Identity)
               .MakeGenericType(modelType, builderType);
-          } catch (Exception e) {
+
+            if (builderIdType.ContainsGenericParameters || builderIdType.ContainsGenericParameters) {
+              throw new Meep.Tech.Data.Configuration.Loader.CannotInitializeArchetypeException(
+                $"Cannot create a default XBam Factory for a component type that requires generic parameters:\n Builder Type: {builderType.ToFullHumanReadableNameString()},\nBuilder Id Type:{builderIdType.ToFullHumanReadableNameString()}"
+              );
+            }
+          }
+          catch (Exception e) {
             throw new ArgumentException($"Could not apply generics to Builder or Id for XBam Component of Type {modelType.FullName}. Using Component Type: {modelType?.ToString() ?? "null"} and Builder Tyoe:{builderType?.ToString() ?? "null"}  \n Inner Exception: {e} \n ===============");
           }
 
@@ -404,13 +411,13 @@ namespace Meep.Tech.Data {
                   | System.Reflection.BindingFlags.Instance
                   | System.Reflection.BindingFlags.Public,
                 null,
-                new Type[] { builderIdType, typeof(Universe) },
+                new Type[] { null, typeof(Universe) },
                 null
               );
 
           return ctor.Invoke(new object[] {
             Activator.CreateInstance(
-              builderIdType,
+null,
               "Default",
               "Component.Factory",
               _universe,
@@ -425,6 +432,11 @@ namespace Meep.Tech.Data {
           builderType = typeof(IModel<>.BuilderFactory).MakeGenericType(modelType);
           builderIdType = typeof(IModel<>.BuilderFactory.Identity)
             .MakeGenericType(modelType, builderType);
+          if (builderIdType.ContainsGenericParameters || builderIdType.ContainsGenericParameters) {
+            throw new Meep.Tech.Data.Configuration.Loader.CannotInitializeArchetypeException(
+              $"Cannot create a default XBam Factory for a model type that requires generic parameters:\n Builder Type: {builderType.ToFullHumanReadableNameString()},\nBuilder Id Type:{builderIdType.ToFullHumanReadableNameString()}"
+            );
+          }
         } catch (Exception e) {
           throw new ArgumentException($"Could not apply generics to Builder or Id for XBam Model of Type {modelType.FullName}. Using Model Type: {modelType?.ToString() ?? "null"} and Builder Tyoe:{builderType?.ToString() ?? "null"}  \n Inner Exception: {e} \n ===============");
         }
@@ -436,7 +448,7 @@ namespace Meep.Tech.Data {
                 | System.Reflection.BindingFlags.Public,
               null,
               new Type[] {
-                builderIdType,
+                null,
                 typeof(Universe)
               },
               null
@@ -444,7 +456,7 @@ namespace Meep.Tech.Data {
 
         return ctor.Invoke(new object[] {
             Activator.CreateInstance(
-              builderIdType,
+              null,
               "Default",
               "Model.Factory",
               _universe,

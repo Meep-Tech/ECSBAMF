@@ -103,7 +103,7 @@ namespace Meep.Tech.Data {
           return (T)value.CastTo(toFetch.ValueType);
         }
         catch(Exception e) {
-          throw new IModel.Builder.Param.MissmatchException($"Tried to get param as type {typeof(T).FullName}. But param has type {value?.GetType().FullName ?? "null"}, and should be type {toFetch.ValueType}.\n{e}");
+          throw new IModel.Builder.Param.MissmatchException($"Tried to get param as type {typeof(T).FullName}. The provided invalid value has Type {value?.GetType().FullName ?? "null"}, but should be of Type: {toFetch.ValueType.FullName}", e);
         }
       }
 
@@ -138,7 +138,7 @@ namespace Meep.Tech.Data {
           return true;
         }
         catch(Exception e) {
-          throw new IModel.Builder.Param.MissmatchException($"Tried to get param as type {typeof(T).FullName}. But param has type {value?.GetType().FullName ?? "null"}, and should be type {toFetch.ValueType}.\n{e}");
+          throw new IModel.Builder.Param.MissmatchException($"Tried to get param as type {typeof(T).FullName}. The provided invalid value has Type {value?.GetType().FullName ?? "null"}, but should be of Type: {toFetch.ValueType.FullName}.", e);
         }
       }
 
@@ -151,7 +151,7 @@ namespace Meep.Tech.Data {
     /// </summary>
     public static T GetAndValidateViaParamAs<T>(this IBuilder builder, IModel.Builder.Param toFetch) {
       if(toFetch.ValueType != null && !toFetch.ValueType.IsAssignableFrom(typeof(T))) {
-        throw new IModel.Builder.Param.MissmatchException($"Param {toFetch.Key}, is clamped to the type: {toFetch.ValueType.FullName}. {typeof(T).FullName} is not a valid type to try to fetch.");
+        throw new IModel.Builder.Param.MissmatchException($"Tried to get param as type {typeof(T).FullName}, but the provided Param object expects a value of Type: {toFetch.ValueType.FullName}.");
       }
       if(builder._tryToGetRawValue(toFetch.Key, out object value)) {
         // if the value is of the requested type, return it
@@ -170,7 +170,7 @@ namespace Meep.Tech.Data {
           return (T)value.CastTo(toFetch.ValueType);
         }
         catch(Exception e) {
-          throw new IModel.Builder.Param.MissmatchException($"Tried to get param as type {typeof(T).FullName}. But param has type {value?.GetType().FullName ?? "null"}, and should be type {toFetch.ValueType}.\n{e}");
+          throw new IModel.Builder.Param.MissmatchException($"Tried to get param: {toFetch.ExternalId}, as Type: {typeof(T).FullName}. The provided invalid value has Type {value?.GetType().FullName ?? "null"}, but should be of Type: {toFetch.ValueType}.", e);
         }
       }
 
@@ -249,7 +249,7 @@ namespace Meep.Tech.Data {
           try {
             return (T)value.CastTo(valueType);
           } catch (Exception e) {
-            throw new IModel.Builder.Param.MissmatchException($"Tried to get param as type {typeof(T).FullName}. But param has type {value?.GetType().FullName ?? "null"}, and should be type {valueType}.\n{e}");
+            throw new IModel.Builder.Param.MissmatchException($"Tried to get param: {paramKey}, as Type: {typeof(T).FullName}. The provided invalid value has Type {value?.GetType().FullName ?? "null"}, but should be of Type: {valueType.FullName}.", e);
           }
         }
       }
@@ -282,7 +282,7 @@ namespace Meep.Tech.Data {
             result = (T)value.CastTo(valueType);
             return true;
           } catch (Exception e) {
-            throw new IModel.Builder.Param.MissmatchException($"Tried to get param as type {typeof(T).FullName}. But param has type {value?.GetType().FullName ?? "null"}, and should be type {valueType}.\n{e}");
+            throw new IModel.Builder.Param.MissmatchException($"Tried to get param as type {typeof(T).FullName}. The provided invalid value has Type {value?.GetType().FullName ?? "null"}, but should be of Type: {valueType.FullName}", e);
           }
         }
       }
@@ -313,7 +313,7 @@ namespace Meep.Tech.Data {
           try {
             return (T)value.CastTo(valueType);
           } catch (Exception e) {
-            throw new IModel.Builder.Param.MissmatchException($"Tried to get param as type {typeof(T).FullName}. But param has type {value?.GetType().FullName ?? "null"}, and should be type {valueType}.\n{e}");
+            throw new IModel.Builder.Param.MissmatchException($"Tried to get param as type {typeof(T).FullName}. The provided invalid value has Type {value?.GetType().FullName ?? "null"}, but should be of Type: {valueType.FullName}.", e);
           }
         }
       }

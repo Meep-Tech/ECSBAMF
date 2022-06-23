@@ -63,14 +63,20 @@ namespace Meep.Tech.Data {
         /// Exception for a missing required parameter
         /// </summary>
         public class MissingException : ArgumentException, IException {
-          public MissingException(string message) : base(message) { }
+          public MissingException(string message)
+            : base(message) { }
+          public MissingException(string message, Exception innerException) 
+            : base(message, innerException) { }
         }
 
         /// <summary>
         /// Exception for a param of the wrong type
         /// </summary>
         public class MissmatchException : ArgumentException, IException {
-          public MissmatchException(string message) : base(message) { }
+          public MissmatchException(string message)
+            : base(message) { }
+          public MissmatchException(string message, Exception innerException) 
+            : base(message, innerException) { }
         }
 
       }
