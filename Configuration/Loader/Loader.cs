@@ -526,8 +526,10 @@ namespace Meep.Tech.Data.Configuration {
 
       Archetype archetype = null;
       try {
-        if (!isSplayed || (!Attribute.IsDefined(systemType, typeof(Settings.DoNotBuildInInitialLoadAttribute))
-              && !Attribute.IsDefined(systemType, typeof(Settings.DoNotBuildThisOrChildrenInInitialLoadAttribute), true))) {
+        if (!isSplayed 
+          || (!Attribute.IsDefined(systemType, typeof(Settings.DoNotBuildInInitialLoadAttribute))
+            && !Attribute.IsDefined(systemType, typeof(Settings.DoNotBuildThisOrChildrenInInitialLoadAttribute), true))
+        ) {
           archetype = _constructArchetypeFromSystemType(systemType);
           _uninitializedArchetypes.Remove(systemType);
         }
@@ -544,18 +546,7 @@ namespace Meep.Tech.Data.Configuration {
       }
 
       if (isSplayed) {
-        object dummy = FormatterServices.GetUninitializedObject(systemType);
-        foreach (var splayType in systemType.GetAllInheritedGenericTypes(typeof(Archetype.IBuildOneForEach<,>))) {
-          if (!typeof(ISplayedLazily).IsAssignableFrom(splayType)) {
-            MethodInfo getMethod
-              = splayType.GetMethod("ConstructArchetypeFor", BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance);
-            foreach (var @enum in Universe.Enumerations.GetAllByType(splayType.GetGenericArguments().First())) {
-              var newType = getMethod.Invoke(dummy, new[] { @enum });
-              Universe._extraContexts
-                .ForEach(context => context.Value.OnArchetypeWasInitialized(systemType, (Archetype)newType));
-            }
-          }
-        }
+        _initializeSplayedArchetype(systemType);
       }
 
       _initializedTypes.Add(systemType);
@@ -566,6 +557,38 @@ namespace Meep.Tech.Data.Configuration {
 
       e = null;
       return true;
+    }
+
+    void _initializeSplayedArchetype(Type systemType) {
+      object dummy = FormatterServices.GetUninitializedObject(systemType);
+      foreach (var splayType in systemType.GetAllInheritedGenericTypes(typeof(Archetype.IBuildOneForEach<,>))) {
+        MethodInfo getMethodInfo
+          = splayType.GetMethod("ConstructArchetypeFor", BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance);
+        Action<Enumeration> getMethod = new(@enum => getMethodInfo.Invoke(dummy, new[] { @enum }));
+
+        if (!typeof(ISplayedLazily).IsAssignableFrom(splayType)) {
+          _constructSplayedArchetype(systemType, dummy, splayType, getMethodInfo);
+        }
+        else {
+          _prepareLazilySplayedArchetype(splayType, getMethod);
+        }
+      }
+    }
+
+    void _constructSplayedArchetype(Type systemType, object dummy, Type splayType, MethodInfo getMethodInfo) {
+      foreach (var @enum in Universe.Enumerations.GetAllByType(splayType.GetGenericArguments().First())) {
+        var newType = getMethodInfo.Invoke(dummy, new[] { @enum });
+        Universe._extraContexts
+          .ForEach(context => context.Value.OnArchetypeWasInitialized(systemType, (Archetype)newType));
+      }
+    }
+
+    static void _prepareLazilySplayedArchetype(Type splayType, Action<Enumeration> getMethod) {
+      System.Type enumType = splayType.GetGenericArguments()[0];
+      System.Type enumBaseType = enumType.GetFirstInheritedGenericTypeParameters(typeof(Enumeration<>)).First();
+      ISplayedLazily._lazySplayedArchetypesByEnumBaseTypeAndEnumType.Add(enumBaseType, new() {
+        { enumType, getMethod }
+      });
     }
 
     /// <summary>
@@ -708,18 +731,30 @@ namespace Meep.Tech.Data.Configuration {
           | BindingFlags.Static
       )?.Invoke(null, new object[] { Universe });
 
+      bool skipTestBuildingModel = false;
+
       // assign root archetype references
       if (!Universe.Archetypes._rootArchetypeTypesByBaseModelType.ContainsKey(key: systemType.FullName) 
         && systemType.IsAssignableToGeneric(typeof(IModel<,>))
       ) {
         var types = systemType.GetFirstInheritedGenericTypeParameters(typeof(IModel<,>));
         if (!typeof(IModel.IBuilderFactory).IsAssignableFrom(types.Last())) {
+          Type rootArchetype = types.Last();
+
           Universe.Archetypes._rootArchetypeTypesByBaseModelType[systemType.FullName]
-            = types.Last();
+            = rootArchetype;
+
+          // if the type is an unasigned generic:
+          if (rootArchetype.FullName == null) {
+            skipTestBuildingModel = true;
+          }
         }
       }
 
-      var defaultModel = _testBuildDefaultModel(systemType);
+      IModel defaultModel = !skipTestBuildingModel 
+        ? _testBuildDefaultModel(systemType)
+        : null;
+
       try {
         Universe.Models._baseTypes.Add(
           systemType.FullName,

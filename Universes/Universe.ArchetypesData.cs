@@ -141,6 +141,10 @@ namespace Meep.Tech.Data {
         Archetype archetype;
         if (modelBaseType.IsAssignableToGeneric(typeof(IModel<,>))) {
           if (_rootArchetypeTypesByBaseModelType.TryGetValue(modelBaseType.FullName, out var rootArchetypeType)) {
+            if (rootArchetypeType.FullName == null) {
+              throw new Loader.CannotInitializeModelException($"Default archetype system type: {rootArchetypeType.Name}, for the model Type: {modelBaseType} can not be recovered as an archetype. The fullname returned by the base archetype System.Type was null, this likely means the base archetype is a generic type.");
+            }
+
             if ((archetype = rootArchetypeType.TryToGetAsArchetype()) != null) {
               return archetype;
             }

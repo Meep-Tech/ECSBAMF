@@ -406,18 +406,18 @@ namespace Meep.Tech.Data {
           }
 
           ctor = builderType
-              .GetConstructor(
-                System.Reflection.BindingFlags.NonPublic
-                  | System.Reflection.BindingFlags.Instance
-                  | System.Reflection.BindingFlags.Public,
-                null,
-                new Type[] { null, typeof(Universe) },
-                null
-              );
+            .GetConstructor(
+              System.Reflection.BindingFlags.NonPublic
+                | System.Reflection.BindingFlags.Instance
+                | System.Reflection.BindingFlags.Public,
+              null,
+              new Type[] { builderIdType, typeof(Universe) },
+              null
+            );
 
           return ctor.Invoke(new object[] {
             Activator.CreateInstance(
-null,
+              builderIdType,
               "Default",
               "Component.Factory",
               _universe,
@@ -448,7 +448,7 @@ null,
                 | System.Reflection.BindingFlags.Public,
               null,
               new Type[] {
-                null,
+                builderIdType,
                 typeof(Universe)
               },
               null
@@ -456,7 +456,7 @@ null,
 
         return ctor.Invoke(new object[] {
             Activator.CreateInstance(
-              null,
+              builderIdType,
               "Default",
               "Model.Factory",
               _universe,

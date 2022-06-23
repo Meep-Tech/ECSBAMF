@@ -90,9 +90,14 @@ namespace Meep.Tech.Data {
       }
 
       internal void _register(Enumeration enumeration) {
+        _addEnumToAllMatchingTypeCollections(enumeration);
+        _checkForAndInitializeLazilySplayedArchetypes(enumeration);
+      }
+
+      void _addEnumToAllMatchingTypeCollections(Enumeration enumeration) {
         var enumType = enumeration.GetType();
         while (enumType.IsAssignableToGeneric(typeof(Enumeration<>)) && (!enumType.IsGenericType || (enumType.GetGenericTypeDefinition() != typeof(Enumeration<>)))) {
-          if(_byType.TryGetValue(enumType.FullName, out var found)) {
+          if (_byType.TryGetValue(enumType.FullName, out var found)) {
             found.Add(
               enumeration.ExternalId,
              enumeration
@@ -104,6 +109,14 @@ namespace Meep.Tech.Data {
             };
 
           enumType = enumType.BaseType;
+        }
+      }
+
+      static void _checkForAndInitializeLazilySplayedArchetypes(Enumeration enumeration) {
+        if (Archetype.ISplayedLazily._lazySplayedArchetypesByEnumBaseTypeAndEnumType.TryGetValue(enumeration.EnumBaseType, out var potentialLazySplayedTypes)) {
+          if (potentialLazySplayedTypes.TryGetValue(enumeration.GetType(), out var lazySplayedArchetypeCtor)) {
+            lazySplayedArchetypeCtor(enumeration);
+          }
         }
       }
 

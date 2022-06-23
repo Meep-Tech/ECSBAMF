@@ -25,8 +25,9 @@ namespace Meep.Tech.Data {
 
       /// <summary>
       /// Code that's executed before final initialization but after registration of a new type of model.
+      /// Default model is null if the model type is generic and can't be tested.
       /// </summary>
-      internal protected virtual void OnModelTypeWasRegistered(System.Type modelType, IModel defaultModel) { }
+      internal protected virtual void OnModelTypeWasRegistered(System.Type modelType, IModel defaultModel = null) { }
 
       /// <summary>
       /// Code that's executed after a new type of model is initialized.

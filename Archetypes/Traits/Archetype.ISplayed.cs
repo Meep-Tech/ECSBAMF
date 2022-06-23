@@ -1,5 +1,8 @@
 ﻿using Meep.Tech.Data.Configuration;
+using System;
 using System.Collections.Generic;
+using System.Reflection;
+using static Meep.Tech.Data.Archetype;
 
 namespace Meep.Tech.Data {
 
@@ -8,13 +11,15 @@ namespace Meep.Tech.Data {
     /// <summary>
     /// The base non-generic interface for IBuildOneForEach
     /// </summary>
-    public interface ISplayed {
-    }
+    public interface ISplayed {}
 
     /// <summary>
     /// The base non-generic interface for IBuildOneForEach.Lazily
     /// </summary>
-    public interface ISplayedLazily : ISplayed { }
+    public interface ISplayedLazily : ISplayed {
+      internal static Dictionary<System.Type, Dictionary<System.Type, Action<Enumeration>>> _lazySplayedArchetypesByEnumBaseTypeAndEnumType
+        = new();
+    }
 
     /// <summary>
     /// This is a trait that dictates that one of these archetypes should be produced for each item in a given enumeration.
@@ -33,12 +38,29 @@ namespace Meep.Tech.Data {
       /// Used to splay the types lazily.
       /// This means the types will not splay on initial load
       /// </summary>
-      public interface Lazily : IBuildOneForEach<TEnumeration, TArchetypeBase>, ITrait<Lazily>, ISplayedLazily {
-        string ITrait<IBuildOneForEach<TEnumeration, TArchetypeBase>>.TraitName
+      public interface Lazily : ITrait<Lazily>, ISplayedLazily {
+        string ITrait<Lazily>.TraitName
           => "Splayed (Lazy)";
 
-        string ITrait<IBuildOneForEach<TEnumeration, TArchetypeBase>>.TraitDescription
+        string ITrait<Lazily>.TraitDescription
           => $"This Archetype was created by a Parent Archetype, along with one other archetype for each Enumeration in: ${typeof(TEnumeration).FullName}. This archetype's Associated Enum is: {AssociatedEnum}. The splayed types will NOT be built on initial load.";
+        
+        internal static Dictionary<TEnumeration, TArchetypeBase> _values
+          = new();
+
+        /// <summary>
+        /// the enum associated with this archetype.
+        /// </summary>
+        TEnumeration AssociatedEnum {
+          get;
+          internal protected set;
+        }
+
+        /// <summary>
+        /// This will be called for each enumeration loaded at runtime for the enumeration type.
+        /// TODO: If a new enumeration of the given type is loaded, a new type of this archetype will also try to be constructed here.
+        /// </summary>
+        internal protected TArchetypeBase ConstructArchetypeFor(TEnumeration enumeration);
       }
 
       string ITrait<IBuildOneForEach<TEnumeration, TArchetypeBase>>.TraitName
@@ -71,12 +93,20 @@ namespace Meep.Tech.Data {
   /// </summary>
   public static class SplayedArchetypedExtensions {
 
-      /// <summary>
-      /// Get the specific Archetype for an enum value.
-      /// </summary>
-      public static TArchetype For<TArchetype, TEnumeration>(this TArchetype splayedArchetype, TEnumeration enumeration)
-        where TArchetype : Archetype, Archetype.IBuildOneForEach<TEnumeration, TArchetype>
-        where TEnumeration : Enumeration
-          => Archetype.IBuildOneForEach<TEnumeration, TArchetype>._values[enumeration];
+    /// <summary>
+    /// Get the specific Archetype for an enum value.
+    /// </summary>
+    public static TArchetype For<TArchetype, TEnumeration>(this TArchetype splayedArchetype, TEnumeration enumeration)
+      where TArchetype : Archetype, Archetype.IBuildOneForEach<TEnumeration, TArchetype>
+      where TEnumeration : Enumeration
+        => Archetype.IBuildOneForEach<TEnumeration, TArchetype>._values[enumeration];
+
+    /// <summary>
+    /// Get the specific Archetype for an enum value.
+    /// </summary>
+    public static TLazyArchetype For<TLazyArchetype, TEnumeration>(this ISplayedLazily splayedArchetype, TEnumeration enumeration)
+      where TLazyArchetype : Archetype, Archetype.ISplayedLazily
+      where TEnumeration : Enumeration
+        => Archetype.IBuildOneForEach<TEnumeration, TLazyArchetype>.Lazily._values[enumeration];
   }
 }
