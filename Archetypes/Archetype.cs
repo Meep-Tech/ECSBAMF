@@ -693,7 +693,7 @@ namespace Meep.Tech.Data {
         _modelConstructor
           = builder => value.Invoke(builder);
 
-        if (Id.Key.Contains("PlayerCharacter")) {
+        if (Id.Key.Contains("Character")) {
           System.Diagnostics.Debugger.Break();
         }
 

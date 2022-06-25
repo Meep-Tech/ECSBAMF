@@ -58,7 +58,7 @@ namespace Meep.Tech.Data {
     public static IModel<TModel>.BuilderFactory Factory {
       get => (IModel<TModel>.BuilderFactory)
         Models.DefaultUniverse.Models
-          .GetBuilderFactoryFor<TModel>();
+          .SetInitialBuilderFactoryFor<TModel>();
       set {
         Models.DefaultUniverse.Models
           .SetInitialBuilderFactoryFor<TModel>(value);

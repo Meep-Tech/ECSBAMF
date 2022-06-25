@@ -103,7 +103,7 @@ namespace Meep.Tech.Data {
       /// <summary>
       /// Get the builder factory for a given type
       /// </summary>
-      public IModel.IBuilderFactory GetBuilderFactoryFor<TModel>()
+      public IModel.IBuilderFactory SetInitialBuilderFactoryFor<TModel>()
         where TModel : IModel<TModel>
           => GetBuilderFactoryFor(typeof(TModel));
 
@@ -114,9 +114,10 @@ namespace Meep.Tech.Data {
       public void SetInitialBuilderFactoryFor<TModel>(IModel.IBuilderFactory factory)
         where TModel : IModel<TModel> 
       {
-        if (!Universe.Loader.IsFinished || Universe.Loader.Options.AllowRuntimeTypeRegistrations) {
+        if (!Universe.Loader.IsFinished) {
           _universe.Models._factoriesByModelType[typeof(TModel)]
             = factory;
+          Universe.Loader._initializedArchetypes.Add(factory as Archetype);
         } else throw new InvalidOperationException($"Tried to edit a factory for the model type: {typeof(TModel).FullName} after the loader was sealed!");
       }
 

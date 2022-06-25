@@ -65,7 +65,7 @@ namespace Meep.Tech.Data {
       /// </summary>
       public IComponent.IBuilderFactory GetBuilderFactoryFor<TComponent>()
         where TComponent : IComponent<TComponent>
-          => (IComponent.IBuilderFactory)_universe.Models.GetBuilderFactoryFor<TComponent>();
+          => (IComponent.IBuilderFactory)_universe.Models.SetInitialBuilderFactoryFor<TComponent>();
 
       /// <summary>
       /// Set the builder factory for a type of component.

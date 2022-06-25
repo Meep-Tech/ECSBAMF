@@ -108,9 +108,9 @@ namespace Meep.Tech.Data.Configuration {
     Dictionary<System.Type, Exception> _uninitializedComponents;
 
     /// <summary>
-    /// The types we need to construct and map data to
+    /// The types that have been constructed and still need model data mapped to them.
     /// </summary>
-    List<Archetype> _initializedArchetypes;
+    internal HashSet<Archetype> _initializedArchetypes;
 
     /// <summary>
     /// How many initalization attempts are remaining
@@ -238,6 +238,17 @@ namespace Meep.Tech.Data.Configuration {
           }
         }
 
+        // then we run the static initializers for all simple models:
+        foreach (Type systemType in typesToBuild.Models.Where(t => typeof(IModel<>).IsAssignableFrom(t))) {
+          if (!_tryToPreInitializeSimpleModel(systemType, out var e)) {
+            if (e is CannotInitializeTypeException) {
+              _failedModels[systemType] = e;
+            }
+            else
+              _uninitializedModels[systemType] = e;
+          }
+        }
+
         // then initialize archetypes:
         foreach (Type systemType in typesToBuild.Archetypes) {
           if (!_tryToInitializeArchetype(systemType, out var e)) {
@@ -249,7 +260,7 @@ namespace Meep.Tech.Data.Configuration {
         }
 
         // then register models
-        foreach (Type systemType in typesToBuild.Models) {
+        foreach (Type systemType in typesToBuild.Models.Except(_failedModels.Keys)) {
           if (!_tryToInitializeModel(systemType, out var e)) {
             if (e is CannotInitializeTypeException) {
               _failedModels[systemType] = e;
@@ -706,7 +717,7 @@ namespace Meep.Tech.Data.Configuration {
 
           Func<IBuilder, IModel> defaultModelConstructor
             = Universe.Models._getDefaultCtorFor(branchAttribute.NewBaseModelType);
-          if (archetype.Id.Key.Contains("PlayerCharacter")) {
+          if (archetype.Id.Key.Contains("Character")) {
             System.Diagnostics.Debugger.Break();
           }
           (archetype as IFactory).ModelConstructor
@@ -761,6 +772,42 @@ namespace Meep.Tech.Data.Configuration {
     /// <summary>
     /// Try to initialize a model type.
     /// </summary>
+    bool _tryToPreInitializeSimpleModel(Type systemType, out Exception e) {
+      /// Check dependencies
+      if (Universe.Models.Dependencies.TryGetValue(systemType, out var dependencies)) {
+        Type firstUnloadedDependency
+          = dependencies.FirstOrDefault(t => !_initializedTypes.Contains(t));
+        if (firstUnloadedDependency != null) {
+          e = new MissingDependencyForModelException(systemType, firstUnloadedDependency);
+          return false;
+        }
+      }
+
+      // invoke static ctor
+
+      try {
+        _runStaticCtorsFromBaseClassUp(systemType);
+      }
+      catch (CannotInitializeModelException ce) {
+        if (Options.FatalOnCannotInitializeType) {
+          throw ce;
+        }
+
+        e = ce;
+        return false;
+      }
+      catch (Exception ex) {
+        e = new FailedToConfigureNewModelException($"Could not initialize Model of type {systemType} due to Unknown Inner Exception.", ex);
+        return false;
+      }
+
+      e = null;
+      return true;
+    }
+
+    /// <summary>
+    /// Try to initialize a model type.
+    /// </summary>
     bool _tryToInitializeModel(Type systemType, out Exception e) {
       /// Check dependencies
       if (Universe.Models.Dependencies.TryGetValue(systemType, out var dependencies)) {
@@ -772,7 +819,10 @@ namespace Meep.Tech.Data.Configuration {
         }
       }
 
+      // invoke static ctor
+
       try {
+        _runStaticCtorsFromBaseClassUp(systemType);
         _registerModelType(systemType);
       } catch (CannotInitializeModelException ce) {
         if (Options.FatalOnCannotInitializeType) {
@@ -799,9 +849,6 @@ namespace Meep.Tech.Data.Configuration {
     /// </summary>
     void _registerModelType(Type systemType) {
 
-      // invoke static ctor
-      _runStaticCtorsFromBaseClassUp(systemType);
-
       systemType.GetMethod(
         nameof(IModel.Setup),
         BindingFlags.Instance
@@ -809,7 +856,7 @@ namespace Meep.Tech.Data.Configuration {
           | BindingFlags.Static
       )?.Invoke(null, new object[] { Universe });
 
-      bool skipTestBuildingModel = false;
+      //bool skipTestBuildingModel = false;
 
       // assign root archetype references
       if (!Universe.Archetypes._rootArchetypeTypesByBaseModelType.ContainsKey(key: systemType.FullName) 
@@ -823,15 +870,15 @@ namespace Meep.Tech.Data.Configuration {
             = rootArchetype;
 
           // if the type is an unasigned generic:
-          if (rootArchetype.FullName == null) {
+          /*if (rootArchetype.FullName == null) {
             skipTestBuildingModel = true;
-          }
+          }*/
         }
       }
 
-      /*IModel defaultModel = !skipTestBuildingModel 
-        ? _testBuildDefaultModel(systemType)
-        : null;*/
+      _initializedArchetypes.Add(
+        _getDefaultFactoryBuilderForModel(systemType)
+      );
 
       try {
         Universe.Models._baseTypes.Add(
@@ -1082,14 +1129,7 @@ namespace Meep.Tech.Data.Configuration {
     /// Test build a model of the given type using it's default archetype or builder.
     /// </summary>
     IModel _testBuildDefaultModel(Type systemType) {
-      Archetype defaultFactory;
-      if (systemType.IsAssignableToGeneric(typeof(IModel<,>))) {
-        defaultFactory
-          = Universe.Archetypes.GetDefaultForModelOfType(systemType);
-      }
-      else {
-        defaultFactory = Universe.Models.GetBuilderFactoryFor(systemType) as Archetype;
-      }
+      Archetype defaultFactory = _getDefaultFactoryBuilderForModel(systemType);
 
       if (defaultFactory == null) {
         throw new Exception($"Could not make a default model for model of type: {systemType.FullName}. Could not fine a default BuilderFactory or Archetype to build it with.");
@@ -1112,6 +1152,11 @@ namespace Meep.Tech.Data.Configuration {
 
       return defaultModel;
     }
+
+    Archetype _getDefaultFactoryBuilderForModel(Type systemType) 
+      => systemType.IsAssignableToGeneric(typeof(IModel<,>))
+        ? Universe.Archetypes.GetDefaultForModelOfType(systemType)
+        : Universe.Models.GetBuilderFactoryFor(systemType) as Archetype;
 
     /// <summary>
     /// Test build a model of the given type using it's default archetype or builder.
@@ -1144,7 +1189,7 @@ namespace Meep.Tech.Data.Configuration {
         Func<IBuilder, IModel> defaultCtor = factory.Id.Universe.Models
           ._getDefaultCtorFor(factory.ModelTypeProduced);
 
-        if (factory.Id.Key.Contains("PlayerCharacter")) {
+        if (factory.Id.Key.Contains("Character")) {
           System.Diagnostics.Debugger.Break();
         }
         iFactory.ModelConstructor
@@ -1250,27 +1295,25 @@ namespace Meep.Tech.Data.Configuration {
     /// Try to finish all remaining initialized archetypes:
     /// </summary>
     void _tryToFinishAllInitalizedTypes() {
-      _initializedArchetypes.RemoveAll(archetype => {
+      var values = _initializedArchetypes.ToList();
+      values.RemoveAll(archetype => {
         try {
           archetype.Finish();
 
           return true;
         } // attempt failure: 
         catch(FailedToConfigureNewArchetypeException) {
-          //Debugger.LogError($"Failed on attempt #{Options.FinalizationAttempts - RemainingFinalizationAttempts} to construct new Archetype of type: {archetype} due to unknown internal error. \n ---------- \n Will retry \n ---------- \n. \nINTERNAL ERROR: {e}");
 
           return false;
-        }
+        } // attempt fatal: 
         catch(CannotInitializeArchetypeException) {
-          //Debugger.LogError($"Cannot finish archetype of type: {archetype} due to CannotInitializeArchetypeException. \n ---------- \n Will Not Retry \n ---------- \n INNER EXCEPTION:\n {e}" + $"\n{e}");
           if(Options.FatalOnCannotInitializeType) {
             throw;
           }
 
           return true;
-        }
-        catch(Exception) {
-          //Debugger.LogError($"Cannot finish archetype of type: {archetype} Due to unknown inner exception. \n ---------- \n Will Not Retry \n ---------- \n." + $"\n{e}");
+        } // attempt fatal: 
+        catch (Exception) {
           if(Options.FatalOnCannotInitializeType) {
             throw;
           }
@@ -1278,6 +1321,7 @@ namespace Meep.Tech.Data.Configuration {
           return true;
         }
       });
+      _initializedArchetypes = values.ToHashSet();
     }
 
     /// <summary>
