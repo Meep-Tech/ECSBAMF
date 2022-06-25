@@ -4,8 +4,6 @@ using System;
 using Newtonsoft.Json.Serialization;
 using System.Linq;
 using System.Reflection;
-using System.Diagnostics.CodeAnalysis;
-using Newtonsoft.Json.Linq;
 using Meep.Tech.Collections.Generic;
 
 namespace Meep.Tech.Data {
@@ -27,13 +25,6 @@ namespace Meep.Tech.Data {
         /// the universe this resolver is for
         /// </summary>
         public Universe Universe {
-          get;
-        }
-
-        /// <summary>
-        /// the universe this resolver is for
-        /// </summary>
-        public IContractResolver _baseResolver {
           get;
         }
 

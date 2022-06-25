@@ -282,7 +282,7 @@ namespace Meep.Tech.Data {
             result = (T)value.CastTo(valueType);
             return true;
           } catch (Exception e) {
-            throw new IModel.Builder.Param.MissmatchException($"Tried to get param as type {typeof(T).FullName}. The provided invalid value has Type {value?.GetType().FullName ?? "null"}, but should be of Type: {valueType.FullName}", e);
+            throw new IModel.Builder.Param.MissmatchException($"Tried to get param: {paramKey}, as type {typeof(T).FullName}. The provided invalid value has Type {value?.GetType().FullName ?? "null"}, but should be of Type: {valueType.FullName}", e);
           }
         }
       }
@@ -313,7 +313,7 @@ namespace Meep.Tech.Data {
           try {
             return (T)value.CastTo(valueType);
           } catch (Exception e) {
-            throw new IModel.Builder.Param.MissmatchException($"Tried to get param as type {typeof(T).FullName}. The provided invalid value has Type {value?.GetType().FullName ?? "null"}, but should be of Type: {valueType.FullName}.", e);
+            throw new IModel.Builder.Param.MissmatchException($"Tried to get param: {paramKey}, as type {typeof(T).FullName}. The provided invalid value has Type {value?.GetType().FullName ?? "null"}, but should be of Type: {valueType.FullName}.", e);
           }
         }
       }

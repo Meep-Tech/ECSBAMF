@@ -27,7 +27,7 @@ namespace Meep.Tech.Data {
       /// Code that's executed before final initialization but after registration of a new type of model.
       /// Default model is null if the model type is generic and can't be tested.
       /// </summary>
-      internal protected virtual void OnModelTypeWasRegistered(System.Type modelType, IModel defaultModel = null) { }
+      internal protected virtual void OnModelTypeWasRegistered(System.Type modelType) { }
 
       /// <summary>
       /// Code that's executed after a new type of model is initialized.
@@ -38,6 +38,11 @@ namespace Meep.Tech.Data {
       /// Code that's executed on finalization of a new type of model.
       /// </summary>
       internal protected virtual void OnArchetypeWasInitialized(System.Type archetypeType, Archetype archetype) { }
+
+      /// <summary>
+      /// Code that's executed when a test model is built for an archetype.
+      /// </summary>
+      internal protected virtual void OnTestModelBuilt(Archetype archetype, System.Type modelType, IModel testModel) { }
 
       /// <summary>
       /// Code that's executed when the initialization of all models, components, enums, and archetypes is complete.

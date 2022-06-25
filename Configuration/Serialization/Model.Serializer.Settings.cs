@@ -71,7 +71,9 @@ namespace Meep.Tech.Data {
 #if DEBUG
           ,
           DifferenceCallback = x => {
-            Console.WriteLine("Comparison Failed");
+            if (System.Diagnostics.Debugger.IsAttached) {
+              System.Diagnostics.Debugger.Break();
+            }
           }
 #endif
         };

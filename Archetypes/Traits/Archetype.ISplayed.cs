@@ -17,7 +17,7 @@ namespace Meep.Tech.Data {
     /// The base non-generic interface for IBuildOneForEach.Lazily
     /// </summary>
     public interface ISplayedLazily : ISplayed {
-      internal static Dictionary<System.Type, Dictionary<System.Type, Action<Enumeration>>> _lazySplayedArchetypesByEnumBaseTypeAndEnumType
+      internal static Dictionary<System.Type, Dictionary<System.Type, List<Func<Enumeration, Archetype>>>> _lazySplayedArchetypesByEnumBaseTypeAndEnumType
         = new();
     }
 

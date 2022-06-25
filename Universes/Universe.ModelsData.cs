@@ -111,10 +111,14 @@ namespace Meep.Tech.Data {
       /// Set the builder factory for a type of component.
       /// TODO: Must be doen during init
       /// </summary>
-      public void SetBuilderFactoryFor<TModel>(IModel.IBuilderFactory factory)
-        where TModel : IModel<TModel>
-          => _universe.Models._factoriesByModelType[typeof(TModel)]
+      public void SetInitialBuilderFactoryFor<TModel>(IModel.IBuilderFactory factory)
+        where TModel : IModel<TModel> 
+      {
+        if (!Universe.Loader.IsFinished || Universe.Loader.Options.AllowRuntimeTypeRegistrations) {
+          _universe.Models._factoriesByModelType[typeof(TModel)]
             = factory;
+        } else throw new InvalidOperationException($"Tried to edit a factory for the model type: {typeof(TModel).FullName} after the loader was sealed!");
+      }
 
       /// <summary>
       /// Get the model type an archetype should produce by default.

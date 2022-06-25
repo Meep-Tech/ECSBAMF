@@ -113,13 +113,13 @@ namespace Meep.Tech.Data {
       Factory = (IModel.IBuilderFactory)builder.Archetype;
       Universe
         = builder.Archetype.Id.Universe;
-      return Initialize((IBuilder<TModelBase>)builder);
+      return OnInitialized((IBuilder<TModelBase>)builder);
     }
 
     /// <summary>
     /// Can be used to initialize a model after the ctor call in xbam
     /// </summary>
-    protected virtual Model<TModelBase> Initialize(IBuilder<TModelBase> builder)
+    protected virtual Model<TModelBase> OnInitialized(IBuilder<TModelBase> builder)
       => this;
   }
 

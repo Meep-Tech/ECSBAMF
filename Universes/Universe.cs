@@ -22,6 +22,12 @@ namespace Meep.Tech.Data {
       = new();
 
     /// <summary>
+    /// The default archetype universe
+    /// </summary>
+    public static Universe Default
+      => Data.Archetypes.DefaultUniverse;
+
+    /// <summary>
     /// The unique key of this universe.
     /// </summary>
     public string Key {
@@ -82,7 +88,7 @@ namespace Meep.Tech.Data {
       Archetypes = new(this);
       Models = new(this);
       Components = new(this);
-      Enumerations = new();
+      Enumerations = new(this);
 
       // set this as the default universe if there isn't one yet
       Data.Archetypes.DefaultUniverse ??= this;

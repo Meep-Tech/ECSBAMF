@@ -60,10 +60,8 @@ namespace Meep.Tech.Data {
         Models.DefaultUniverse.Models
           .GetBuilderFactoryFor<TModel>();
       set {
-        // TODO: move this to a set function under Universe.Models for IModel<TModel> types
-        // ... and add a check to make sure the universe isn't locked.
         Models.DefaultUniverse.Models
-          ._factoriesByModelType[typeof(TModel)] = value;
+          .SetInitialBuilderFactoryFor<TModel>(value);
       }
     }
 

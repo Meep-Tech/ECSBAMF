@@ -18,7 +18,7 @@ namespace Meep.Tech.Data.Configuration {
   /// Loads archetypes.
   /// </summary>
   public sealed partial class Loader {
-    Dictionary<System.Type, Dictionary<System.Type, IModel>> _testModels;
+    internal Dictionary<System.Type, Dictionary<System.Type, IModel>> _testModels;
     Dictionary<Archetype, System.Type> _loadedTestParams;
     List<System.Type> _initializedTypes;
     List<Assembly> _assemblyLoadOrder;
@@ -159,6 +159,8 @@ namespace Meep.Tech.Data.Configuration {
         _tryToCompleteAllArchetypesInitialization();
         _tryToCompleteAllComponentsInitialization();
       }
+
+      _testBuildModelsForAllInitializedTypes();
 
       Universe._extraContexts.ToList().ForEach(context => context.Value.OnAllTypesInitializationComplete());
 
@@ -461,7 +463,9 @@ namespace Meep.Tech.Data.Configuration {
           // if this type's got enums we want:
           if (systemType.GetCustomAttribute<BuildAllDeclaredEnumValuesOnInitialLoadAttribute>() != null
             || systemType.IsAssignableToGeneric(typeof(Enumeration<>))
-            || systemType.IsAssignableToGeneric(typeof(Archetype<,>))
+            || (systemType.IsAssignableToGeneric(typeof(Archetype<,>)) 
+              && !Attribute.IsDefined(systemType, typeof(Settings.DoNotBuildInInitialLoadAttribute))
+                && !Attribute.IsDefined(systemType, typeof(Settings.DoNotBuildThisOrChildrenInInitialLoadAttribute), true))
           ) {
             _validateAssemblyCollectionExists(_assemblyTypesToBuild, assembly);
             foreach (PropertyInfo staticEnumProperty in systemType.GetProperties(BindingFlags.Static | BindingFlags.Public).Where(p => p.PropertyType.IsAssignableToGeneric(typeof(Enumeration<>)))) {
@@ -522,10 +526,11 @@ namespace Meep.Tech.Data.Configuration {
         }
       }
 
-      bool isSplayed = typeof(ISplayed).IsAssignableFrom(systemType);
-
+      bool isSplayed;
       Archetype archetype = null;
       try {
+        isSplayed = typeof(ISplayed).IsAssignableFrom(systemType);
+        // if not we need to construct a new one
         if (!isSplayed 
           || (!Attribute.IsDefined(systemType, typeof(Settings.DoNotBuildInInitialLoadAttribute))
             && !Attribute.IsDefined(systemType, typeof(Settings.DoNotBuildThisOrChildrenInInitialLoadAttribute), true))
@@ -545,10 +550,12 @@ namespace Meep.Tech.Data.Configuration {
         return false;
       }
 
+      // init splayed
       if (isSplayed) {
         _initializeSplayedArchetype(systemType);
       }
 
+      // done initializing!
       _initializedTypes.Add(systemType);
       if (archetype is not null) {
         Universe._extraContexts
@@ -560,35 +567,58 @@ namespace Meep.Tech.Data.Configuration {
     }
 
     void _initializeSplayedArchetype(Type systemType) {
-      object dummy = FormatterServices.GetUninitializedObject(systemType);
-      foreach (var splayType in systemType.GetAllInheritedGenericTypes(typeof(Archetype.IBuildOneForEach<,>))) {
-        MethodInfo getMethodInfo
-          = splayType.GetMethod("ConstructArchetypeFor", BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance);
-        Action<Enumeration> getMethod = new(@enum => getMethodInfo.Invoke(dummy, new[] { @enum }));
+      object dummy;
+      List<GenericTestArgumentAttribute> attributes = new();
+      if (systemType.ContainsGenericParameters) {
+        if ((attributes = systemType.GetCustomAttributes().Where(a => a is GenericTestArgumentAttribute).Cast<GenericTestArgumentAttribute>().ToList()).Any()) {
+          dummy = FormatterServices.GetUninitializedObject(systemType.MakeGenericType(attributes.OrderBy(a => a.Order).Select(a => a.GenericArgumentType).ToArray()));
+        } else throw new InvalidDataException($"Splayed Archetype of type: {systemType.Name} is generic, and does not implement one of more of the GenericTestArgumentAttribute");
+      } else {
+        dummy = FormatterServices.GetUninitializedObject(systemType);
+      }
 
-        if (!typeof(ISplayedLazily).IsAssignableFrom(splayType)) {
-          _constructSplayedArchetype(systemType, dummy, splayType, getMethodInfo);
+      foreach (var splayType in systemType.GetAllInheritedGenericTypes(typeof(Archetype.IBuildOneForEach<,>))) {
+        if (splayType.GetGenericArguments().Last() == systemType) {
+          var getMethod = _getSplayerArchetypeCtor(dummy, splayType);
+          _constructSplayedArchetypes(systemType, splayType, getMethod);
         }
-        else {
+      }
+
+      foreach (var splayType in systemType.GetAllInheritedGenericTypes(typeof(Archetype.IBuildOneForEach<,>.Lazily))) {
+        if (splayType.GetGenericArguments().Last() == systemType) {
+          var getMethod = _getSplayerArchetypeCtor(dummy, splayType);
           _prepareLazilySplayedArchetype(splayType, getMethod);
         }
       }
     }
 
-    void _constructSplayedArchetype(Type systemType, object dummy, Type splayType, MethodInfo getMethodInfo) {
+    static Func<Enumeration, Archetype> _getSplayerArchetypeCtor(object dummy, Type splayType) {
+      MethodInfo getMethodInfo
+        = splayType.GetMethod("ConstructArchetypeFor", BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance);
+       Func<Enumeration, Archetype> getMethod = new(@enum => (Archetype)getMethodInfo.Invoke(dummy, new[] { @enum }));
+      return getMethod;
+    }
+
+    void _constructSplayedArchetypes(Type systemType, Type splayType,  Func<Enumeration, Archetype> getMethod) {
       foreach (var @enum in Universe.Enumerations.GetAllByType(splayType.GetGenericArguments().First())) {
-        var newType = getMethodInfo.Invoke(dummy, new[] { @enum });
+        var newType = getMethod(@enum);
         Universe._extraContexts
-          .ForEach(context => context.Value.OnArchetypeWasInitialized(systemType, (Archetype)newType));
+          .ForEach(context => context.Value.OnArchetypeWasInitialized(systemType, newType));
       }
     }
 
-    static void _prepareLazilySplayedArchetype(Type splayType, Action<Enumeration> getMethod) {
+    static void _prepareLazilySplayedArchetype(Type splayType,  Func<Enumeration, Archetype> getMethod) {
       System.Type enumType = splayType.GetGenericArguments()[0];
       System.Type enumBaseType = enumType.GetFirstInheritedGenericTypeParameters(typeof(Enumeration<>)).First();
-      ISplayedLazily._lazySplayedArchetypesByEnumBaseTypeAndEnumType.Add(enumBaseType, new() {
-        { enumType, getMethod }
-      });
+      if(ISplayedLazily._lazySplayedArchetypesByEnumBaseTypeAndEnumType.TryGetValue(enumBaseType, out var existingWaitingLazySplayedTypes)) {
+        if (existingWaitingLazySplayedTypes.TryGetValue(enumType, out var existingWaitingLazyCtors)) {
+          existingWaitingLazyCtors.Add(getMethod);
+        } else existingWaitingLazySplayedTypes.Add(enumType, new() { getMethod });
+      } else {
+        ISplayedLazily._lazySplayedArchetypesByEnumBaseTypeAndEnumType[enumBaseType] = new() {
+          {enumType, new() {getMethod } }
+        };
+      }
     }
 
     /// <summary>
@@ -597,14 +627,41 @@ namespace Meep.Tech.Data.Configuration {
     /// Maybe this could be done more smoothly by pre-emptively registering all ids?
     /// </summary>
     Archetype _constructArchetypeFromSystemType(System.Type archetypeSystemType, int depth = 0) {
-      // Get ctor
-      ConstructorInfo archetypeConstructor = archetypeSystemType.GetConstructor(
-          BindingFlags.Instance | BindingFlags.NonPublic,
-          null,
-          new Type[0],
-          null
-        );
-      object[] ctorArgs = new object[0];
+      // see if we have a partially initialized archetype registered
+      Archetype archetype = archetypeSystemType?.TryToGetAsArchetype();
+
+      /// Try to construct it.
+      /// The CTor should register it to it's main collection.
+      try {
+        if (archetype is null) {
+          // Get ctor
+          _getArchetypeConstructorAndArgs(archetypeSystemType, out ConstructorInfo archetypeConstructor, out object[] ctorArgs);
+          archetype = (Archetype)archetypeConstructor.Invoke(ctorArgs);
+        }
+
+        // success:
+        _initializedArchetypes.Add(archetype);
+      } // attempt failure: 
+      catch (FailedToConfigureTypeException e) {
+        string failureMessage = $"Failed on attempt #{Options.InitializationAttempts - _remainingInitializationAttempts} to construct new Archetype of type: {archetypeSystemType.FullName} due to unknown internal error. \n ---------- \n Will retry \n ---------- \n.";
+        throw new FailedToConfigureNewArchetypeException(failureMessage, e);
+      } // fatal:
+      catch (Exception e) {
+        string fatalMessage = $"Cannot initialize archetype of type: {archetypeSystemType?.FullName ?? "NULLTYPE"} Due to unknown inner exception. \n ---------- \n Will Not Retry \n ---------- \n.";
+        throw new CannotInitializeArchetypeException(fatalMessage, e);
+      }
+
+      return archetype;
+    }
+
+    static void _getArchetypeConstructorAndArgs(Type archetypeSystemType, out ConstructorInfo archetypeConstructor, out object[] ctorArgs) {
+      archetypeConstructor = archetypeSystemType.GetConstructor(
+        BindingFlags.Instance | BindingFlags.NonPublic,
+        null,
+        new Type[0],
+        null
+      );
+      ctorArgs = new object[0];
 
       // We first look for a private parameterless ctor, then for a protected ctor with one argument which inherits from ArchetypeId.
       if (archetypeConstructor == null) {
@@ -616,12 +673,26 @@ namespace Meep.Tech.Data.Configuration {
           throw new CannotInitializeArchetypeException($"Cannot initialize type: {archetypeSystemType?.FullName ?? "ERRORNULLTYPE"},\n  it does not impliment either:\n\t\t a private or protected parameterless constructor that takes no arguments,\n\t\t or a protected/private ctor that takes one argument that inherits from ArchetypeId that accepts the default of Null for singleton initialization.");
         }
       }
+    }
 
-      /// Try to construct it.
-      /// The CTor should register it to it's main collection.
-      Archetype archetype;
+    /// <summary>
+    /// Try to build a test model for each archetype, and throw if it fails
+    /// </summary>
+    void _testBuildModelsForAllInitializedTypes() {
+      foreach (var archetype in _initializedArchetypes) {
+        if(!_tryToBuildDefaultModelForArchetype(archetype.GetType(), archetype, out var failureException)) {
+          _initializedArchetypes.Remove(archetype);
+          _uninitializedArchetypes.Add(archetype.GetType(), failureException);
+          _failedArchetypes.Add(archetype.GetType(), failureException);
+          archetype.TryToUnload();
+        }
+      }
+    }
+
+    bool _tryToBuildDefaultModelForArchetype(Type archetypeSystemType, Archetype archetype, out Exception exception) {
+      exception = null;
+      IModel defaultModel = null;
       try {
-        archetype = (Archetype)archetypeConstructor.Invoke(ctorArgs);
         // load branch attribute and set the new model ctor if there is one
         BranchAttribute branchAttribute;
         // (first one is newest inherited)
@@ -635,45 +706,52 @@ namespace Meep.Tech.Data.Configuration {
 
           Func<IBuilder, IModel> defaultModelConstructor
             = Universe.Models._getDefaultCtorFor(branchAttribute.NewBaseModelType);
+          if (archetype.Id.Key.Contains("PlayerCharacter")) {
+            System.Diagnostics.Debugger.Break();
+          }
           (archetype as IFactory).ModelConstructor
             = defaultModelConstructor;
         }
 
+
         // Try to make the default model, and register what that is:
-        IModel defaultModel
+        defaultModel
           = Configuration.Loader.GetOrBuildTestModel(
               archetype,
               archetype.ModelTypeProduced
           );
-
-        archetype.ModelTypeProduced
-          = Universe.Models._modelTypesProducedByArchetypes[archetype]
-          = defaultModel.GetType();
-
-        if (!Universe.Archetypes._rootArchetypeTypesByBaseModelType.ContainsKey(defaultModel.GetType().FullName)) {
-          Universe.Archetypes._rootArchetypeTypesByBaseModelType[defaultModel.GetType().FullName] = archetype.GetType();
-        }
-
-        // success:
-        _initializedArchetypes.Add(archetype);
-      } // attempt failure: 
-      catch (FailedToConfigureNewArchetypeException e) {
-        string failureMessage;
-        try {
-          failureMessage = $"Failed on attempt #{Options.InitializationAttempts - _remainingInitializationAttempts} to construct new Archetype of type: {archetypeSystemType.FullName} due to unknown internal error. \n ---------- \n Will retry \n ---------- \n.";
-        } // fatal:
-        catch (Exception ex) {
-          string fatalMessage = $"Cannot initialize archetype of type: {archetypeSystemType?.FullName ?? "NULLTYPE"} for unknown reasons. \n ---------- \n Will Not Retry \n ---------- \n.";
-          throw new CannotInitializeArchetypeException(fatalMessage, ex);
-        }
-        throw new FailedToConfigureNewArchetypeException(failureMessage, e);
-      } // fatal:
+      }
+      catch (CannotInitializeTypeException e) {
+        exception = e;
+      }
+      catch (MissingDependencyForModelException e) {
+        exception = new FailedToConfigureNewModelException($"Could not configure default model. Will try again.", e);
+      }
+      catch (FailedToConfigureNewModelException e) {
+        exception = new FailedToConfigureNewArchetypeException($"Could not configure default model. Will try again.", e);
+      }
       catch (Exception e) {
-        string fatalMessage = $"Cannot initialize archetype of type: {archetypeSystemType?.FullName ?? "NULLTYPE"} Due to unknown inner exception. \n ---------- \n Will Not Retry \n ---------- \n.";
-        throw new CannotInitializeArchetypeException(fatalMessage, e);
+        exception = new FailedToConfigureNewModelException($"Could not configure default model. Will try again.", e);
       }
 
-      return archetype;
+      if (exception is not null) {
+        return false;
+      }
+
+      System.Type modelType = defaultModel.GetType();
+
+      archetype.ModelTypeProduced
+        = Universe.Models._modelTypesProducedByArchetypes[archetype]
+        = modelType;
+
+      if (!Universe.Archetypes._rootArchetypeTypesByBaseModelType.ContainsKey(modelType.FullName)) {
+        Universe.Archetypes._rootArchetypeTypesByBaseModelType[modelType.FullName] = archetype.GetType();
+      }
+
+      Universe._extraContexts
+        .ForEach(context => context.Value.OnTestModelBuilt(archetype,  modelType, defaultModel ));
+
+      return true;
     }
 
     #endregion
@@ -751,9 +829,9 @@ namespace Meep.Tech.Data.Configuration {
         }
       }
 
-      IModel defaultModel = !skipTestBuildingModel 
+      /*IModel defaultModel = !skipTestBuildingModel 
         ? _testBuildDefaultModel(systemType)
-        : null;
+        : null;*/
 
       try {
         Universe.Models._baseTypes.Add(
@@ -767,7 +845,7 @@ namespace Meep.Tech.Data.Configuration {
       }
 
       Universe._extraContexts
-        .ForEach(context => context.Value.OnModelTypeWasRegistered(systemType, defaultModel));
+        .ForEach(context => context.Value.OnModelTypeWasRegistered(systemType));
     }
 
     #endregion
@@ -913,16 +991,22 @@ namespace Meep.Tech.Data.Configuration {
     /// <summary>
     /// A function that can be used to test build models.
     /// </summary>
+    public static IModel GetOrBuildTestModel(System.Type modelBase, Universe universe) {
+      if (universe.Loader._staticallyInitializedTypes.Contains(modelBase)) {
+        var factory = universe.Archetypes.GetDefaultForModelOfType(modelBase);
+        return GetOrBuildTestModel(factory, modelBase);
+      } else throw new FailedToConfigureNewModelException($"Cannot make a default test model with an unknown archetype if it's static constructors have not yet been called as a different archetype may have been set inthe static ctor.");
+    }
+
+    /// <summary>
+    /// A function that can be used to test build models.
+    /// </summary>
     public static IModel GetOrBuildTestModel(Archetype factory, System.Type modelBase) {
       // check the cache (if there is one still)
       if ((factory.Id.Universe.Loader._testModels?.ContainsKey(factory.GetType()) ?? false)
         && factory.Id.Universe.Loader._testModels[factory.GetType()].ContainsKey(modelBase)
       ) {
         return factory.Id.Universe.Loader._testModels[factory.GetType()][modelBase];
-      }
-
-      if (factory.Id.Name.Contains("Jelly")) {
-        Console.WriteLine("");
       }
 
       IBuilder testBuilder
@@ -1023,7 +1107,7 @@ namespace Meep.Tech.Data.Configuration {
         Universe.Models._modelTypesProducedByArchetypes[defaultFactory] = defaultModel.GetType();
       }
       catch (Exception e) {
-        throw new Exception($"Could not make a default model for model of type: {systemType.FullName}, using default archeytpe of type: {defaultFactory}.", e);
+        throw new FailedToConfigureNewModelException($"Could not make a default model for model of type: {systemType.FullName}, using default archeytpe of type: {defaultFactory}.", e);
       }
 
       return defaultModel;
@@ -1060,6 +1144,9 @@ namespace Meep.Tech.Data.Configuration {
         Func<IBuilder, IModel> defaultCtor = factory.Id.Universe.Models
           ._getDefaultCtorFor(factory.ModelTypeProduced);
 
+        if (factory.Id.Key.Contains("PlayerCharacter")) {
+          System.Diagnostics.Debugger.Break();
+        }
         iFactory.ModelConstructor
           = builder => defaultCtor.Invoke(builder);
       }
@@ -1088,9 +1175,6 @@ namespace Meep.Tech.Data.Configuration {
 
     Dictionary<string, object> _loadOrGetTestParams(Archetype factoryType, System.Type modelType) {
       System.Type currentModelType = null;
-      if (modelType.Name.Contains("Jelly")) {
-        Console.WriteLine("");
-      }
       if (!factoryType.Id.Universe.Loader.IsFinished) {
         if (_loadedTestParams?.TryGetValue(factoryType, out currentModelType) ?? false) {
           if (currentModelType != modelType) {

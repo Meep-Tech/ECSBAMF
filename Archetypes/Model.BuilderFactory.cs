@@ -19,6 +19,7 @@ namespace Meep.Tech.Data {
     /// <summary>
     /// The factory that was used to make this object
     /// </summary>
+    [ArchetypeProperty]
     public IModel.IBuilderFactory Factory {
       get;
       private set;

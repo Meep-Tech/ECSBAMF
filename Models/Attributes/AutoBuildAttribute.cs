@@ -111,14 +111,14 @@ namespace Meep.Tech.Data {
         .Select(e => (
           order: e.a.Order, 
           name: e.a.ParameterName ?? e.p.Name, 
-          func: new Func<IModel, IBuilder, IModel>((m, b) => _buildField(m, b, e.p, e.a, modelType))
+          func: new Func<IModel, IBuilder, IModel>((m, b) => _autoBuildModelProperty(m, b, e.p, e.a, modelType))
         )).OrderBy(e => e.order)
         .Select(e => (e.name, e.func));
 
     /// <summary>
     /// TODO: this needs to be heavily optomized.
     /// </summary>
-    static IModel _buildField(IModel m, IBuilder b, PropertyInfo p, AutoBuildAttribute attributeData, System.Type modelType) {
+    static IModel _autoBuildModelProperty(IModel m, IBuilder b, PropertyInfo p, AutoBuildAttribute attributeData, System.Type modelType) {
       try {
         System.Reflection.MethodInfo setter = p.GetSetMethod(true);
         if (setter is null) {
@@ -141,7 +141,7 @@ namespace Meep.Tech.Data {
         }
 
         if (!attributeData._checkedRequired) {
-          attributeData.IsRequiredAsAParameter = attributeData.IsRequiredAsAParameter || p.GetCustomAttributes().Where(a => a.GetType().Name == "Required").Any();
+          attributeData.IsRequiredAsAParameter = attributeData.IsRequiredAsAParameter || p.GetCustomAttributes().Where(a => a.GetType().Name == "RequiredAttribute").Any();
           attributeData._checkedRequired = true;
         }
 
@@ -165,7 +165,7 @@ namespace Meep.Tech.Data {
         if (!attributeData._checkedNotNull) {
           attributeData.NotNull = attributeData.NotNull
             || p.GetCustomAttributes()
-              .Where(a => a.GetType().Name == "NotNull")
+              .Where(a => a.GetType().Name == "NotNullAttribute")
               .Any();
           attributeData._checkedNotNull = true;
         }

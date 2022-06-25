@@ -1,4 +1,5 @@
-﻿using Meep.Tech.Data.Reflection;
+﻿using Meep.Tech.Collections.Generic;
+using Meep.Tech.Data.Reflection;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -10,6 +11,17 @@ namespace Meep.Tech.Data {
     /// Data pertaining to enumerations
     /// </summary>
     public class EnumerationData {
+
+      /// <summary>
+      /// The universe this data is for
+      /// </summary>
+      public Universe Universe {
+        get;
+      }
+
+      internal EnumerationData(Universe universe) {
+        Universe = universe;
+      }
 
       /// <summary>
       /// All enumerations indexed by type.
@@ -112,10 +124,15 @@ namespace Meep.Tech.Data {
         }
       }
 
-      static void _checkForAndInitializeLazilySplayedArchetypes(Enumeration enumeration) {
+      void _checkForAndInitializeLazilySplayedArchetypes(Enumeration enumeration) {
         if (Archetype.ISplayedLazily._lazySplayedArchetypesByEnumBaseTypeAndEnumType.TryGetValue(enumeration.EnumBaseType, out var potentialLazySplayedTypes)) {
-          if (potentialLazySplayedTypes.TryGetValue(enumeration.GetType(), out var lazySplayedArchetypeCtor)) {
-            lazySplayedArchetypeCtor(enumeration);
+          if (potentialLazySplayedTypes.TryGetValue(enumeration.GetType(), out var lazySplayedArchetypeCtors)) {
+            IEnumerable<Archetype> archetypes = lazySplayedArchetypeCtors.Select( c => c(enumeration));
+            archetypes.ForEach(a => {
+              var t = a.GetType();
+              Universe._extraContexts
+                .ForEach(context => context.Value.OnArchetypeWasInitialized(t, a));
+            });
           }
         }
       }

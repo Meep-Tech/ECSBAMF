@@ -117,7 +117,7 @@ namespace Meep.Tech.Data.Configuration {
     /// <summary>
     /// Exeption thrown when a dependency for a type is missing
     /// </summary>
-    public class MissingDependencyException : InvalidOperationException {
+    public class MissingDependencyException : FailedToConfigureTypeException {
       public MissingDependencyException(string message) : base(message) { }
       public MissingDependencyException(string message, Exception innerException) : base(message, innerException) { }
       internal MissingDependencyException(string type, Type dependentType, System.Type missingDependency) : base(

@@ -139,6 +139,11 @@ namespace Meep.Tech.Data {
     /// </summary>
     protected internal virtual void Finish() {}
 
+    /// <summary>
+    /// Try to unload this archetype
+    /// </summary>
+    protected internal abstract void TryToUnload();
+
     #endregion
 
     #region Initialization
@@ -688,6 +693,10 @@ namespace Meep.Tech.Data {
         _modelConstructor
           = builder => value.Invoke(builder);
 
+        if (Id.Key.Contains("PlayerCharacter")) {
+          System.Diagnostics.Debugger.Break();
+        }
+
         IModel model
           = Configuration.Loader.GetOrBuildTestModel(
               this,
@@ -826,7 +835,7 @@ namespace Meep.Tech.Data {
     /// </summary>
     /// <returns></returns>
     protected internal virtual TModelBase Make(IEnumerable<KeyValuePair<string, object>> @params)
-      => BuildModel(MakeBuilder(@params.ToDictionary(
+      => BuildModel(MakeBuilder(@params?.ToDictionary(
         param => param.Key,
         param => param.Value
       )));
@@ -835,14 +844,14 @@ namespace Meep.Tech.Data {
     /// Helper for potentially making an item without initializing a Builder object.
     /// </summary>
     protected internal TModelBase Make(IEnumerable<(string key, object value)> @params)
-      => Make(@params.Select(entry => new KeyValuePair<string,object>(entry.key, entry.value)));
+      => Make(@params?.Select(entry => new KeyValuePair<string,object>(entry.key, entry.value)));
 
     /// <summary>
     /// Helper for potentially making an item without initializing a Builder object.
     /// </summary>
     protected internal TDesiredModel Make<TDesiredModel>(IEnumerable<(string key, object value)> @params)
       where TDesiredModel : TModelBase
-      => (TDesiredModel)Make(@params.Select(entry => new KeyValuePair<string,object>(entry.key, entry.value)));
+      => (TDesiredModel)Make(@params?.Select(entry => new KeyValuePair<string,object>(entry.key, entry.value)));
 
     /// <summary>
     /// Helper for potentially making an item without initializing a Builder object.
@@ -854,14 +863,14 @@ namespace Meep.Tech.Data {
     /// Helper for potentially making an item without initializing a Builder object.
     /// </summary>
     protected internal TModelBase Make(IEnumerable<(IModel.Builder.Param key, object value)> @params)
-      => Make(@params.Select(entry => new KeyValuePair<IModel.Builder.Param, object>(entry.key, entry.value)));
+      => Make(@params?.Select(entry => new KeyValuePair<IModel.Builder.Param, object>(entry.key, entry.value)));
 
     /// <summary>
     /// Helper for potentially making an item without initializing a Builder object.
     /// </summary>
     protected internal TDesiredModel Make<TDesiredModel>(IEnumerable<(IModel.Builder.Param key, object value)> @params)
       where TDesiredModel : TModelBase
-      => (TDesiredModel)Make(@params.Select(entry => new KeyValuePair<IModel.Builder.Param, object>(entry.key, entry.value)));
+      => (TDesiredModel)Make(@params?.Select(entry => new KeyValuePair<IModel.Builder.Param, object>(entry.key, entry.value)));
 
     /// <summary>
     /// Helper for potentially making an item without initializing a Builder object.
@@ -873,7 +882,7 @@ namespace Meep.Tech.Data {
     /// Helper for potentially making an item without initializing a Builder object.
     /// </summary>
     protected internal TModelBase Make(IEnumerable<KeyValuePair<IModel.Builder.Param, object>> @params)
-      => Make(@params.Select(entry => new KeyValuePair<string,object>(entry.Key.Key, entry.Value)));
+      => Make(@params?.Select(entry => new KeyValuePair<string,object>(entry.Key.Key, entry.Value)));
 
     /// <summary>
     /// Helper for potentially making an item without initializing a Builder object.
@@ -1113,7 +1122,7 @@ namespace Meep.Tech.Data {
     /// <summary>
     /// Attempts to unload this archetype from the universe and collections it's registered to
     /// </summary>
-    protected void TryToUnload() {
+    protected internal sealed override void TryToUnload() {
       // TODO: should this be it's own setting; AllowDeInitializationsAfterLoaderFinalization?
       if (!Id.Universe.Loader.IsFinished || AllowInitializationsAfterLoaderFinalization) {
         Universe universe = Id.Universe;
