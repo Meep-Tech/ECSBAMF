@@ -22,11 +22,11 @@ namespace Meep.Tech.Collections.Generic {
       get => base[index]; 
       set {
         if (base[index].HasValue) {
-          _entryIndexes.RemoveFromHashSet(base[index].Value.Value.StackKey, index);
+          _entryIndexes.RemoveFromInnerHashSet(base[index].Value.Value.StackKey, index);
         }
         base[index] = value;
         if (value.HasValue) {
-          _entryIndexes.AddToHashSet(value.Value.Value.StackKey, index);
+          _entryIndexes.AddToInnerHashSet(value.Value.Value.StackKey, index);
         }
       }
     }
@@ -54,7 +54,7 @@ namespace Meep.Tech.Collections.Generic {
       int currentStacks = Count;
       base.Add(item, count);
       if (currentStacks != Count && item is not null) {
-        _entryIndexes.AddToHashSet(item.StackKey, Count - 1);
+        _entryIndexes.AddToInnerHashSet(item.StackKey, Count - 1);
       }
     }
 
@@ -63,7 +63,7 @@ namespace Meep.Tech.Collections.Generic {
       int currentStacks = Count;
       base.Add(items);
       if (currentStacks != Count && items.HasValue) {
-        _entryIndexes.AddToHashSet(items.Value.Value.StackKey, Count - 1);
+        _entryIndexes.AddToInnerHashSet(items.Value.Value.StackKey, Count - 1);
       }
     }
 
@@ -79,7 +79,7 @@ namespace Meep.Tech.Collections.Generic {
         _values[existingStackIndex].Value.Remove(remainder, out remainder);
         if (!_values[existingStackIndex].Value.Any()) {
           _values[existingStackIndex] = null;
-          _entryIndexes.RemoveFromHashSet(value.StackKey, existingStackIndex);
+          _entryIndexes.RemoveFromInnerHashSet(value.StackKey, existingStackIndex);
         }
       }
 

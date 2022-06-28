@@ -69,8 +69,8 @@ namespace Meep.Tech.Collections.Generic {
     public virtual void Add(IEnumerable<TTag> tags, TValue value) {
       if (tags.Any()) {
         tags.ForEach(tag => {
-          _valuesByTag.AddToHashSet(tag, value);
-          _tagsByValue.AddToHashSet(value, tag);
+          _valuesByTag.AddToInnerHashSet(tag, value);
+          _tagsByValue.AddToInnerHashSet(value, tag);
         });
       }
       else

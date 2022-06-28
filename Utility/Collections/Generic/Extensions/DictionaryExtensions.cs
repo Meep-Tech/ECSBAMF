@@ -102,7 +102,7 @@ namespace Meep.Tech.Collections.Generic {
     /// <summary>
     /// Add an item to a ICollection within a dictionary at the given key
     /// </summary>
-    public static void AddToHashSet<TKey, TValue>(this IDictionary<TKey, HashSet<TValue>> dictionary, TKey key, TValue value) {
+    public static void AddToInnerHashSet<TKey, TValue>(this IDictionary<TKey, HashSet<TValue>> dictionary, TKey key, TValue value) {
       if (dictionary.TryGetValue(key, out HashSet<TValue> valueCollection)) {
         valueCollection.Add(value);
       } else
@@ -112,7 +112,7 @@ namespace Meep.Tech.Collections.Generic {
     /// <summary>
     /// Add an item to a ICollection within a dictionary at the given key
     /// </summary>
-    public static bool RemoveFromHashSet<TKey, TValue>(this IDictionary<TKey, HashSet<TValue>> dictionary, TKey key, TValue value) {
+    public static bool RemoveFromInnerHashSet<TKey, TValue>(this IDictionary<TKey, HashSet<TValue>> dictionary, TKey key, TValue value) {
       if (dictionary.TryGetValue(key, out HashSet<TValue> valueCollection)) {
         return valueCollection.Remove(value);
       } else return false;

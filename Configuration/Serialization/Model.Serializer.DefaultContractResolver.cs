@@ -92,7 +92,7 @@ namespace Meep.Tech.Data {
             }
           }
 
-          Universe._extraContexts.ForEach(c => c.Value.OnModelJsonPropertyCreated(member, baseProperty));
+          Universe.ExtraContexts.OnLoaderModelJsonPropertyCreationComplete(member, baseProperty);
           return baseProperty;
         }
       }

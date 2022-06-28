@@ -202,11 +202,6 @@ namespace Meep.Tech.Data {
             ) == null) {
               continue;
             }
-            if (typeof(Archetype.ISplayed).IsAssignableFrom(archetype.Type)) {
-              if (!typeof(Archetype.ISplayedLazily).IsAssignableFrom(attributeTrait.GetType())) {
-                continue;
-              }
-            }
           }
 
           foreach (System.Type interfaceTrait in attributeTrait.GetType().GetAllInheritedGenericTypes(typeof(ITrait<>))) {

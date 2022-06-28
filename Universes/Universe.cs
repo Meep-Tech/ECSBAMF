@@ -2,6 +2,7 @@
 using Meep.Tech.Data.Configuration;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace Meep.Tech.Data {
 
@@ -10,8 +11,6 @@ namespace Meep.Tech.Data {
   /// This is what the loader builds.
   /// </summary>
   public partial class Universe {
-    internal readonly Dictionary<Type, ExtraContext> _extraContexts
-      = new();
 
     /// <summary>
     /// All Universes
@@ -79,6 +78,13 @@ namespace Meep.Tech.Data {
     }
 
     /// <summary>
+    /// The extra contexts
+    /// </summary>
+    public ExtraContextsData ExtraContexts {
+      get;
+    }
+
+    /// <summary>
     /// Make a new universe of Archetypes
     /// </summary>
     public Universe(Loader loader, string nameKey = null) {
@@ -89,6 +95,7 @@ namespace Meep.Tech.Data {
       Models = new(this);
       Components = new(this);
       Enumerations = new(this);
+      ExtraContexts = new ExtraContextsData(this);
 
       // set this as the default universe if there isn't one yet
       Data.Archetypes.DefaultUniverse ??= this;
@@ -105,7 +112,9 @@ namespace Meep.Tech.Data {
         throw new Exception($"Must add extra context before the loader for the universe has finished.");
       }
       extraContext.Universe = this;
-      _extraContexts[typeof(TExtraContext)] = extraContext;
+      ExtraContexts._extraContexts[typeof(TExtraContext)] = extraContext;
+
+      ExtraContexts._addAllOverrideDelegates(extraContext);
     }
 
     /// <summary>
@@ -114,7 +123,7 @@ namespace Meep.Tech.Data {
     public TExtraContext GetExtraContext<TExtraContext>()
       where TExtraContext : ExtraContext {
       try {
-        return (TExtraContext)_extraContexts[typeof(TExtraContext)];
+        return (TExtraContext)ExtraContexts._extraContexts[typeof(TExtraContext)];
       } catch (System.Collections.Generic.KeyNotFoundException keyNotFoundE) {
         throw new KeyNotFoundException($"No extra context of the type {typeof(TExtraContext).FullName} added to this universe. Further ECSBAM configuration may be required.", keyNotFoundE);
       }

@@ -125,13 +125,12 @@ namespace Meep.Tech.Data {
       }
 
       void _checkForAndInitializeLazilySplayedArchetypes(Enumeration enumeration) {
-        if (Archetype.ISplayedLazily._lazySplayedArchetypesByEnumBaseTypeAndEnumType.TryGetValue(enumeration.EnumBaseType, out var potentialLazySplayedTypes)) {
+        if (Archetype.ISplayed._splayedArchetypeCtorsByEnumBaseTypeAndEnumType.TryGetValue(enumeration.EnumBaseType, out var potentialLazySplayedTypes)) {
           if (potentialLazySplayedTypes.TryGetValue(enumeration.GetType(), out var lazySplayedArchetypeCtors)) {
-            IEnumerable<Archetype> archetypes = lazySplayedArchetypeCtors.Select( c => c(enumeration));
-            archetypes.ForEach(a => {
-              var t = a.GetType();
-              Universe._extraContexts
-                .ForEach(context => context.Value.OnArchetypeWasInitialized(t, a));
+            lazySplayedArchetypeCtors.ForEach(c => {
+              Universe.ExtraContexts.OnLoaderArchetypeInitializationStart(enumeration.GetType(), true);
+              var a = c(enumeration);
+              Universe.ExtraContexts.OnLoaderArchetypeInitializationComplete(true, a.GetType(), a, null, true);
             });
           }
         }

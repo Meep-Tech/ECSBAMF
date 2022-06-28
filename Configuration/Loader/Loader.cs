@@ -24,6 +24,76 @@ namespace Meep.Tech.Data.Configuration {
     List<Assembly> _assemblyLoadOrder;
 
     /// <summary>
+    /// The assembly types that will be built in order
+    /// </summary>
+    OrderedDictionary<Assembly, AssemblyBuildableTypesCollection> _assemblyTypesToBuild;
+
+    /// <summary>
+    /// The types that failed entirely
+    /// </summary>
+    Dictionary<System.Type, Exception> _failedArchetypes;
+
+    /// <summary>
+    /// The types that failed entirely
+    /// </summary>
+    Dictionary<MemberInfo, Exception> _failedEnumerations;
+
+    /// <summary>
+    /// The types that failed entirely
+    /// </summary>
+    Dictionary<System.Type, Exception> _failedModels;
+
+    /// <summary>
+    /// The types that failed entirely
+    /// </summary>
+    Dictionary<System.Type, Exception> _failedComponents;
+
+    /// <summary>
+    /// The types we need to construct and map data to
+    /// </summary>
+    internal Dictionary<System.Type, Exception> _uninitializedArchetypes;
+
+    /// <summary>
+    /// The types we need to construct and map data to
+    /// </summary>
+    internal Dictionary<System.Type, Exception> _uninitializedModels;
+
+    /// <summary>
+    /// The types we need to construct and map data to
+    /// </summary>
+    internal Dictionary<System.Type, Exception> _uninitializedComponents;
+
+    /// <summary>
+    /// The types we need to construct and map data to
+    /// </summary>
+    internal Dictionary<PropertyInfo, Exception> _uninitializedEnums;
+
+    /// <summary>
+    /// The types that have been constructed and still need model data mapped to them.
+    /// </summary>
+    internal HashSet<Archetype> _initializedArchetypes;
+
+    /// <summary>
+    /// How many initalization attempts are remaining
+    /// </summary>
+    int _remainingInitializationAttempts;
+
+    /// <summary>
+    /// How many finalization attempts are remaining
+    /// </summary>
+    int _remainingFinalizationAttempts;
+
+    /// <summary>
+    /// Externally fetched assemblies for loading
+    /// </summary>
+    List<Assembly> _unorderedAssembliesToLoad;
+
+    /// <summary>
+    /// The assemblies from Options.PreOrderedAssemblyFiles along with order.json combined and ready to use
+    /// </summary>
+    Map<ushort, string> _orderedAssemblyFiles;
+
+    /// <summary>
     /// The specified settings for this loader
     /// </summary>
     public Settings Options {
@@ -68,69 +138,13 @@ namespace Meep.Tech.Data.Configuration {
       => _initializedTypes;
 
     /// <summary>
-    /// The assembly types that will be built in order
+    /// The total count of currently uninitialized types.
     /// </summary>
-    OrderedDictionary<Assembly, AssemblyBuildableTypesCollection> _assemblyTypesToBuild;
-
-    /// <summary>
-    /// The types we need to construct and map data to
-    /// </summary>
-    Dictionary<System.Type, Exception> _uninitializedArchetypes;
-
-    /// <summary>
-    /// The types that failed entirely
-    /// </summary>
-    Dictionary<System.Type, Exception> _failedArchetypes;
-
-    /// <summary>
-    /// The types that failed entirely
-    /// </summary>
-    Dictionary<MemberInfo, Exception> _failedEnumerations;
-
-    /// <summary>
-    /// The types that failed entirely
-    /// </summary>
-    Dictionary<System.Type, Exception> _failedModels;
-
-    /// <summary>
-    /// The types that failed entirely
-    /// </summary>
-    Dictionary<System.Type, Exception> _failedComponents;
-
-    /// <summary>
-    /// The types we need to construct and map data to
-    /// </summary>
-    Dictionary<System.Type, Exception> _uninitializedModels;
-
-    /// <summary>
-    /// The types we need to construct and map data to
-    /// </summary>
-    Dictionary<System.Type, Exception> _uninitializedComponents;
-
-    /// <summary>
-    /// The types that have been constructed and still need model data mapped to them.
-    /// </summary>
-    internal HashSet<Archetype> _initializedArchetypes;
-
-    /// <summary>
-    /// How many initalization attempts are remaining
-    /// </summary>
-    int _remainingInitializationAttempts;
-
-    /// <summary>
-    /// How many finalization attempts are remaining
-    /// </summary>
-    int _remainingFinalizationAttempts;
-
-    /// <summary>
-    /// Externally fetched assemblies for loading
-    /// </summary>
-    List<Assembly> _unorderedAssembliesToLoad;
-
-    /// <summary>
-    /// The assemblies from Options.PreOrderedAssemblyFiles along with order.json combined and ready to use
-    /// </summary>
-    Map<ushort, string> _orderedAssemblyFiles;
+    public int UninitializedTypesCount
+      => (_uninitializedArchetypes?.Count ?? 0) 
+        + (_uninitializedModels?.Count ?? 0) 
+        + (_uninitializedComponents?.Count ?? 0) 
+        + (_uninitializedEnums?.Count ?? 0);
 
     #region Initialization
 
@@ -146,27 +160,37 @@ namespace Meep.Tech.Data.Configuration {
     /// Try to load all archetypes, using the Settings
     /// </summary>
     public void Initialize(Universe universe = null) {
+      universe?.ExtraContexts.OnLoaderInitializationStart(this);
       _initFields();
 
       Universe = universe ?? Universe ?? new Universe(this, Options.UniverseName);
-      Universe._extraContexts.ToList().ForEach(context => context.Value.OnLoaderInitialize());
       _initializeModelSerializerSettings();
+
+      Universe.ExtraContexts.OnLoaderInitializationComplete(Universe);
+
       _initalizeCompatableArchetypeData();
+
+      Universe.ExtraContexts.OnLoaderInitialSystemTypesCollected();
+
       _initializeTypesByAssembly();
 
-      while (_remainingInitializationAttempts-- > 0 && _uninitializedArchetypes.Count + _uninitializedModels.Count + _uninitializedComponents.Count > 0) {
+      Universe.ExtraContexts.OnLoaderTypesInitializationFirstRunComplete();
+
+      while (_remainingInitializationAttempts-- > 0 && UninitializedTypesCount > 0) {
+        int attemptNumber = Options.InitializationAttempts - _remainingFinalizationAttempts + 1;
+        Universe.ExtraContexts.OnLoaderFurtherAnizializationAttemptStart(attemptNumber);
+        _tryToCompleteAllEnumsInitialization();
         _tryToCompleteAllModelsInitialization();
         _tryToCompleteAllArchetypesInitialization();
         _tryToCompleteAllComponentsInitialization();
+        Universe.ExtraContexts.OnLoaderFurtherAnizializationAttemptComplete(attemptNumber);
       }
+
+      Universe.ExtraContexts.OnLoaderTypesInitializationAllRunsComplete();
 
       _testBuildModelsForAllInitializedTypes();
 
-      Universe._extraContexts.ToList().ForEach(context => context.Value.OnAllTypesInitializationComplete());
-
-      _applyModificationsToAllTypesByAssemblyLoadOrder();
-
-      Universe._extraContexts.ToList().ForEach(context => context.Value.OnModificationsComplete());
+      _tryToLoadAllModifiers();
 
       while (_remainingFinalizationAttempts-- > 0 && _initializedArchetypes.Count > 0) {
         _tryToFinishAllInitalizedTypes();
@@ -191,6 +215,7 @@ namespace Meep.Tech.Data.Configuration {
       _uninitializedComponents = new();
       _uninitializedModels = new();
       _uninitializedArchetypes = new();
+      _uninitializedEnums = new();
 
       _failedEnumerations = new();
       _failedArchetypes = new();
@@ -210,6 +235,8 @@ namespace Meep.Tech.Data.Configuration {
       _loadModLoadOrderFromJson();
       _orderAssembliesByModLoadOrder();
 
+      Universe.ExtraContexts.OnLoaderAssembliesCollected(_assemblyLoadOrder);
+
       _loadAllBuildableTypes();
     }
 
@@ -223,9 +250,16 @@ namespace Meep.Tech.Data.Configuration {
 
     void _initializeTypesByAssembly() {
       foreach (AssemblyBuildableTypesCollection typesToBuild in _assemblyTypesToBuild.Values) {
+        Universe.ExtraContexts.OnLoaderAssemblyLoadStart(typesToBuild);
+
         // enums first:
         foreach (PropertyInfo prop in typesToBuild.Enumerations) {
-          _registerEnumValue(prop);
+          if (!_tryToInitializeAndBuildEnumType(prop, out var e)) {
+            if (e is CannotInitializeTypeException) {
+              _failedEnumerations[prop] = e;
+            } else
+              _uninitializedEnums[prop] = e;
+          }
         }
 
         // components next: 
@@ -259,6 +293,11 @@ namespace Meep.Tech.Data.Configuration {
           }
         }
 
+        // try to register any new splayed archetypes.
+        foreach(var splayedInterfaceType in ISplayed._splayedInterfaceTypes) {
+          _constructSplayedArchetypes(splayedInterfaceType);
+        }
+
         // then register models
         foreach (Type systemType in typesToBuild.Models.Except(_failedModels.Keys)) {
           if (!_tryToInitializeModel(systemType, out var e)) {
@@ -268,6 +307,8 @@ namespace Meep.Tech.Data.Configuration {
               _uninitializedModels[systemType] = e;
           }
         }
+
+        Universe.ExtraContexts.OnLoaderAssemblyLoadComplete(typesToBuild);
       }
     }
 
@@ -440,7 +481,7 @@ namespace Meep.Tech.Data.Configuration {
             // ... if it extends Archetype<,> 
             if (systemType.IsAssignableToGeneric(typeof(Archetype<,>))) {
               _validateAssemblyCollectionExists(_assemblyTypesToBuild, assembly);
-              _assemblyTypesToBuild[assembly].Archetypes.Add(systemType);
+              _assemblyTypesToBuild[assembly]._archetypes.Add(systemType);
               IEnumerable<DependencyAttribute> dependencies = systemType.GetCustomAttributes<DependencyAttribute>();
               if (dependencies?.Any() ?? false) {
                 Universe.Archetypes._dependencies[systemType] = dependencies.Select(d => d.DependentOnType);
@@ -450,14 +491,14 @@ namespace Meep.Tech.Data.Configuration {
               _validateAssemblyCollectionExists(_assemblyTypesToBuild, assembly);
               // ... if it's an IComponent<>
               if (systemType.IsAssignableToGeneric(typeof(IComponent<>))) {
-                _assemblyTypesToBuild[assembly].Components.Add(systemType);
+                _assemblyTypesToBuild[assembly]._components.Add(systemType);
                 IEnumerable<DependencyAttribute> dependencies = systemType.GetCustomAttributes<DependencyAttribute>();
                 if (dependencies?.Any() ?? false) {
                   Universe.Components._dependencies[systemType] = dependencies.Select(d => d.DependentOnType);
                 }
               }
               else {
-                _assemblyTypesToBuild[assembly].Models.Add(systemType);
+                _assemblyTypesToBuild[assembly]._models.Add(systemType);
                 IEnumerable<DependencyAttribute> dependencies = systemType.GetCustomAttributes<DependencyAttribute>();
                 if (dependencies?.Any() ?? false) {
                   Universe.Models._dependencies[systemType] = dependencies.Select(d => d.DependentOnType);
@@ -480,7 +521,7 @@ namespace Meep.Tech.Data.Configuration {
           ) {
             _validateAssemblyCollectionExists(_assemblyTypesToBuild, assembly);
             foreach (PropertyInfo staticEnumProperty in systemType.GetProperties(BindingFlags.Static | BindingFlags.Public).Where(p => p.PropertyType.IsAssignableToGeneric(typeof(Enumeration<>)))) {
-              _assemblyTypesToBuild[assembly].Enumerations.Add(staticEnumProperty);
+              _assemblyTypesToBuild[assembly]._enumerations.Add(staticEnumProperty);
             }
           }
           else
@@ -501,23 +542,62 @@ namespace Meep.Tech.Data.Configuration {
       }
     }
 
-    class AssemblyBuildableTypesCollection {
+    /// <summary>
+    /// Used to hold assembly types to load.
+    /// </summary>
+    public class AssemblyBuildableTypesCollection {
+      internal List<Type> _archetypes
+          = new();
+      internal List<Type> _models
+          = new();
+      internal List<Type> _components
+          = new();
+      internal List<PropertyInfo> _enumerations
+          = new();
 
-      internal List<Type> Archetypes
-          = new();
-      internal List<Type> Models
-          = new();
-      internal List<Type> Components
-          = new();
-      internal List<PropertyInfo> Enumerations
-          = new();
-      internal Type Modifications;
+      /// <summary>
+      /// The archetype types
+      /// </summary>
+      public IReadOnlyList<Type> Archetypes
+          => _archetypes;
 
-      internal Assembly Assembly {
+      /// <summary>
+      /// The model types
+      /// </summary>
+      public IReadOnlyList<Type> Models
+          => _models;
+
+      /// <summary>
+      /// The component types
+      /// </summary>
+      public IReadOnlyList<Type> Components
+          => _components;
+
+      /// <summary>
+      /// The enumeration properties
+      /// </summary>
+      public IReadOnlyList<PropertyInfo> Enumerations
+          => _enumerations;
+
+      /// <summary>
+      /// The single modification class allowed per assembly.
+      /// </summary>
+      public Type Modifications {
+        get;
+        internal set;
+      }
+
+      /// <summary>
+      /// The assembly these types are from
+      /// </summary>
+      public Assembly Assembly {
         get;
       }
 
-      public AssemblyBuildableTypesCollection(Assembly assembly) {
+      /// <summary>
+      /// Used to make a new buildable type collection.
+      /// </summary>
+      internal AssemblyBuildableTypesCollection(Assembly assembly) {
         Assembly = assembly;
       }
     }
@@ -527,12 +607,14 @@ namespace Meep.Tech.Data.Configuration {
     #region Archetype Init
 
     bool _tryToInitializeArchetype(Type systemType, out Exception e) {
+      Universe.ExtraContexts.OnLoaderArchetypeInitializationStart(systemType, false);
       /// Check dependencies. TODO: for a,m,&c, index items by their waiting dependency and when a type loads check if anything is waiting on it, and try to load it then.
       if (Universe.Archetypes.Dependencies.TryGetValue(systemType, out var dependencies)) {
         Type firstUnloadedDependency
           = dependencies.FirstOrDefault(t => !_initializedTypes.Contains(t));
         if (firstUnloadedDependency != null) {
           e = new MissingDependencyForArchetypeException(systemType, firstUnloadedDependency);
+          Universe.ExtraContexts.OnLoaderArchetypeInitializationComplete(false, systemType, null, e, false);
           return false;
         }
       }
@@ -551,13 +633,16 @@ namespace Meep.Tech.Data.Configuration {
         }
       } catch (CannotInitializeArchetypeException ce) {
         if (Options.FatalOnCannotInitializeType) {
+          Universe.ExtraContexts.OnLoaderArchetypeInitializationComplete(false, systemType, null, ce, false);
           throw ce;
         }
 
         e = ce;
+        Universe.ExtraContexts.OnLoaderArchetypeInitializationComplete(false, systemType, null, e, false);
         return false;
       } catch (FailedToConfigureNewArchetypeException fe) {
         e = fe;
+        Universe.ExtraContexts.OnLoaderArchetypeInitializationComplete(false, systemType, null, e, false);
         return false;
       }
 
@@ -568,12 +653,9 @@ namespace Meep.Tech.Data.Configuration {
 
       // done initializing!
       _initializedTypes.Add(systemType);
-      if (archetype is not null) {
-        Universe._extraContexts
-          .ForEach(context => context.Value.OnArchetypeWasInitialized(systemType, archetype));
-      }
 
       e = null;
+      Universe.ExtraContexts.OnLoaderArchetypeInitializationComplete(true, systemType, archetype, e, false);
       return true;
     }
 
@@ -588,45 +670,57 @@ namespace Meep.Tech.Data.Configuration {
         dummy = FormatterServices.GetUninitializedObject(systemType);
       }
 
-      foreach (var splayType in systemType.GetAllInheritedGenericTypes(typeof(Archetype.IBuildOneForEach<,>))) {
+      foreach (var splayType in systemType.GetAllInheritedGenericTypes(typeof(Archetype.ISplayed<,>))) {
         if (splayType.GetGenericArguments().Last() == systemType) {
           var getMethod = _getSplayerArchetypeCtor(dummy, splayType);
-          _constructSplayedArchetypes(systemType, splayType, getMethod);
-        }
-      }
-
-      foreach (var splayType in systemType.GetAllInheritedGenericTypes(typeof(Archetype.IBuildOneForEach<,>.Lazily))) {
-        if (splayType.GetGenericArguments().Last() == systemType) {
-          var getMethod = _getSplayerArchetypeCtor(dummy, splayType);
-          _prepareLazilySplayedArchetype(splayType, getMethod);
+          _prepareSplayedArchetype(splayType, getMethod, out var enumBaseType);
+          _constructSplayedArchetypes(splayType);
         }
       }
     }
 
     static Func<Enumeration, Archetype> _getSplayerArchetypeCtor(object dummy, Type splayType) {
       MethodInfo getMethodInfo
-        = splayType.GetMethod("ConstructArchetypeFor", BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance);
+        = splayType.GetMethod("_constructArchetypeFor", BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance);
        Func<Enumeration, Archetype> getMethod = new(@enum => (Archetype)getMethodInfo.Invoke(dummy, new[] { @enum }));
       return getMethod;
     }
 
-    void _constructSplayedArchetypes(Type systemType, Type splayType,  Func<Enumeration, Archetype> getMethod) {
-      foreach (var @enum in Universe.Enumerations.GetAllByType(splayType.GetGenericArguments().First())) {
-        var newType = getMethod(@enum);
-        Universe._extraContexts
-          .ForEach(context => context.Value.OnArchetypeWasInitialized(systemType, newType));
-      }
+    void _constructSplayedArchetypes(Type splayInterfaceType) {
+      System.Type enumType = splayInterfaceType.GetGenericArguments()[0];
+      System.Type enumBaseType = enumType.GetFirstInheritedGenericTypeParameters(typeof(Enumeration<>)).First();
+
+      var enumValues = Universe.Enumerations.GetAllByType(enumType);
+      ISplayed._splayedArchetypeCtorsByEnumBaseTypeAndEnumType[enumBaseType][enumType].ForEach(getMethod => {
+        foreach (var @enum in enumValues.Except(ISplayed._completedEnumsByInterfaceBase.TryToGet(splayInterfaceType) ?? Enumerable.Empty<Enumeration>())) {
+          Universe.ExtraContexts.OnLoaderArchetypeInitializationStart(splayInterfaceType.GetGenericArguments()[1], true);
+          // TODO: try catch.
+          var newType = getMethod(@enum);
+          ISplayed._completedEnumsByInterfaceBase.AddToInnerHashSet(splayInterfaceType, @enum);
+          Universe.ExtraContexts.OnLoaderArchetypeInitializationComplete(true, newType.GetType(), newType, null, true);
+
+        }
+      });
     }
 
-    static void _prepareLazilySplayedArchetype(Type splayType,  Func<Enumeration, Archetype> getMethod) {
-      System.Type enumType = splayType.GetGenericArguments()[0];
-      System.Type enumBaseType = enumType.GetFirstInheritedGenericTypeParameters(typeof(Enumeration<>)).First();
-      if(ISplayedLazily._lazySplayedArchetypesByEnumBaseTypeAndEnumType.TryGetValue(enumBaseType, out var existingWaitingLazySplayedTypes)) {
+    static void _prepareSplayedArchetype(Type splayInterfaceType, Func<Enumeration, Archetype> getMethod, out System.Type enumBaseType) {
+      System.Type enumType = splayInterfaceType.GetGenericArguments()[0];
+      enumBaseType = enumType.GetFirstInheritedGenericTypeParameters(typeof(Enumeration<>)).First();
+
+      var allowLazyPropAttribute
+        = splayInterfaceType.GetGenericArguments().Last()
+        .GetCustomAttribute<AllowLazyArchetypeInitializationsOnNewLazyEnumerationInitializationsAttribute>();
+
+      if (allowLazyPropAttribute is not null && allowLazyPropAttribute.SplayType == splayInterfaceType) {
+        ISplayed._splayedInterfaceTypesThatAllowLazyInitializations.Add(getMethod);
+      }
+
+      if (ISplayed._splayedArchetypeCtorsByEnumBaseTypeAndEnumType.TryGetValue(enumBaseType, out var existingWaitingLazySplayedTypes)) {
         if (existingWaitingLazySplayedTypes.TryGetValue(enumType, out var existingWaitingLazyCtors)) {
           existingWaitingLazyCtors.Add(getMethod);
         } else existingWaitingLazySplayedTypes.Add(enumType, new() { getMethod });
       } else {
-        ISplayedLazily._lazySplayedArchetypesByEnumBaseTypeAndEnumType[enumBaseType] = new() {
+        ISplayed._splayedArchetypeCtorsByEnumBaseTypeAndEnumType[enumBaseType] = new() {
           {enumType, new() {getMethod } }
         };
       }
@@ -690,6 +784,7 @@ namespace Meep.Tech.Data.Configuration {
     /// Try to build a test model for each archetype, and throw if it fails
     /// </summary>
     void _testBuildModelsForAllInitializedTypes() {
+      Universe.ExtraContexts.OnLoaderBuildAllTestModelsStart(_initializedArchetypes.Count);
       foreach (var archetype in _initializedArchetypes) {
         if(!_tryToBuildDefaultModelForArchetype(archetype.GetType(), archetype, out var failureException)) {
           _initializedArchetypes.Remove(archetype);
@@ -698,9 +793,11 @@ namespace Meep.Tech.Data.Configuration {
           archetype.TryToUnload();
         }
       }
+      Universe.ExtraContexts.OnLoaderBuildAllTestModelsComplete();
     }
 
     bool _tryToBuildDefaultModelForArchetype(Type archetypeSystemType, Archetype archetype, out Exception exception) {
+      Universe.ExtraContexts.OnLoaderTestModelBuildStart(archetype);
       exception = null;
       IModel defaultModel = null;
       try {
@@ -746,6 +843,7 @@ namespace Meep.Tech.Data.Configuration {
       }
 
       if (exception is not null) {
+        Universe.ExtraContexts.OnLoaderTestModelBuildComplete(false, archetype, defaultModel, exception);
         return false;
       }
 
@@ -759,8 +857,7 @@ namespace Meep.Tech.Data.Configuration {
         Universe.Archetypes._rootArchetypeTypesByBaseModelType[modelType.FullName] = archetype.GetType();
       }
 
-      Universe._extraContexts
-        .ForEach(context => context.Value.OnTestModelBuilt(archetype,  modelType, defaultModel ));
+      Universe.ExtraContexts.OnLoaderTestModelBuildComplete(true, archetype, defaultModel, null);
 
       return true;
     }
@@ -773,12 +870,15 @@ namespace Meep.Tech.Data.Configuration {
     /// Try to initialize a model type.
     /// </summary>
     bool _tryToPreInitializeSimpleModel(Type systemType, out Exception e) {
+      Universe.ExtraContexts.OnLoaderSimpleModelInitializationStart(systemType);
       /// Check dependencies
       if (Universe.Models.Dependencies.TryGetValue(systemType, out var dependencies)) {
         Type firstUnloadedDependency
           = dependencies.FirstOrDefault(t => !_initializedTypes.Contains(t));
         if (firstUnloadedDependency != null) {
           e = new MissingDependencyForModelException(systemType, firstUnloadedDependency);
+          Universe.ExtraContexts.OnLoaderSimpleModelInitializationComplete(false, systemType, e);
+
           return false;
         }
       }
@@ -794,14 +894,17 @@ namespace Meep.Tech.Data.Configuration {
         }
 
         e = ce;
+        Universe.ExtraContexts.OnLoaderSimpleModelInitializationComplete(false, systemType, e);
         return false;
       }
       catch (Exception ex) {
         e = new FailedToConfigureNewModelException($"Could not initialize Model of type {systemType} due to Unknown Inner Exception.", ex);
+        Universe.ExtraContexts.OnLoaderSimpleModelInitializationComplete(false, systemType, e);
         return false;
       }
 
       e = null;
+      Universe.ExtraContexts.OnLoaderSimpleModelInitializationComplete(true, systemType, null);
       return true;
     }
 
@@ -809,12 +912,14 @@ namespace Meep.Tech.Data.Configuration {
     /// Try to initialize a model type.
     /// </summary>
     bool _tryToInitializeModel(Type systemType, out Exception e) {
+      Universe.ExtraContexts.OnLoaderModelFullInitializationStart(systemType);
       /// Check dependencies
       if (Universe.Models.Dependencies.TryGetValue(systemType, out var dependencies)) {
         Type firstUnloadedDependency
           = dependencies.FirstOrDefault(t => !_initializedTypes.Contains(t));
         if (firstUnloadedDependency != null) {
           e = new MissingDependencyForModelException(systemType, firstUnloadedDependency);
+          Universe.ExtraContexts.OnLoaderModelFullInitializationComplete(false, systemType, e);
           return false;
         }
       }
@@ -826,21 +931,23 @@ namespace Meep.Tech.Data.Configuration {
         _registerModelType(systemType);
       } catch (CannotInitializeModelException ce) {
         if (Options.FatalOnCannotInitializeType) {
+          Universe.ExtraContexts.OnLoaderModelFullInitializationComplete(false, systemType, ce);
           throw ce;
         }
 
         e = ce;
+        Universe.ExtraContexts.OnLoaderModelFullInitializationComplete(false, systemType, e);
         return false;
       } catch (Exception ex) {
         e = new FailedToConfigureNewModelException($"Could not initialize Model of type {systemType} due to Unknown Inner Exception.", ex);
+        Universe.ExtraContexts.OnLoaderModelFullInitializationComplete(false, systemType, e); 
         return false;
       }
 
       _initializedTypes.Add(systemType);
-      Universe._extraContexts
-        .ForEach(context => context.Value.OnModelTypeWasInitialized(systemType));
 
       e = null;
+      Universe.ExtraContexts.OnLoaderModelFullInitializationComplete(true, systemType, e);
       return true;
     }
 
@@ -848,37 +955,60 @@ namespace Meep.Tech.Data.Configuration {
     /// Register a new type of model.
     /// </summary>
     void _registerModelType(Type systemType) {
+      Universe.ExtraContexts.OnLoaderModelFullRegistrationStart(systemType);
 
-      systemType.GetMethod(
-        nameof(IModel.Setup),
-        BindingFlags.Instance
-          | BindingFlags.NonPublic
-          | BindingFlags.Static
-      )?.Invoke(null, new object[] { Universe });
+      try {
+        systemType.GetMethod(
+          nameof(IModel.Setup),
+          BindingFlags.Instance
+            | BindingFlags.NonPublic
+            | BindingFlags.Static
+        )?.Invoke(null, new object[] { Universe });
 
-      //bool skipTestBuildingModel = false;
+        bool testBuildRequiresGenericType = false;
 
-      // assign root archetype references
-      if (!Universe.Archetypes._rootArchetypeTypesByBaseModelType.ContainsKey(key: systemType.FullName) 
-        && systemType.IsAssignableToGeneric(typeof(IModel<,>))
-      ) {
-        var types = systemType.GetFirstInheritedGenericTypeParameters(typeof(IModel<,>));
-        if (!typeof(IModel.IBuilderFactory).IsAssignableFrom(types.Last())) {
-          Type rootArchetype = types.Last();
+        // assign root archetype references
+        if (!Universe.Archetypes._rootArchetypeTypesByBaseModelType.ContainsKey(key: systemType.FullName)
+          && systemType.IsAssignableToGeneric(typeof(IModel<,>))
+        ) {
+          var types = systemType.GetFirstInheritedGenericTypeParameters(typeof(IModel<,>));
+          if (!typeof(IModel.IBuilderFactory).IsAssignableFrom(types.Last())) {
+            Type rootArchetype = types.Last();
 
-          Universe.Archetypes._rootArchetypeTypesByBaseModelType[systemType.FullName]
-            = rootArchetype;
+            Universe.Archetypes._rootArchetypeTypesByBaseModelType[systemType.FullName]
+              = rootArchetype;
 
-          // if the type is an unasigned generic:
-          /*if (rootArchetype.FullName == null) {
-            skipTestBuildingModel = true;
-          }*/
+            // if the type is an unasigned generic:
+            if (rootArchetype.FullName == null) {
+              testBuildRequiresGenericType = true;
+            }
+          }
         }
-      }
 
-      _initializedArchetypes.Add(
-        _getDefaultFactoryBuilderForModel(systemType)
-      );
+        System.Type typeToTest = systemType;
+        if (testBuildRequiresGenericType) {
+          IEnumerable<GenericTestArgumentAttribute> attributes;
+          if ((attributes = systemType.GetCustomAttributes().Where(a => a is GenericTestArgumentAttribute).Cast<GenericTestArgumentAttribute>()).Any()) {
+            typeToTest = systemType.MakeGenericType(
+              attributes.OrderBy(a => a.Order)
+                .Select(a => a.GenericArgumentType)
+                .ToArray()
+            );
+          }
+          else {
+            var ex = new InvalidDataException($"Model of type: {systemType.Name} is generic, and does not implement one of more of the GenericTestArgumentAttribute");
+            Universe.ExtraContexts.OnLoaderModelFullRegistrationComplete(false, systemType, ex);
+            throw ex;
+          }
+        }
+
+        _initializedArchetypes.Add(
+          _getDefaultFactoryBuilderForModel(typeToTest)
+        );
+      } catch (Exception e) {
+        Universe.ExtraContexts.OnLoaderModelFullRegistrationComplete(false, systemType, e);
+        throw e;
+      }
 
       try {
         Universe.Models._baseTypes.Add(
@@ -887,12 +1017,13 @@ namespace Meep.Tech.Data.Configuration {
             ?? systemType.GetFirstInheritedGenericTypeParameters(typeof(IModel<,>)).First()
         );
       }
-      catch (Exception e) {
-        throw new NotImplementedException($"Could not find IModel<> Base Type for {systemType}, does it inherit from IModel by mistake instead of Model<T>?", e);
+      catch (Exception e) {  
+        var ex = new NotImplementedException($"Could not find IModel<> Base Type for {systemType}, does it inherit from IModel by mistake instead of Model<T>?", e);
+        Universe.ExtraContexts.OnLoaderModelFullRegistrationComplete(false, systemType, ex);
+        throw ex;
       }
 
-      Universe._extraContexts
-        .ForEach(context => context.Value.OnModelTypeWasRegistered(systemType));
+      Universe.ExtraContexts.OnLoaderModelFullRegistrationComplete(true, systemType, null);
     }
 
     #endregion
@@ -903,12 +1034,14 @@ namespace Meep.Tech.Data.Configuration {
     /// Try to initialize a component type.
     /// </summary>
     bool _tryToInitializeComponent(Type systemType, out Exception e) {
+      Universe.ExtraContexts.OnLoaderComponentInitializationStart(systemType);
       /// Check dependencies
       if (Universe.Components.Dependencies.TryGetValue(systemType, out var dependencies)) {
         Type firstUnloadedDependency
           = dependencies.FirstOrDefault(t => !_initializedTypes.Contains(t));
         if (firstUnloadedDependency != null) {
           e = new MissingDependencyForComponentException(systemType, firstUnloadedDependency);
+          Universe.ExtraContexts.OnLoaderComponentInitializationComplete(false, systemType, e);
           return false;
         }
       }
@@ -921,14 +1054,17 @@ namespace Meep.Tech.Data.Configuration {
         }
 
         e = ce;
+        Universe.ExtraContexts.OnLoaderComponentInitializationComplete(false, systemType, e);
         return false;
       } catch (Exception ex) {
         e = new FailedToConfigureNewComponentException($"Could not initialize Component of type {systemType} due to Unknown Inner Exception.", ex);
+        Universe.ExtraContexts.OnLoaderComponentInitializationComplete(false, systemType, e);
         return false;
       }
 
       _initializedTypes.Add(systemType);
       e = null;
+      Universe.ExtraContexts.OnLoaderComponentInitializationComplete(true, systemType, null);
       return true;
     }
 
@@ -947,7 +1083,17 @@ namespace Meep.Tech.Data.Configuration {
           | BindingFlags.Static
       )?.Invoke(null, new object[] { Universe });
 
-      _testBuildDefaultComponent(systemType);
+      Universe.ExtraContexts.OnLoaderBuildTestComponentStart(systemType);
+      IComponent testComponent = null;
+      try {
+        testComponent = _testBuildDefaultComponent(systemType);
+      } catch (Exception e) {
+        Universe.ExtraContexts.OnLoaderBuildTestComponentComplete(false, systemType, testComponent, e);
+        throw e;
+      }
+      Universe.ExtraContexts.OnLoaderBuildTestComponentComplete(true, systemType, testComponent, null);
+      
+
       try {
         Universe.Components._baseTypes.Add(
           systemType.FullName,
@@ -995,37 +1141,62 @@ namespace Meep.Tech.Data.Configuration {
 
     #region Enum Init
 
-    void _registerEnumValue(PropertyInfo prop) {
+    bool _tryToInitializeAndBuildEnumType(PropertyInfo prop, out Exception ex) {
+      Universe.ExtraContexts.OnLoaderEnumInitializationStart(prop);
+      bool success = true;
+      Enumeration value = null;
+      ex = null;
+
       try {
-        prop.GetValue(null);
+        value = (Enumeration)prop.GetValue(null);
       }
       catch (Exception e) {
+        ex = e;
         _failedEnumerations.Add(prop, e);
+        success = false;
       }
+
+      Universe.ExtraContexts.OnLoaderEnumInitializationComplete(success, prop, value, ex);
+      return success;
     }
 
     #endregion
 
     #region Modifications Init
 
+    void _tryToLoadAllModifiers() {
+      IEnumerable<Type> modifierTypes = _assemblyTypesToBuild.Values
+        .Select(a => a.Modifications)
+        .Where(v => v is not null);
+
+      Universe.ExtraContexts.OnLoaderAllModificationsStart(modifierTypes);
+      _applyModificationsToAllTypesByAssemblyLoadOrder(modifierTypes);
+      Universe.ExtraContexts.OnLoaderAllModificationsComplete();
+    }
+
     /// <summary>
     /// Call all the the Archetype.Modifier.Initialize() functions in mod load order.
     /// </summary>
-    void _applyModificationsToAllTypesByAssemblyLoadOrder() {
-      foreach (System.Type modifierType in _assemblyTypesToBuild.Values
-        .Select(a => a.Modifications)
-        .Where(v => !(v is null))
-      ) {
-        Modifications modifier
-          = Activator.CreateInstance(
-            modifierType,
-            BindingFlags.NonPublic | BindingFlags.Instance,
-            null,
-            new object[] { Universe },
-            null
-          ) as Modifications;
+    void _applyModificationsToAllTypesByAssemblyLoadOrder(IEnumerable<System.Type> modifierTypes) {
+      foreach (System.Type modifierType in modifierTypes) {
+      Universe.ExtraContexts.OnLoaderModificationStart(modifierType);
+        Modifications modifier = null;
+        try {
+          modifier
+            = Activator.CreateInstance(
+              modifierType,
+              BindingFlags.NonPublic | BindingFlags.Instance,
+              null,
+              new object[] { Universe },
+              null
+            ) as Modifications;
 
-        modifier.Initialize();
+          modifier.Initialize();
+        } catch (Exception e) {
+          Universe.ExtraContexts.OnLoaderModificationComplete(false, modifierType, modifier, e);
+        }
+
+        Universe.ExtraContexts.OnLoaderModificationComplete(true, modifierType, modifier, null);
       }
     }
 
@@ -1161,13 +1332,13 @@ namespace Meep.Tech.Data.Configuration {
     /// <summary>
     /// Test build a model of the given type using it's default archetype or builder.
     /// </summary>
-    void _testBuildDefaultComponent(Type systemType) {
+    Data.IComponent _testBuildDefaultComponent(Type systemType) {
       if (!(Universe.Components.GetBuilderFactoryFor(systemType) is Archetype defaultFactory)) {
         throw new Exception($"Could not make a default component model of type: {systemType.FullName}. Could not fine a default BuilderFactory to build it with.");
       }
-
+      IModel defaultComponent;
       try {
-        IModel defaultComponent
+        defaultComponent
           = Configuration.Loader.GetOrBuildTestModel(
              defaultFactory,
              systemType
@@ -1181,6 +1352,8 @@ namespace Meep.Tech.Data.Configuration {
       catch (Exception e) {
         throw new Exception($"Could not make a default component model of type: {systemType.FullName}, using default archeytpe of type: {defaultFactory}. Make sure you have propper default test parameters set for the archetype", e);
       }
+
+      return (IComponent)defaultComponent;
     }
 
     static IBuilder _loadOrGetTestBuilder(Archetype factory, Dictionary<string, object> @params, out (IModel model, bool hasValue)? potentiallyBuiltModel) {
@@ -1189,9 +1362,6 @@ namespace Meep.Tech.Data.Configuration {
         Func<IBuilder, IModel> defaultCtor = factory.Id.Universe.Models
           ._getDefaultCtorFor(factory.ModelTypeProduced);
 
-        if (factory.Id.Key.Contains("Character")) {
-          System.Diagnostics.Debugger.Break();
-        }
         iFactory.ModelConstructor
           = builder => defaultCtor.Invoke(builder);
       }
@@ -1251,6 +1421,20 @@ namespace Meep.Tech.Data.Configuration {
     /// <summary>
     /// Try to initialize any archetypes that failed:
     /// </summary>
+    void _tryToCompleteAllEnumsInitialization() {
+      _uninitializedEnums.Keys.ToList().ForEach(enumProp => {
+        if (_tryToInitializeAndBuildEnumType(enumProp, out var e)) {
+          _uninitializedEnums.Remove(enumProp);
+        }
+        else {
+          _uninitializedEnums[enumProp] = e;
+        }
+      });
+    }
+
+    /// <summary>
+    /// Try to initialize any archetypes that failed:
+    /// </summary>
     void _tryToCompleteAllComponentsInitialization() {
       _uninitializedComponents.Keys.ToList().ForEach(componentSystemType => {
         if (_tryToInitializeComponent(componentSystemType, out var e)) {
@@ -1295,6 +1479,7 @@ namespace Meep.Tech.Data.Configuration {
     /// Try to finish all remaining initialized archetypes:
     /// </summary>
     void _tryToFinishAllInitalizedTypes() {
+      Universe.ExtraContexts.OnLoaderFinishTypesStart();
       var values = _initializedArchetypes.ToList();
       values.RemoveAll(archetype => {
         try {
@@ -1322,20 +1507,46 @@ namespace Meep.Tech.Data.Configuration {
         }
       });
       _initializedArchetypes = values.ToHashSet();
+      Universe.ExtraContexts.OnLoaderFinishTypesComplete();
     }
 
     /// <summary>
     /// Finish initialization
     /// </summary>
     void _finalize() {
+      Universe.ExtraContexts.OnLoaderFinalizeStart();
       _reportOnFailedTypeInitializations();
       _finalizeModelSerializerSettings();
-      Universe._extraContexts.ToList()
-        .ForEach(context => context.Value.OnLoaderFinalize());
+      Universe.ExtraContexts.OnLoaderFinalizeComplete();
 
       _clearUnnesisaryFields();
+      _clearNonLazySplayedTypesFromMemory();
 
       IsFinished = true;
+      Universe.ExtraContexts.OnLoaderIsFinished();
+    }
+
+    void _clearNonLazySplayedTypesFromMemory() {
+      /// remove all non lazy loadable types.
+      ISplayed._splayedArchetypeCtorsByEnumBaseTypeAndEnumType.Keys.ForEach(enumBaseType =>
+        ISplayed._splayedArchetypeCtorsByEnumBaseTypeAndEnumType[enumBaseType].Keys.ForEach(enumType =>
+          ISplayed._splayedArchetypeCtorsByEnumBaseTypeAndEnumType[enumBaseType][enumType].ToList().ForEach(getMethod => {
+            if (!ISplayed._splayedInterfaceTypesThatAllowLazyInitializations.Contains(getMethod)) {
+              ISplayed._splayedArchetypeCtorsByEnumBaseTypeAndEnumType[enumBaseType][enumType].Remove(getMethod);
+              if (!ISplayed._splayedArchetypeCtorsByEnumBaseTypeAndEnumType[enumBaseType][enumType].Any()) {
+                ISplayed._splayedArchetypeCtorsByEnumBaseTypeAndEnumType[enumBaseType].Remove(enumType);
+                if (!ISplayed._splayedArchetypeCtorsByEnumBaseTypeAndEnumType[enumBaseType].Any()) {
+                  ISplayed._splayedArchetypeCtorsByEnumBaseTypeAndEnumType.Remove(enumBaseType);
+                }
+              }
+            }
+          })
+        )
+      );
+
+      ISplayed._splayedInterfaceTypes = null;
+      ISplayed._splayedInterfaceTypesThatAllowLazyInitializations = null;
+      ISplayed._completedEnumsByInterfaceBase = null;
     }
 
     void _clearUnnesisaryFields() {
@@ -1346,6 +1557,7 @@ namespace Meep.Tech.Data.Configuration {
       _assemblyTypesToBuild = null;
 
       _uninitializedArchetypes = null;
+      _uninitializedEnums = null;
       _uninitializedComponents = null;
       _uninitializedModels = null;
 

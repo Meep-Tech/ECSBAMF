@@ -693,10 +693,6 @@ namespace Meep.Tech.Data {
         _modelConstructor
           = builder => value.Invoke(builder);
 
-        if (Id.Key.Contains("Character")) {
-          System.Diagnostics.Debugger.Break();
-        }
-
         IModel model
           = Configuration.Loader.GetOrBuildTestModel(
               this,
@@ -1113,11 +1109,8 @@ namespace Meep.Tech.Data {
     /// Called on unload before the type is actually un-registered from the universe.
     /// the base version of this calls OnUnload for all extra contexts, if there are any.
     /// </summary>
-    protected virtual void OnUnloadFrom(Universe universe) {
-      universe._extraContexts.Values.ForEach(ec => {
-        ec.OnUnload(this);
-      });
-    }
+    protected virtual void OnUnloadFrom(Universe universe)
+      => universe.ExtraContexts.OnUnloadArchetype(this);
 
     /// <summary>
     /// Attempts to unload this archetype from the universe and collections it's registered to
