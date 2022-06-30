@@ -83,20 +83,20 @@ namespace Meep.Tech.Data.Configuration {
       } = 10;
 
       /// <summary>
+      /// How many times to re-run models that failed to be test built to account for types that require others
+      /// </summary>
+      public short ModelTestBuildAttempts {
+        get;
+        set;
+      } = 10;
+
+      /// <summary>
       /// How many times to attempt to run finalization on remaining initializing types
       /// </summary>
       public short FinalizationAttempts {
         get;
         set;
       } = 1;
-
-      /// <summary>
-      /// How many times to loop though components to initialize them accounting for dependency misses
-      /// </summary>
-      public int ComponentInitializationAttempts {
-        get;
-        set;
-      } = 4;
 
       /// <summary>
       /// Overrideable bool to allow runtime registrations of types that set AllowSubtypeRuntimeRegistrations to true.

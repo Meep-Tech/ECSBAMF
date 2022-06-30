@@ -22,6 +22,7 @@ namespace Meep.Tech.Data.Configuration {
     Dictionary<Archetype, System.Type> _loadedTestParams;
     List<System.Type> _initializedTypes;
     List<Assembly> _assemblyLoadOrder;
+    List<Failure> _failures;
 
     /// <summary>
     /// The assembly types that will be built in order
@@ -74,6 +75,11 @@ namespace Meep.Tech.Data.Configuration {
     internal HashSet<Archetype> _initializedArchetypes;
 
     /// <summary>
+    /// The types that have been finished.
+    /// </summary>
+    internal HashSet<Archetype> _finishedArchetypes;
+
+    /// <summary>
     /// How many initalization attempts are remaining
     /// </summary>
     int _remainingInitializationAttempts;
@@ -120,10 +126,8 @@ namespace Meep.Tech.Data.Configuration {
     /// <summary>
     /// Types that failed to initialize and their exceptions.
     /// </summary>
-    public IReadOnlyList<Failure> Failures {
-      get;
-      private set;
-    }
+    public IReadOnlyList<Failure> Failures 
+      => _failures;
 
     /// <summary>
     /// Assembled mod load order.
@@ -141,9 +145,9 @@ namespace Meep.Tech.Data.Configuration {
     /// The total count of currently uninitialized types.
     /// </summary>
     public int UninitializedTypesCount
-      => (_uninitializedArchetypes?.Count ?? 0) 
-        + (_uninitializedModels?.Count ?? 0) 
-        + (_uninitializedComponents?.Count ?? 0) 
+      => (_uninitializedArchetypes?.Count ?? 0)
+        + (_uninitializedModels?.Count ?? 0)
+        + (_uninitializedComponents?.Count ?? 0)
         + (_uninitializedEnums?.Count ?? 0);
 
     #region Initialization
@@ -177,7 +181,7 @@ namespace Meep.Tech.Data.Configuration {
       Universe.ExtraContexts.OnLoaderTypesInitializationFirstRunComplete();
 
       while (_remainingInitializationAttempts-- > 0 && UninitializedTypesCount > 0) {
-        int attemptNumber = Options.InitializationAttempts - _remainingFinalizationAttempts + 1;
+        int attemptNumber = Options.InitializationAttempts - _remainingInitializationAttempts + 1;
         Universe.ExtraContexts.OnLoaderFurtherAnizializationAttemptStart(attemptNumber);
         _tryToCompleteAllEnumsInitialization();
         _tryToCompleteAllModelsInitialization();
@@ -185,6 +189,9 @@ namespace Meep.Tech.Data.Configuration {
         _tryToCompleteAllComponentsInitialization();
         Universe.ExtraContexts.OnLoaderFurtherAnizializationAttemptComplete(attemptNumber);
       }
+
+      // try to register any final splayed archetypes.
+      _tryToInitializeAllRemainingSplayedTypes(true);
 
       Universe.ExtraContexts.OnLoaderTypesInitializationAllRunsComplete();
 
@@ -211,6 +218,7 @@ namespace Meep.Tech.Data.Configuration {
 
       _initializedTypes = new();
       _initializedArchetypes = new();
+      _finishedArchetypes = new();
 
       _uninitializedComponents = new();
       _uninitializedModels = new();
@@ -221,6 +229,8 @@ namespace Meep.Tech.Data.Configuration {
       _failedArchetypes = new();
       _failedComponents = new();
       _failedModels = new();
+
+      _failures = new();
     }
 
     /// <summary>
@@ -257,7 +267,8 @@ namespace Meep.Tech.Data.Configuration {
           if (!_tryToInitializeAndBuildEnumType(prop, out var e)) {
             if (e is CannotInitializeTypeException) {
               _failedEnumerations[prop] = e;
-            } else
+            }
+            else
               _uninitializedEnums[prop] = e;
           }
         }
@@ -267,7 +278,8 @@ namespace Meep.Tech.Data.Configuration {
           if (!_tryToInitializeComponent(systemType, out var e)) {
             if (e is CannotInitializeTypeException) {
               _failedComponents[systemType] = e;
-            } else
+            }
+            else
               _uninitializedComponents[systemType] = e;
           }
         }
@@ -288,14 +300,10 @@ namespace Meep.Tech.Data.Configuration {
           if (!_tryToInitializeArchetype(systemType, out var e)) {
             if (e is CannotInitializeTypeException) {
               _failedArchetypes[systemType] = e;
-            } else
+            }
+            else
               _uninitializedArchetypes[systemType] = e;
           }
-        }
-
-        // try to register any new splayed archetypes.
-        foreach(var splayedInterfaceType in ISplayed._splayedInterfaceTypes) {
-          _constructSplayedArchetypes(splayedInterfaceType);
         }
 
         // then register models
@@ -303,16 +311,21 @@ namespace Meep.Tech.Data.Configuration {
           if (!_tryToInitializeModel(systemType, out var e)) {
             if (e is CannotInitializeTypeException) {
               _failedModels[systemType] = e;
-            } else
+            }
+            else
               _uninitializedModels[systemType] = e;
           }
         }
+
+        // try to register any new splayed archetypes.
+        _tryToInitializeAllRemainingSplayedTypes();
 
         Universe.ExtraContexts.OnLoaderAssemblyLoadComplete(typesToBuild);
       }
     }
 
     void _runStaticCtorsFromBaseClassUp(System.Type @class) {
+      System.Type original = @class;
       List<System.Type> newAncestors = new() {
         @class
       };
@@ -327,7 +340,7 @@ namespace Meep.Tech.Data.Configuration {
       }
 
       newAncestors.Reverse();
-      foreach (System.Type type in newAncestors) {
+      foreach (System.Type type in newAncestors.Append(original)) {
         try {
           // invoke static ctor
           System.Runtime.CompilerServices
@@ -338,6 +351,8 @@ namespace Meep.Tech.Data.Configuration {
           throw new Exception($"Failed to run static constructor for ancestor: {type?.FullName ?? "null"}, of type: {@class.FullName}.\n=Exception:{e}\n\n=Inner Exception\n{e.InnerException}");
         }
       }
+
+      _staticallyInitializedTypes.Add(original);
     }
 
     #region Assembly Load Order Init
@@ -448,7 +463,7 @@ namespace Meep.Tech.Data.Configuration {
         ).ToHashSet().ToList();
     }
 
-    bool _validateAssemblyByName(AssemblyName assembly) 
+    bool _validateAssemblyByName(AssemblyName assembly)
       => assembly.FullName.StartsWith(Options.ArchetypeAssembliesPrefix)
         && !Options.AssemblyPrefixesToIgnore
           .Where(assemblyPrefix => assembly.FullName.StartsWith(assemblyPrefix))
@@ -515,7 +530,7 @@ namespace Meep.Tech.Data.Configuration {
           // if this type's got enums we want:
           if (systemType.GetCustomAttribute<BuildAllDeclaredEnumValuesOnInitialLoadAttribute>() != null
             || systemType.IsAssignableToGeneric(typeof(Enumeration<>))
-            || (systemType.IsAssignableToGeneric(typeof(Archetype<,>)) 
+            || (systemType.IsAssignableToGeneric(typeof(Archetype<,>))
               && !Attribute.IsDefined(systemType, typeof(Settings.DoNotBuildInInitialLoadAttribute))
                 && !Attribute.IsDefined(systemType, typeof(Settings.DoNotBuildThisOrChildrenInInitialLoadAttribute), true))
           ) {
@@ -622,16 +637,24 @@ namespace Meep.Tech.Data.Configuration {
       bool isSplayed;
       Archetype archetype = null;
       try {
+        // check if it's splayed
         isSplayed = typeof(ISplayed).IsAssignableFrom(systemType);
+
         // if not we need to construct a new one
-        if (!isSplayed 
+        if (!isSplayed
           || (!Attribute.IsDefined(systemType, typeof(Settings.DoNotBuildInInitialLoadAttribute))
             && !Attribute.IsDefined(systemType, typeof(Settings.DoNotBuildThisOrChildrenInInitialLoadAttribute), true))
         ) {
           archetype = _constructArchetypeFromSystemType(systemType);
           _uninitializedArchetypes.Remove(systemType);
         }
-      } catch (CannotInitializeArchetypeException ce) {
+
+        // init splayed
+        if (isSplayed) {
+          _initializeSplayedArchetype(systemType);
+        }
+      }
+      catch (CannotInitializeArchetypeException ce) {
         if (Options.FatalOnCannotInitializeType) {
           Universe.ExtraContexts.OnLoaderArchetypeInitializationComplete(false, systemType, null, ce, false);
           throw ce;
@@ -640,16 +663,18 @@ namespace Meep.Tech.Data.Configuration {
         e = ce;
         Universe.ExtraContexts.OnLoaderArchetypeInitializationComplete(false, systemType, null, e, false);
         return false;
-      } catch (FailedToConfigureNewArchetypeException fe) {
+      }
+      catch (FailedToConfigureNewArchetypeException fe) {
+        e = fe;
+        Universe.ExtraContexts.OnLoaderArchetypeInitializationComplete(false, systemType, null, e, false);
+        return false;
+      }
+      catch (MissingDependencyForArchetypeException fe) {
         e = fe;
         Universe.ExtraContexts.OnLoaderArchetypeInitializationComplete(false, systemType, null, e, false);
         return false;
       }
 
-      // init splayed
-      if (isSplayed) {
-        _initializeSplayedArchetype(systemType);
-      }
 
       // done initializing!
       _initializedTypes.Add(systemType);
@@ -662,66 +687,138 @@ namespace Meep.Tech.Data.Configuration {
     void _initializeSplayedArchetype(Type systemType) {
       object dummy;
       List<GenericTestArgumentAttribute> attributes = new();
+      Type[] genericTestTypeArguments = null;
+
       if (systemType.ContainsGenericParameters) {
         if ((attributes = systemType.GetCustomAttributes().Where(a => a is GenericTestArgumentAttribute).Cast<GenericTestArgumentAttribute>().ToList()).Any()) {
-          dummy = FormatterServices.GetUninitializedObject(systemType.MakeGenericType(attributes.OrderBy(a => a.Order).Select(a => a.GenericArgumentType).ToArray()));
-        } else throw new InvalidDataException($"Splayed Archetype of type: {systemType.Name} is generic, and does not implement one of more of the GenericTestArgumentAttribute");
-      } else {
+          genericTestTypeArguments = attributes.OrderBy(a => a.Order).Select(a => a.GenericArgumentType).ToArray();
+          dummy = FormatterServices.GetUninitializedObject(systemType.MakeGenericType(genericTestTypeArguments));
+        }
+        else throw new InvalidDataException($"Splayed Archetype of type: {systemType.Name} is generic, and does not implement one of more of the GenericTestArgumentAttribute");
+      }
+      else {
         dummy = FormatterServices.GetUninitializedObject(systemType);
       }
 
       foreach (var splayType in systemType.GetAllInheritedGenericTypes(typeof(Archetype.ISplayed<,>))) {
         if (splayType.GetGenericArguments().Last() == systemType) {
-          var getMethod = _getSplayerArchetypeCtor(dummy, splayType);
-          _prepareSplayedArchetype(splayType, getMethod, out var enumBaseType);
-          _constructSplayedArchetypes(splayType);
+          System.Type enumType = splayType.GetGenericArguments()[0];
+          System.Type enumBaseType = enumType.GetFirstInheritedGenericTypeParameters(typeof(Enumeration<>)).First();
+
+          Func<Enumeration, Archetype> getMethod;
+          if ((getMethod = ISplayed._splayedArchetypeCtorsByEnumBaseTypeAndEnumTypeAndSplayType.TryToGet(enumBaseType)?.TryToGet(enumType)?.TryToGet(splayType)) is null) {
+            getMethod = _getSplayerArchetypeCtor(dummy, splayType, genericTestTypeArguments);
+            _prepareSplayedArchetype(splayType, getMethod, enumType, enumBaseType);
+          }
+
+          _constructSplayedArchetypes(splayType, enumType, enumBaseType);
         }
       }
     }
 
-    static Func<Enumeration, Archetype> _getSplayerArchetypeCtor(object dummy, Type splayType) {
+    static Func<Enumeration, Archetype> _getSplayerArchetypeCtor(object dummy, Type splayType, System.Type[] genericTestTypes = null) {
+      System.Type constructedSplayedType = splayType;
+
+      if (genericTestTypes is not null) {
+        var genericBaseArguments = splayType.GetGenericArguments();
+        genericBaseArguments[1] = genericBaseArguments[1].MakeGenericType(genericTestTypes);
+        constructedSplayedType = splayType.GetGenericTypeDefinition().MakeGenericType(genericBaseArguments);
+      }
+
       MethodInfo getMethodInfo
-        = splayType.GetMethod("_constructArchetypeFor", BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance);
-       Func<Enumeration, Archetype> getMethod = new(@enum => (Archetype)getMethodInfo.Invoke(dummy, new[] { @enum }));
+        = constructedSplayedType.GetMethod("ConstructArchetypeFor", BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance);
+      MethodInfo registerMethodInfo
+        = constructedSplayedType.GetMethod("_registerSubArchetype", BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Static);
+
+      Func<Enumeration, Archetype> getMethod = new(@enum => {
+        var archetype = (Archetype)getMethodInfo.Invoke(dummy, new[] { @enum });
+        registerMethodInfo.Invoke(null, new object[] { archetype, @enum });
+        return archetype;
+      });
       return getMethod;
     }
 
-    void _constructSplayedArchetypes(Type splayInterfaceType) {
-      System.Type enumType = splayInterfaceType.GetGenericArguments()[0];
-      System.Type enumBaseType = enumType.GetFirstInheritedGenericTypeParameters(typeof(Enumeration<>)).First();
-
-      var enumValues = Universe.Enumerations.GetAllByType(enumType);
-      ISplayed._splayedArchetypeCtorsByEnumBaseTypeAndEnumType[enumBaseType][enumType].ForEach(getMethod => {
-        foreach (var @enum in enumValues.Except(ISplayed._completedEnumsByInterfaceBase.TryToGet(splayInterfaceType) ?? Enumerable.Empty<Enumeration>())) {
-          Universe.ExtraContexts.OnLoaderArchetypeInitializationStart(splayInterfaceType.GetGenericArguments()[1], true);
-          // TODO: try catch.
-          var newType = getMethod(@enum);
-          ISplayed._completedEnumsByInterfaceBase.AddToInnerHashSet(splayInterfaceType, @enum);
-          Universe.ExtraContexts.OnLoaderArchetypeInitializationComplete(true, newType.GetType(), newType, null, true);
-
-        }
-      });
+    void _tryToInitializeAllRemainingSplayedTypes(bool markErrorsAsFailuresAndContinue = false) {
+      foreach (var splayedInterfaceWithGetMethod in ISplayed._splayedArchetypeCtorsByEnumBaseTypeAndEnumTypeAndSplayType.SelectMany(e => e.Value.SelectMany(e => e.Value))) {
+        _constructSplayedArchetypes(splayedInterfaceWithGetMethod.Key, getMethod: splayedInterfaceWithGetMethod.Value, markErrorsAsFailuresAndContinue: markErrorsAsFailuresAndContinue);
+      }
     }
 
-    static void _prepareSplayedArchetype(Type splayInterfaceType, Func<Enumeration, Archetype> getMethod, out System.Type enumBaseType) {
-      System.Type enumType = splayInterfaceType.GetGenericArguments()[0];
-      enumBaseType = enumType.GetFirstInheritedGenericTypeParameters(typeof(Enumeration<>)).First();
+    void _constructSplayedArchetypes(Type splayInterfaceType, System.Type enumType = null, System.Type enumBaseType = null, Func<Enumeration, Archetype> getMethod = null, bool markErrorsAsFailuresAndContinue = false) {
+      enumType ??= splayInterfaceType.GetGenericArguments()[0];
+      enumBaseType ??= enumType.GetFirstInheritedGenericTypeParameters(typeof(Enumeration<>)).First();
 
-      var allowLazyPropAttribute
-        = splayInterfaceType.GetGenericArguments().Last()
-        .GetCustomAttribute<AllowLazyArchetypeInitializationsOnNewLazyEnumerationInitializationsAttribute>();
-
-      if (allowLazyPropAttribute is not null && allowLazyPropAttribute.SplayType == splayInterfaceType) {
-        ISplayed._splayedInterfaceTypesThatAllowLazyInitializations.Add(getMethod);
+      IEnumerable<Enumeration> enumValues;
+      try {
+        enumValues = Universe.Enumerations.GetAllByType(enumType);
+      }
+      catch (KeyNotFoundException ex) {
+        var e = new MissingDependencyForArchetypeException($"Enums of type: {enumType.FullName}, have not been collected yet.");
+        if (markErrorsAsFailuresAndContinue) {
+          _failures.Add(new Failure("Archetype", splayInterfaceType, e));
+          return;
+        }
+        else throw e;
+      }
+      catch (Exception ex) {
+        var e = new FailedToConfigureNewArchetypeException($"Could not build splayed Archetypes of type: {splayInterfaceType.GetGenericArguments()[1].FullName} for enums of type: {enumType.FullName} due to unknown inner exception.", ex);
+        if (markErrorsAsFailuresAndContinue) {
+          _failures.Add(new Failure("Archetype", splayInterfaceType, e));
+          return;
+        }
+        else throw e;
       }
 
-      if (ISplayed._splayedArchetypeCtorsByEnumBaseTypeAndEnumType.TryGetValue(enumBaseType, out var existingWaitingLazySplayedTypes)) {
-        if (existingWaitingLazySplayedTypes.TryGetValue(enumType, out var existingWaitingLazyCtors)) {
-          existingWaitingLazyCtors.Add(getMethod);
-        } else existingWaitingLazySplayedTypes.Add(enumType, new() { getMethod });
-      } else {
-        ISplayed._splayedArchetypeCtorsByEnumBaseTypeAndEnumType[enumBaseType] = new() {
-          {enumType, new() {getMethod } }
+      getMethod ??= ISplayed._splayedArchetypeCtorsByEnumBaseTypeAndEnumTypeAndSplayType[enumBaseType][enumType][splayInterfaceType];
+      foreach (var @enum in enumValues.Except(ISplayed._completedEnumsByInterfaceBase.TryToGet(splayInterfaceType) ?? Enumerable.Empty<Enumeration>())) {
+        Universe.ExtraContexts.OnLoaderArchetypeInitializationStart(splayInterfaceType.GetGenericArguments()[1], true);
+        Archetype newType;
+        try {
+          newType = getMethod(@enum);
+        }
+        catch (CannotInitializeTypeException e) {
+          Universe.ExtraContexts.OnLoaderArchetypeInitializationComplete(false, splayInterfaceType.GetGenericArguments()[1], null, e, true);
+          if (markErrorsAsFailuresAndContinue) {
+            _failures.Add(new Failure("Archetype", splayInterfaceType, e));
+            continue;
+          } else throw e;
+        }
+        catch (Exception e) {
+          Type archetypeType = splayInterfaceType.GetGenericArguments()[1];
+          Universe.ExtraContexts.OnLoaderArchetypeInitializationComplete(false, archetypeType, null, e, true);
+          var ex = new FailedToConfigureNewArchetypeException($"Failed to build Archetype Sub Type for splayed Archetype: {archetypeType.FullName}, using enum: {@enum}, of type: {enumType.FullName}", e);
+          if (markErrorsAsFailuresAndContinue) {
+            _failures.Add(new Failure("Archetype", splayInterfaceType, ex));
+            continue;
+          } else throw ex;
+        }
+
+        ISplayed._completedEnumsByInterfaceBase.AddToInnerHashSet(splayInterfaceType, @enum);
+        _initializedArchetypes.Add(newType);
+        Universe.ExtraContexts.OnLoaderArchetypeInitializationComplete(true, newType.GetType(), newType, null, true);
+      }
+    }
+
+    void _prepareSplayedArchetype(Type splayInterfaceType, Func<Enumeration, Archetype> getMethod, System.Type enumType, System.Type enumBaseType) {
+      if (Options.AllowRuntimeTypeRegistrations) {
+        var allowLazyPropAttribute
+          = splayInterfaceType.GetGenericArguments().Last()
+          .GetCustomAttribute<AllowLazyArchetypeInitializationsOnNewLazyEnumerationInitializationsAttribute>();
+
+        if (allowLazyPropAttribute is not null && allowLazyPropAttribute.SplayType == splayInterfaceType) {
+          ISplayed._splayedInterfaceTypesThatAllowLazyInitializations.Add(getMethod);
+        }
+      }
+
+      if (ISplayed._splayedArchetypeCtorsByEnumBaseTypeAndEnumTypeAndSplayType.TryGetValue(enumBaseType, out var existingWaitingSplayedTypes)) {
+        if (existingWaitingSplayedTypes.TryGetValue(enumType, out var existingWaitingLazyCtors)) {
+          existingWaitingLazyCtors.Add(splayInterfaceType, getMethod);
+        }
+        else existingWaitingSplayedTypes.Add(enumType, new() { { splayInterfaceType, getMethod } });
+      }
+      else {
+        ISplayed._splayedArchetypeCtorsByEnumBaseTypeAndEnumTypeAndSplayType[enumBaseType] = new() {
+          {enumType, new() { { splayInterfaceType, getMethod } }   }
         };
       }
     }
@@ -785,14 +882,25 @@ namespace Meep.Tech.Data.Configuration {
     /// </summary>
     void _testBuildModelsForAllInitializedTypes() {
       Universe.ExtraContexts.OnLoaderBuildAllTestModelsStart(_initializedArchetypes.Count);
-      foreach (var archetype in _initializedArchetypes) {
-        if(!_tryToBuildDefaultModelForArchetype(archetype.GetType(), archetype, out var failureException)) {
-          _initializedArchetypes.Remove(archetype);
-          _uninitializedArchetypes.Add(archetype.GetType(), failureException);
-          _failedArchetypes.Add(archetype.GetType(), failureException);
-          archetype.TryToUnload();
+
+      HashSet<Archetype> successfullyTestedArchetypes = new();
+      int attemptsRemaining = Options.ModelTestBuildAttempts;
+      while (successfullyTestedArchetypes.Count() < _initializedArchetypes.Count() && attemptsRemaining-- > 0) {
+        foreach (var archetype in _initializedArchetypes.Except(successfullyTestedArchetypes).ToList()) {
+          if (!_tryToBuildDefaultModelForArchetype(archetype.GetType(), archetype, out var failureException)) {
+            if (attemptsRemaining == 0) {
+              _initializedArchetypes.Remove(archetype);
+              _uninitializedArchetypes.Add(archetype.GetType(), failureException);
+              _failedArchetypes.Add(archetype.GetType(), failureException);
+              archetype.TryToUnload();
+            }
+          }
+          else {
+            successfullyTestedArchetypes.Add(archetype);
+          }
         }
       }
+
       Universe.ExtraContexts.OnLoaderBuildAllTestModelsComplete();
     }
 
@@ -929,7 +1037,8 @@ namespace Meep.Tech.Data.Configuration {
       try {
         _runStaticCtorsFromBaseClassUp(systemType);
         _registerModelType(systemType);
-      } catch (CannotInitializeModelException ce) {
+      }
+      catch (CannotInitializeModelException ce) {
         if (Options.FatalOnCannotInitializeType) {
           Universe.ExtraContexts.OnLoaderModelFullInitializationComplete(false, systemType, ce);
           throw ce;
@@ -938,9 +1047,10 @@ namespace Meep.Tech.Data.Configuration {
         e = ce;
         Universe.ExtraContexts.OnLoaderModelFullInitializationComplete(false, systemType, e);
         return false;
-      } catch (Exception ex) {
+      }
+      catch (Exception ex) {
         e = new FailedToConfigureNewModelException($"Could not initialize Model of type {systemType} due to Unknown Inner Exception.", ex);
-        Universe.ExtraContexts.OnLoaderModelFullInitializationComplete(false, systemType, e); 
+        Universe.ExtraContexts.OnLoaderModelFullInitializationComplete(false, systemType, e);
         return false;
       }
 
@@ -965,49 +1075,58 @@ namespace Meep.Tech.Data.Configuration {
             | BindingFlags.Static
         )?.Invoke(null, new object[] { Universe });
 
-        bool testBuildRequiresGenericType = false;
+        //bool testBuildRequiresGenericType = false;
 
         // assign root archetype references
-        if (!Universe.Archetypes._rootArchetypeTypesByBaseModelType.ContainsKey(key: systemType.FullName)
-          && systemType.IsAssignableToGeneric(typeof(IModel<,>))
-        ) {
-          var types = systemType.GetFirstInheritedGenericTypeParameters(typeof(IModel<,>));
-          if (!typeof(IModel.IBuilderFactory).IsAssignableFrom(types.Last())) {
+        // archetype based models
+        if (systemType.IsAssignableToGeneric(typeof(IModel<,>))) {
+          if (!Universe.Archetypes._rootArchetypeTypesByBaseModelType.ContainsKey(key: systemType.FullName)) {
+            var types = systemType.GetFirstInheritedGenericTypeParameters(typeof(IModel<,>));
+            //if (!typeof(IModel.IBuilderFactory).IsAssignableFrom(types.Last())) {
             Type rootArchetype = types.Last();
 
             Universe.Archetypes._rootArchetypeTypesByBaseModelType[systemType.FullName]
               = rootArchetype;
 
             // if the type is an unasigned generic:
-            if (rootArchetype.FullName == null) {
+            /*if (rootArchetype.FullName == null) {
               testBuildRequiresGenericType = true;
+            }*/
+            //}
+          }
+        } // factory based models
+        else {
+          System.Type typeToTest = systemType;
+          if (systemType.GetFirstInheritedGenericTypeParameters(typeof(IModel<>)).First().FullName is null) {
+            IEnumerable<GenericTestArgumentAttribute> attributes;
+            if ((attributes = systemType.GetCustomAttributes().Where(a => a is GenericTestArgumentAttribute).Cast<GenericTestArgumentAttribute>()).Any()) {
+              typeToTest = systemType.MakeGenericType(
+                attributes.OrderBy(a => a.Order)
+                  .Select(a => a.GenericArgumentType)
+                  .ToArray()
+              );
+            }
+            else {
+              var ex = new InvalidDataException($"Model of type: {systemType.Name} is generic, and does not implement one of more of the GenericTestArgumentAttribute");
+              Universe.ExtraContexts.OnLoaderModelFullRegistrationComplete(false, systemType, ex);
+              throw ex;
             }
           }
-        }
 
-        System.Type typeToTest = systemType;
-        if (testBuildRequiresGenericType) {
-          IEnumerable<GenericTestArgumentAttribute> attributes;
-          if ((attributes = systemType.GetCustomAttributes().Where(a => a is GenericTestArgumentAttribute).Cast<GenericTestArgumentAttribute>()).Any()) {
-            typeToTest = systemType.MakeGenericType(
-              attributes.OrderBy(a => a.Order)
-                .Select(a => a.GenericArgumentType)
-                .ToArray()
-            );
-          }
-          else {
-            var ex = new InvalidDataException($"Model of type: {systemType.Name} is generic, and does not implement one of more of the GenericTestArgumentAttribute");
-            Universe.ExtraContexts.OnLoaderModelFullRegistrationComplete(false, systemType, ex);
-            throw ex;
-          }
+          _initializedArchetypes.Add(
+            (Archetype)Universe.Models.GetBuilderFactoryFor(typeToTest)
+          );
         }
-
-        _initializedArchetypes.Add(
-          _getDefaultFactoryBuilderForModel(typeToTest)
-        );
-      } catch (Exception e) {
-        Universe.ExtraContexts.OnLoaderModelFullRegistrationComplete(false, systemType, e);
+      }
+      catch (FailedToConfigureTypeException e) {
         throw e;
+      }
+      catch (CannotInitializeTypeException e) {
+        throw e;
+      }
+      catch (Exception e) {
+        Universe.ExtraContexts.OnLoaderModelFullRegistrationComplete(false, systemType, e);
+        throw new FailedToConfigureNewModelException($"Could not Register Model of type: {systemType.FullName} due to unknown inner exception.", e);
       }
 
       try {
@@ -1017,8 +1136,8 @@ namespace Meep.Tech.Data.Configuration {
             ?? systemType.GetFirstInheritedGenericTypeParameters(typeof(IModel<,>)).First()
         );
       }
-      catch (Exception e) {  
-        var ex = new NotImplementedException($"Could not find IModel<> Base Type for {systemType}, does it inherit from IModel by mistake instead of Model<T>?", e);
+      catch (Exception e) {
+        var ex = new CannotInitializeModelException($"Could not find IModel<> Base Type for {systemType}, does it inherit from IModel by mistake instead of Model<T>?", e);
         Universe.ExtraContexts.OnLoaderModelFullRegistrationComplete(false, systemType, ex);
         throw ex;
       }
@@ -1048,7 +1167,8 @@ namespace Meep.Tech.Data.Configuration {
 
       try {
         _registerComponentType(systemType);
-      } catch (CannotInitializeComponentException ce) {
+      }
+      catch (CannotInitializeComponentException ce) {
         if (Options.FatalOnCannotInitializeType) {
           throw ce;
         }
@@ -1056,7 +1176,8 @@ namespace Meep.Tech.Data.Configuration {
         e = ce;
         Universe.ExtraContexts.OnLoaderComponentInitializationComplete(false, systemType, e);
         return false;
-      } catch (Exception ex) {
+      }
+      catch (Exception ex) {
         e = new FailedToConfigureNewComponentException($"Could not initialize Component of type {systemType} due to Unknown Inner Exception.", ex);
         Universe.ExtraContexts.OnLoaderComponentInitializationComplete(false, systemType, e);
         return false;
@@ -1087,19 +1208,21 @@ namespace Meep.Tech.Data.Configuration {
       IComponent testComponent = null;
       try {
         testComponent = _testBuildDefaultComponent(systemType);
-      } catch (Exception e) {
+      }
+      catch (Exception e) {
         Universe.ExtraContexts.OnLoaderBuildTestComponentComplete(false, systemType, testComponent, e);
         throw e;
       }
       Universe.ExtraContexts.OnLoaderBuildTestComponentComplete(true, systemType, testComponent, null);
-      
+
 
       try {
         Universe.Components._baseTypes.Add(
           systemType.FullName,
           systemType.GetFirstInheritedGenericTypeParameters(typeof(IComponent<>)).First()
         );
-      } catch (Exception e) {
+      }
+      catch (Exception e) {
         throw new NotImplementedException($"Could not find IComponent<> Base Type for {systemType}, does it inherit from IComponent instead of IComponent<T> by mistake?", e);
       }
 
@@ -1179,7 +1302,7 @@ namespace Meep.Tech.Data.Configuration {
     /// </summary>
     void _applyModificationsToAllTypesByAssemblyLoadOrder(IEnumerable<System.Type> modifierTypes) {
       foreach (System.Type modifierType in modifierTypes) {
-      Universe.ExtraContexts.OnLoaderModificationStart(modifierType);
+        Universe.ExtraContexts.OnLoaderModificationStart(modifierType);
         Modifications modifier = null;
         try {
           modifier
@@ -1192,7 +1315,8 @@ namespace Meep.Tech.Data.Configuration {
             ) as Modifications;
 
           modifier.Initialize();
-        } catch (Exception e) {
+        }
+        catch (Exception e) {
           Universe.ExtraContexts.OnLoaderModificationComplete(false, modifierType, modifier, e);
         }
 
@@ -1212,8 +1336,12 @@ namespace Meep.Tech.Data.Configuration {
     public static IModel GetOrBuildTestModel(System.Type modelBase, Universe universe) {
       if (universe.Loader._staticallyInitializedTypes.Contains(modelBase)) {
         var factory = universe.Archetypes.GetDefaultForModelOfType(modelBase);
-        return GetOrBuildTestModel(factory, modelBase);
-      } else throw new FailedToConfigureNewModelException($"Cannot make a default test model with an unknown archetype if it's static constructors have not yet been called as a different archetype may have been set inthe static ctor.");
+        if (modelBase.IsAssignableFrom(factory.ModelTypeProduced)) {
+          return GetOrBuildTestModel(factory, modelBase);
+        }
+        else throw new FailedToConfigureNewModelException($"Default archetype mismatch: {factory}. Cannot make a default test model of type:{modelBase.FullName}, with an unknown archetype if it's default archetype has not yet been set up. Usually this means the model's proper archetype has not yet been tested itself."); ;
+      }
+      else throw new FailedToConfigureNewModelException($"Cannot make a default test model of type:{modelBase.FullName}, with an unknown archetype if it's static constructors have not yet been called as a different archetype may have been set inthe static ctor.");
     }
 
     /// <summary>
@@ -1324,7 +1452,7 @@ namespace Meep.Tech.Data.Configuration {
       return defaultModel;
     }
 
-    Archetype _getDefaultFactoryBuilderForModel(Type systemType) 
+    Archetype _getDefaultFactoryBuilderForModel(Type systemType)
       => systemType.IsAssignableToGeneric(typeof(IModel<,>))
         ? Universe.Archetypes.GetDefaultForModelOfType(systemType)
         : Universe.Models.GetBuilderFactoryFor(systemType) as Archetype;
@@ -1395,7 +1523,8 @@ namespace Meep.Tech.Data.Configuration {
           if (currentModelType != modelType) {
             return _generateTestParamsHelper(factoryType, modelType);
           }
-        } else {
+        }
+        else {
           return _generateTestParamsHelper(factoryType, modelType);
         }
       }
@@ -1439,7 +1568,8 @@ namespace Meep.Tech.Data.Configuration {
       _uninitializedComponents.Keys.ToList().ForEach(componentSystemType => {
         if (_tryToInitializeComponent(componentSystemType, out var e)) {
           _uninitializedComponents.Remove(componentSystemType);
-        } else {
+        }
+        else {
           _uninitializedComponents[componentSystemType] = e;
         }
       });
@@ -1452,7 +1582,8 @@ namespace Meep.Tech.Data.Configuration {
       _uninitializedModels.Keys.ToList().ForEach(modelSystemType => {
         if (_tryToInitializeModel(modelSystemType, out var e)) {
           _uninitializedModels.Remove(modelSystemType);
-        } else {
+        }
+        else {
           _uninitializedModels[modelSystemType] = e;
         }
       });
@@ -1465,7 +1596,8 @@ namespace Meep.Tech.Data.Configuration {
       _uninitializedArchetypes.Keys.ToList().ForEach(archetypeSystemType => {
         if (_tryToInitializeArchetype(archetypeSystemType, out var e)) {
           _uninitializedArchetypes.Remove(archetypeSystemType);
-        } else {
+        }
+        else {
           _uninitializedArchetypes[archetypeSystemType] = e;
         }
       });
@@ -1484,22 +1616,23 @@ namespace Meep.Tech.Data.Configuration {
       values.RemoveAll(archetype => {
         try {
           archetype.Finish();
+          _finishedArchetypes.Add(archetype);
 
           return true;
         } // attempt failure: 
-        catch(FailedToConfigureNewArchetypeException) {
+        catch (FailedToConfigureNewArchetypeException) {
 
           return false;
         } // attempt fatal: 
-        catch(CannotInitializeArchetypeException) {
-          if(Options.FatalOnCannotInitializeType) {
+        catch (CannotInitializeArchetypeException) {
+          if (Options.FatalOnCannotInitializeType) {
             throw;
           }
 
           return true;
         } // attempt fatal: 
         catch (Exception) {
-          if(Options.FatalOnCannotInitializeType) {
+          if (Options.FatalOnCannotInitializeType) {
             throw;
           }
 
@@ -1528,15 +1661,15 @@ namespace Meep.Tech.Data.Configuration {
 
     void _clearNonLazySplayedTypesFromMemory() {
       /// remove all non lazy loadable types.
-      ISplayed._splayedArchetypeCtorsByEnumBaseTypeAndEnumType.Keys.ForEach(enumBaseType =>
-        ISplayed._splayedArchetypeCtorsByEnumBaseTypeAndEnumType[enumBaseType].Keys.ForEach(enumType =>
-          ISplayed._splayedArchetypeCtorsByEnumBaseTypeAndEnumType[enumBaseType][enumType].ToList().ForEach(getMethod => {
-            if (!ISplayed._splayedInterfaceTypesThatAllowLazyInitializations.Contains(getMethod)) {
-              ISplayed._splayedArchetypeCtorsByEnumBaseTypeAndEnumType[enumBaseType][enumType].Remove(getMethod);
-              if (!ISplayed._splayedArchetypeCtorsByEnumBaseTypeAndEnumType[enumBaseType][enumType].Any()) {
-                ISplayed._splayedArchetypeCtorsByEnumBaseTypeAndEnumType[enumBaseType].Remove(enumType);
-                if (!ISplayed._splayedArchetypeCtorsByEnumBaseTypeAndEnumType[enumBaseType].Any()) {
-                  ISplayed._splayedArchetypeCtorsByEnumBaseTypeAndEnumType.Remove(enumBaseType);
+      ISplayed._splayedArchetypeCtorsByEnumBaseTypeAndEnumTypeAndSplayType.Keys.ForEach(enumBaseType =>
+        ISplayed._splayedArchetypeCtorsByEnumBaseTypeAndEnumTypeAndSplayType[enumBaseType].Keys.ForEach(enumType =>
+          ISplayed._splayedArchetypeCtorsByEnumBaseTypeAndEnumTypeAndSplayType[enumBaseType][enumType].ToList().ForEach(getMethod => {
+            if (!ISplayed._splayedInterfaceTypesThatAllowLazyInitializations.Contains(getMethod.Value)) {
+              ISplayed._splayedArchetypeCtorsByEnumBaseTypeAndEnumTypeAndSplayType[enumBaseType][enumType].Remove(getMethod.Key);
+              if (!ISplayed._splayedArchetypeCtorsByEnumBaseTypeAndEnumTypeAndSplayType[enumBaseType][enumType].Any()) {
+                ISplayed._splayedArchetypeCtorsByEnumBaseTypeAndEnumTypeAndSplayType[enumBaseType].Remove(enumType);
+                if (!ISplayed._splayedArchetypeCtorsByEnumBaseTypeAndEnumTypeAndSplayType[enumBaseType].Any()) {
+                  ISplayed._splayedArchetypeCtorsByEnumBaseTypeAndEnumTypeAndSplayType.Remove(enumBaseType);
                 }
               }
             }
@@ -1544,7 +1677,6 @@ namespace Meep.Tech.Data.Configuration {
         )
       );
 
-      ISplayed._splayedInterfaceTypes = null;
       ISplayed._splayedInterfaceTypesThatAllowLazyInitializations = null;
       ISplayed._completedEnumsByInterfaceBase = null;
     }
@@ -1565,6 +1697,7 @@ namespace Meep.Tech.Data.Configuration {
       _failedModels = null;
       _failedArchetypes = null;
       _failedEnumerations = null;
+      _finishedArchetypes = null;
 
       _initializedArchetypes = null;
     }
@@ -1573,7 +1706,7 @@ namespace Meep.Tech.Data.Configuration {
       // add the converters to the default json serializer settings.
       bool defaultExists;
       JsonSerializerSettings @default;
-      if(JsonConvert.DefaultSettings is not null) {
+      if (JsonConvert.DefaultSettings is not null) {
         @default = JsonConvert.DefaultSettings();
         defaultExists = true;
       }
@@ -1589,25 +1722,25 @@ namespace Meep.Tech.Data.Configuration {
 
     void _reportOnFailedTypeInitializations() {
       List<Failure> failures = new();
-      foreach((System.Type componentType, Exception ex) in _uninitializedComponents.Merge(_failedComponents)) {
-        Console.Error.WriteLine($"Could not initialize Component Type: {componentType}, due to Internal Exception:\n\n{ex}");
+      foreach ((System.Type componentType, Exception ex) in _uninitializedComponents.Merge(_failedComponents)) {
+        //Console.Error.WriteLine($"Could not initialize Component Type: {componentType}, due to Internal Exception:\n\n{ex}");
         failures.Add(new("Component", componentType, ex));
       }
-      foreach((System.Type modelType, Exception ex) in _uninitializedModels.Merge(_failedModels)) {
-        Console.Error.WriteLine($"Could not initialize Model Type: {modelType}, due to Internal Exception:\n\n{ex}");
+      foreach ((System.Type modelType, Exception ex) in _uninitializedModels.Merge(_failedModels)) {
+        //Console.Error.WriteLine($"Could not initialize Model Type: {modelType}, due to Internal Exception:\n\n{ex}");
         failures.Add(new("Model", modelType, ex));
       }
-      foreach((System.Type archetypeType, Exception ex) in _uninitializedArchetypes.Merge(_failedArchetypes)) {
-        Console.Error.WriteLine($"Could not initialize Archetype Type: {archetypeType}, due to Internal Exception:\n\n{ex}");
+      foreach ((System.Type archetypeType, Exception ex) in _uninitializedArchetypes.Merge(_failedArchetypes)) {
+        //Console.Error.WriteLine($"Could not initialize Archetype Type: {archetypeType}, due to Internal Exception:\n\n{ex}");
         failures.Add(new("Archetype", archetypeType, ex));
       }
       foreach ((MemberInfo enumProp, Exception ex) in _failedEnumerations) {
-        Console.Error.WriteLine($"Could not initialize Enum of Type: {(enumProp is PropertyInfo p ? p.PropertyType : "unknown")} on property with name:{enumProp.Name} on type: {enumProp.DeclaringType.FullName} due to Internal Exception:\n\n{ex}");
-        failures.Add(new("Enumeration", (enumProp as PropertyInfo).PropertyType, ex));
+        //Console.Error.WriteLine($"Could not initialize Enum of Type: {(enumProp is PropertyInfo p ? p.PropertyType : "unknown")} on property with name:{enumProp.Name} on type: {enumProp.DeclaringType.FullName} due to Internal Exception:\n\n{ex}");
+        failures.Add(new("Enumeration", (enumProp as PropertyInfo).PropertyType, ex) {  Metadata = enumProp});
       }
 
-      Failures = failures;
-      if((Options.FatalOnCannotInitializeType || Options.FatalDuringFinalizationOnCouldNotInitializeTypes) && Failures.Any()) {
+      _failures.AddRange(failures);
+      if ((Options.FatalOnCannotInitializeType || Options.FatalDuringFinalizationOnCouldNotInitializeTypes) && Failures.Any()) {
         throw new InvalidOperationException("Failed to initialize several types in the ECSBAM Loader:\n"
           + string.Join('\n', Failures));
       }
@@ -1635,12 +1768,18 @@ namespace Meep.Tech.Data.Configuration {
       public Exception Exception { get; }
 
       /// <summary>
+      /// Other extra metadata about the failure.
+      /// </summary>
+      public object Metadata { get; internal init; }
+
+      /// <summary>
       /// Make a new failure for reporting.
       /// </summary>
       public Failure(string xbamType, Type systemType, Exception exception) {
         XbamType = xbamType;
         SystemType = systemType;
         Exception = exception;
+        Metadata = null;
       }
 
       ///<summary><inheritdoc/></summary>

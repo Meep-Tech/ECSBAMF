@@ -1,5 +1,4 @@
-﻿using Meep.Tech.Collections.Generic;
-using System;
+﻿using System;
 using System.Collections.Generic;
 
 namespace Meep.Tech.Data {
@@ -65,11 +64,11 @@ namespace Meep.Tech.Data {
       /// </summary>
       public IComponent.IBuilderFactory GetBuilderFactoryFor<TComponent>()
         where TComponent : IComponent<TComponent>
-          => (IComponent.IBuilderFactory)_universe.Models.SetInitialBuilderFactoryFor<TComponent>();
+          => (IComponent.IBuilderFactory)_universe.Models.GetBuilderFactoryFor<TComponent>();
 
       /// <summary>
       /// Set the builder factory for a type of component.
-      /// TODO: Must be doen during init
+      /// TODO: Must be doen during init or static ctor calls
       /// </summary>
       public void SetBuilderFactoryFor<TComponent>(IComponent.IBuilderFactory factory)
         where TComponent : IComponent<TComponent>

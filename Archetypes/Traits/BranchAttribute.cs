@@ -29,15 +29,4 @@ namespace Meep.Tech.Data {
       NewBaseModelType = newBaseModelType;
     }
   }
-
-  /// <summary>
-  /// Used as shorthand for a property in a model that can be set by a matching property in an archetype.
-  /// TODO: this is not implemented and may require code generation!!!!!
-  /// </summary>
-  /*[AttributeUsage(AttributeTargets.Property, Inherited = false)]
-  public class ArchetypePropertyAttribute
-    : Attribute {
-
-    public ArchetypePropertyAttribute() {}
-  }*/
 }

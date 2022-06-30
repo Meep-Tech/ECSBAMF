@@ -17,9 +17,9 @@ namespace Meep.Tech.Data {
       /// </summary>
       public class DefaultContractResolver : Newtonsoft.Json.Serialization.DefaultContractResolver {
         IFactory.JsonStringConverter _factoryToStringJsonConverter 
-          = new IFactory.JsonStringConverter();
+          = new();
         IReadableComponentStorage.ComponentsToJsonConverter _componentsJsonConverter 
-          = new IReadableComponentStorage.ComponentsToJsonConverter();
+          = new();
 
         /// <summary>
         /// the universe this resolver is for
@@ -49,16 +49,20 @@ namespace Meep.Tech.Data {
             baseProps.FirstOrDefault(prop
               => prop.PropertyName == nameof(Universe).ToLower())
           );
+
           // Add unique ids if there isn't one already
           if(typeof(IUnique).IsAssignableFrom(type)) {
-            if(!baseProps.Any(prop => prop.PropertyName == "id")) {
+            JsonProperty idJsonProp;
+            if((idJsonProp = baseProps.FirstOrDefault(prop => prop.PropertyName == "id")) == null) {
               PropertyInfo idProp = type.GetInterface(nameof(IUnique))
                 .GetProperty(nameof(IUnique.Id));
               if(idProp == null) {
                 throw new NotImplementedException($"Types that inherit from IUnique require a serializeable 'id' property. {type.FullName} Does not have one.");
               }
-              baseProps.Add(CreateProperty(idProp, memberSerialization));
+              baseProps.Add(idJsonProp = CreateProperty(idProp, memberSerialization));
             }
+
+            idJsonProp.Order = int.MinValue + 1;
           }
 
           return baseProps;
@@ -72,6 +76,7 @@ namespace Meep.Tech.Data {
           if(!(member.GetCustomAttribute(typeof(ArchetypePropertyAttribute)) is null)) {
             // Archetype is always first:
             baseProperty.Order = int.MinValue;
+            baseProperty.PropertyName = nameof(Archetype).ToLower();
             baseProperty.Converter = _factoryToStringJsonConverter;
             baseProperty.ObjectCreationHandling = ObjectCreationHandling.Replace;
           }
@@ -79,6 +84,7 @@ namespace Meep.Tech.Data {
           if(!(member.GetCustomAttribute(typeof(ModelComponentsProperty)) is null)) {
             baseProperty.Order = int.MaxValue;
             baseProperty.Converter = _componentsJsonConverter;
+            baseProperty.PropertyName = nameof(Components).ToLower();
             baseProperty.ObjectCreationHandling = ObjectCreationHandling.Replace;
           }
 

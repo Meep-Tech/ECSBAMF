@@ -190,7 +190,6 @@ namespace Meep.Tech.Data {
 
     /// <summary>
     /// Turn the model into a serialized data object.
-    /// TODO: does this loop?
     /// </summary>
     public static JObject ToJson(this IModel model)
       => model.ToJson();

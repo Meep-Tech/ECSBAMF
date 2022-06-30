@@ -103,7 +103,7 @@ namespace Meep.Tech.Data {
       /// <summary>
       /// Get the builder factory for a given type
       /// </summary>
-      public IModel.IBuilderFactory SetInitialBuilderFactoryFor<TModel>()
+      public IModel.IBuilderFactory GetBuilderFactoryFor<TModel>()
         where TModel : IModel<TModel>
           => GetBuilderFactoryFor(typeof(TModel));
 

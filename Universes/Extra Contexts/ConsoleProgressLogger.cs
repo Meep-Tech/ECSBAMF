@@ -146,7 +146,9 @@ namespace Meep.Tech.Data.Configuration {
             + assemblyTypes.Enumerations.Count
             + assemblyTypes.Archetypes.Count
             + assemblyTypes.Models.Count * 2
-            + ISplayed._splayedInterfaceTypes.Count;
+            + ISplayed._splayedArchetypeCtorsByEnumBaseTypeAndEnumTypeAndSplayType
+              .Sum(x => x.Value.Sum(
+                e => e.Value.Count));
 
         if (assemblyTypes.Modifications is not null) {
           _totalCurrentSteps += LoaderModifierStepCountSize;
@@ -232,7 +234,12 @@ namespace Meep.Tech.Data.Configuration {
         _subProcessStepsRemaining -= 1;
 
         if (success) {
-          _writeMessage($"Finished Initializing {(isSplayedSubType ? "Splayed " : "")}Archetype: {archetype}, from class: {archetypeSystemType.ToFullHumanReadableNameString()}.", "Loader");
+          if (archetype is not null) {
+            _writeMessage($"Finished Initializing {(isSplayedSubType ? "Splayed " : "")}Archetype: {archetype.Id.Key}, from class: {archetypeSystemType.ToFullHumanReadableNameString()}.", "Loader");
+          }
+          else {
+            _writeMessage($"Finished Initializing All Sub-Archetypes from class: {archetypeSystemType.ToFullHumanReadableNameString()}.", "Loader");
+          }
         }
         else {
           _writeMessage($"Failed to Initialize {(isSplayedSubType ? "A Splayed " : "")}Archetype from class: {archetypeSystemType.ToFullHumanReadableNameString()}", "Loader", true, error);
@@ -375,7 +382,7 @@ namespace Meep.Tech.Data.Configuration {
     protected internal override Action OnLoaderFinishTypesComplete
       => () => {
         _overallStepsRemaining -= LoaderMajorStepCountSize;
-        _writeMessage($"Finished Loading {_loader._initializedArchetypes.Count()} Archetypes.", "Loader", verboseNonErrorText: string.Join("\n\t - ", _loader._initializedArchetypes));
+        _writeMessage($"Finished Loading {_loader._finishedArchetypes.Count()} Archetypes with: {_loader._initializedArchetypes.Count()} Types Unfinished.", "Loader", verboseNonErrorText: string.Join("\n\t - ", _loader._initializedArchetypes));
       };
 
     protected internal override Action OnLoaderFinalizeStart
@@ -386,6 +393,17 @@ namespace Meep.Tech.Data.Configuration {
         _overallStepsRemaining = 0;
 
         _writeMessage($"Finalized the XBam Loader for Universe: {_loader.Universe.Key}.", "Loader");
+        if (VerboseModeForErrors && _loader.Failures.Any()) {
+          _writeMessage($"Failed To Initialize The Following {_loader.Failures.Count()} Types:", isError: true, prefix: "Loader");
+          foreach(Loader.Failure failure in _loader.Failures) {
+            if (failure.XbamType == "Enumeration") {
+              Console.Error.WriteLine($"Could not initialize Enumeration of Type: {failure.SystemType.ToFullHumanReadableNameString()} on Property with Name:{(failure.Metadata as PropertyInfo).Name}, on Type: {(failure.Metadata as PropertyInfo).DeclaringType.ToFullHumanReadableNameString()}, due to Exception:\n\n{failure.Exception}");
+            }
+            else {
+              Console.Error.WriteLine($"Could not initialize {failure.XbamType} Type: {failure.SystemType.ToFullHumanReadableNameString()}, due to Exception:\n\n{failure.Exception}");
+            }
+          }
+        }
       };
 
     protected internal override Action OnLoaderIsFinished
@@ -393,13 +411,13 @@ namespace Meep.Tech.Data.Configuration {
         _overallStepsRemaining = null;
 
         _writeMessage($"XBam Loader for Universe: {_loader.Universe.Key} Finished and is now Sealed.", "Loader", verboseNonErrorText:
-          $"Enumerations Loaded:"
+          $"Enumerations Loaded:\n\t - "
             + string.Join($"\n\t - ", _loader.Universe.Enumerations.ByType.SelectMany(bt => bt.Value))
-          + $"\nArchetypes Loaded:"
+          + $"\nArchetypes Loaded:\n\t - "
             + string.Join($"\n\t - ", _loader.Universe.Archetypes.All.All)
-          + $"\nModel Types Loaded:"
+          + $"\nModel Types Loaded:\n\t - "
             + string.Join($"\n\t - ", _loader.Universe.Models.All.Select(t => t.FullName))
-          + $"\nComponent Types Loaded:"
+          + $"\nComponent Types Loaded:\n\t - "
             + string.Join($"\n\t - ", _loader.Universe.Components.All.Select(t => t.FullName))
         );
       };

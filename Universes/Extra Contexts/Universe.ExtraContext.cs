@@ -10,7 +10,6 @@ namespace Meep.Tech.Data {
 
     /// <summary>
     /// A Type that can be added as context to a universe.
-    /// TODO: extra context functions should be registration based.
     /// </summary>
     public class ExtraContext {
 

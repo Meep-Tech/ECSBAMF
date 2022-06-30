@@ -89,14 +89,12 @@ namespace Meep.Tech.Data {
 
       /// <summary>
       /// Check if this has a given component by base type
-      /// TODO, if this causes a stackoverflow we'll need to use the extensionmethod trick... which may be cleaner anyway lol
       /// </summary>
       public virtual bool HasComponent(System.Type componentType)
         => ReadableComponentStorageExtensions.HasComponent(this, componentType);
 
       /// <summary>
       /// Check if this has a component matching the given object
-      /// TODO, if this causes a stackoverflow we'll need to use the extensionmethod trick... which may be cleaner anyway lol
       /// </summary>
       public virtual bool HasComponent(string componentBaseKey)
         => ReadableComponentStorageExtensions.HasComponent(this, componentBaseKey);

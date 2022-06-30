@@ -125,13 +125,15 @@ namespace Meep.Tech.Data {
       }
 
       void _checkForAndInitializeLazilySplayedArchetypes(Enumeration enumeration) {
-        if (Archetype.ISplayed._splayedArchetypeCtorsByEnumBaseTypeAndEnumType.TryGetValue(enumeration.EnumBaseType, out var potentialLazySplayedTypes)) {
-          if (potentialLazySplayedTypes.TryGetValue(enumeration.GetType(), out var lazySplayedArchetypeCtors)) {
-            lazySplayedArchetypeCtors.ForEach(c => {
-              Universe.ExtraContexts.OnLoaderArchetypeInitializationStart(enumeration.GetType(), true);
-              var a = c(enumeration);
-              Universe.ExtraContexts.OnLoaderArchetypeInitializationComplete(true, a.GetType(), a, null, true);
-            });
+        if (Universe.Loader.IsFinished && Universe.Loader.Options.AllowRuntimeTypeRegistrations) {
+          if (Archetype.ISplayed._splayedArchetypeCtorsByEnumBaseTypeAndEnumTypeAndSplayType.TryGetValue(enumeration.EnumBaseType, out var potentialLazySplayedTypes)) {
+            if (potentialLazySplayedTypes.TryGetValue(enumeration.GetType(), out var lazySplayedArchetypeCtors)) {
+              lazySplayedArchetypeCtors.ForEach(c => {
+                Universe.ExtraContexts.OnLoaderArchetypeInitializationStart(enumeration.GetType(), true);
+                var a = c.Value(enumeration);
+                Universe.ExtraContexts.OnLoaderArchetypeInitializationComplete(true, a.GetType(), a, null, true);
+              });
+            }
           }
         }
       }
