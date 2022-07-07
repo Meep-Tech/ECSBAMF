@@ -23,6 +23,7 @@ namespace Meep.Tech.Data.Configuration {
     List<System.Type> _initializedTypes;
     List<Assembly> _assemblyLoadOrder;
     List<Failure> _failures;
+    HashSet<Archetype> _successfullyTestedArchetypes;
 
     /// <summary>
     /// The assembly types that will be built in order
@@ -204,6 +205,54 @@ namespace Meep.Tech.Data.Configuration {
       }
 
       _finalize();
+    }
+
+    /// <summary>
+    /// Can be used to add an initialized archetype to this loader from extra contexts etc while loading is ongoing.
+    /// </summary>
+    public void AddInitializedArchetype(Archetype archetype) {
+      if (!IsFinished && _successfullyTestedArchetypes is null) {
+        _initializedArchetypes.Add(archetype);
+      } else throw new InvalidOperationException($"Loader is sealed or has started Model Tests, newly initialized Archetypes cannot be added.");
+    }
+
+    /// <summary>
+    /// Can be used to add info about an archetype that failed to be loaded.
+    /// </summary>
+    public void AddArchetypeFailure(System.Type archetypeType, Exception exception = null) {
+      if (!IsFinished) {
+        _failures.Add(new("Archetype", archetypeType, exception));
+      } else throw new InvalidOperationException($"Loader is Sealed, failures shouldn't be being added at this point.");
+    }
+
+    /// <summary>
+    /// Can be used to add info about an model that failed to be loaded.
+    /// </summary>
+    public void AddModelTypeFailure(System.Type modelType, Exception exception = null) {
+      if (!IsFinished) {
+        _failures.Add(new("Model", modelType, exception));
+      }
+      else throw new InvalidOperationException($"Loader is Sealed, failures shouldn't be being added at this point.");
+    }
+
+    /// <summary>
+    /// Can be used to add info about an model that failed to be loaded.
+    /// </summary>
+    public void AddComponentTypeFailure(System.Type componentType, Exception exception = null) {
+      if (!IsFinished) {
+        _failures.Add(new("Component", componentType, exception));
+      }
+      else throw new InvalidOperationException($"Loader is Sealed, failures shouldn't be being added at this point.");
+    }
+
+    /// <summary>
+    /// Can be used to add info about an enum that failed to be loaded.
+    /// </summary>
+    public void AddEnumValueFailure(PropertyInfo enumProperty, Exception exception = null) {
+      if (!IsFinished) {
+        _failures.Add(new("Enum", enumProperty.PropertyType, exception) {  Metadata = enumProperty });
+      }
+      else throw new InvalidOperationException($"Loader is Sealed, failures shouldn't be being added at this point.");
     }
 
     void _initFields() {
@@ -883,10 +932,10 @@ namespace Meep.Tech.Data.Configuration {
     void _testBuildModelsForAllInitializedTypes() {
       Universe.ExtraContexts.OnLoaderBuildAllTestModelsStart(_initializedArchetypes.Count);
 
-      HashSet<Archetype> successfullyTestedArchetypes = new();
+      _successfullyTestedArchetypes = new();
       int attemptsRemaining = Options.ModelTestBuildAttempts;
-      while (successfullyTestedArchetypes.Count() < _initializedArchetypes.Count() && attemptsRemaining-- > 0) {
-        foreach (var archetype in _initializedArchetypes.Except(successfullyTestedArchetypes).ToList()) {
+      while (_successfullyTestedArchetypes.Count() < _initializedArchetypes.Count() && attemptsRemaining-- > 0) {
+        foreach (var archetype in _initializedArchetypes.Except(_successfullyTestedArchetypes).ToList()) {
           if (!_tryToBuildDefaultModelForArchetype(archetype.GetType(), archetype, out var failureException)) {
             if (attemptsRemaining == 0) {
               _initializedArchetypes.Remove(archetype);
@@ -896,7 +945,7 @@ namespace Meep.Tech.Data.Configuration {
             }
           }
           else {
-            successfullyTestedArchetypes.Add(archetype);
+            _successfullyTestedArchetypes.Add(archetype);
           }
         }
       }
@@ -1699,6 +1748,7 @@ namespace Meep.Tech.Data.Configuration {
       _failedEnumerations = null;
       _finishedArchetypes = null;
 
+      _successfullyTestedArchetypes = null;
       _initializedArchetypes = null;
     }
 

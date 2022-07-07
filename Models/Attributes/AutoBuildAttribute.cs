@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
 using System.Reflection;
-using static Meep.Tech.Data.AutoBuildAttribute;
 
 namespace Meep.Tech.Data {
 
@@ -27,6 +26,12 @@ namespace Meep.Tech.Data {
     public delegate bool ValueValidator(object value, IBuilder builder, IModel model, out string message, out System.Exception validationError);
 
     /// <summary>
+    /// A value getter.
+    /// </summary>
+    /// <returns>the gotten value</returns>
+    public delegate object ValueGetter(IModel model, IBuilder builder, PropertyInfo propertyInfo, AutoBuildAttribute attribute, bool isRequired);
+
+    /// <summary>
     /// If this field must not be null before being returned by the auto build step.
     /// </summary>
     public bool NotNull {
@@ -43,6 +48,14 @@ namespace Meep.Tech.Data {
       set;
     } = false;
     internal bool _checkedRequired;
+
+    /// <summary>
+    /// An overrideable getter
+    /// </summary>
+    public virtual ValueGetter Getter {
+      get;
+      set;
+    }
 
     /// <summary>
     /// Optional override name for the parameter expected by the builder to build this property with.
@@ -104,15 +117,23 @@ namespace Meep.Tech.Data {
         : base(message, innerException) { ModelTypeBeingBuilt = modelType; }
     }
 
-    internal static IEnumerable<(string name, Func<IModel, IBuilder, IModel> function)> _generateAutoBuilderSteps(System.Type modelType)
+    internal static IEnumerable<(string name, Func<IModel, IBuilder, IModel> function)> _generateAutoBuilderSteps(System.Type modelType, Universe universe)
       => modelType.GetProperties(System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)
         .Select(p => (p, a: p.GetCustomAttribute<AutoBuildAttribute>(true)))
         .Where(e => e.a is not null)
-        .Select(e => (
-          order: e.a.Order, 
-          name: e.a.ParameterName ?? e.p.Name, 
-          func: new Func<IModel, IBuilder, IModel>((m, b) => _autoBuildModelProperty(m, b, e.p, e.a, modelType))
-        )).OrderBy(e => e.order)
+        .Select(e => {
+          universe.ExtraContexts.OnLoaderAutoBuildPropertyCreationStart(modelType, e.a, e.p);
+
+          var entry = (
+            order: e.a.Order,
+            name: e.a.ParameterName ?? e.p.Name,
+            func: new Func<IModel, IBuilder, IModel>((m, b) 
+              => _autoBuildModelProperty(m, b, e.p, e.a, modelType))
+          );
+
+          universe.ExtraContexts.OnLoaderAutoBuildPropertyCreationComplete(modelType, e.a, e.p, entry);
+          return entry;
+        }).OrderBy(e => e.order)
         .Select(e => (e.name, e.func));
 
     /// <summary>
@@ -145,9 +166,17 @@ namespace Meep.Tech.Data {
           attributeData._checkedRequired = true;
         }
 
-        object value = attributeData.IsRequiredAsAParameter
-          ? _getRequiredValueFromBuilder(b, p, attributeData)
-          : _getValueFromBuilderOrDefault(m, b, p, attributeData);
+        ValueGetter getter = attributeData.Getter
+          ??= attributeData.IsRequiredAsAParameter
+            ? BuildDefaultGetterForRequiredValueFromBuilder(m, b, p, attributeData)
+            : BuildDefaultGetterFromBuilderOrDefault(m, b, p, attributeData);
+
+        object value = getter(
+          m,
+          b, p,
+          attributeData,
+          attributeData.IsRequiredAsAParameter
+        );
 
         if (attributeData.ValueValidatorName is not null) {
           // TODO: cache this
@@ -236,16 +265,19 @@ namespace Meep.Tech.Data {
       }
     }
 
-    static object _getDefaultValue(IModel model, IBuilder builder, PropertyInfo property, AutoBuildAttribute attributeData) {
+    /// <summary>
+    /// The default getter for getting a default value for a field.
+    /// </summary>
+    public static ValueGetter GetDefaultValue = (IModel model, IBuilder builder, PropertyInfo property, AutoBuildAttribute attributeData, bool isRequired) => {
       /// get via default attribute box value.
       // TODO: instead of an overall override, this should be able to be deferred then used if the cached functions provide null in the end.
       var defaultValueAttributeData = property.GetCustomAttributes(typeof(DefaultValueAttribute), true).FirstOrDefault() as DefaultValueAttribute;
-      if(defaultValueAttributeData is not null) {
+      if (defaultValueAttributeData is not null) {
         return defaultValueAttributeData.Value;
       }
 
       /// get via getter on the model
-      if(attributeData.DefaultValueGetterDelegateName is not null) {
+      if (attributeData.DefaultValueGetterDelegateName is not null) {
         var @delegate = property.DeclaringType.GetMembers(System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)
           .FirstOrDefault(m => m.Name == attributeData.DefaultValueGetterDelegateName
             && (
@@ -261,14 +293,15 @@ namespace Meep.Tech.Data {
                 })
             ));
 
-        if(@delegate is null) {
+        if (@delegate is null) {
           throw new MissingMemberException($"Could not find a property or field named {attributeData.DefaultValueGetterDelegateName}, on model type {property.DeclaringType}, that is a delegate of type {typeof(AutoBuildAttribute.DefaultValueGetter).FullName}, or a function with the same name and the return type {typeof(IModel).FullName}, and parameters: ({nameof(IBuilder)}, {nameof(IModel)})");
         }
 
-        if(@delegate is MethodInfo method) {
+        if (@delegate is MethodInfo method) {
           // TODO: cache this
           return method.Invoke(model, new object[] { model, builder });
-        } else {
+        }
+        else {
           DefaultValueGetter defaultGetterDelegate = (@delegate is PropertyInfo p
               ? p.GetValue(model)
               : @delegate is FieldInfo f
@@ -282,7 +315,7 @@ namespace Meep.Tech.Data {
       }
 
       /// get via name on the archetype
-      if(attributeData.DefaultArchetypePropertyName is not null) {
+      if (attributeData.DefaultArchetypePropertyName is not null) {
         var archetypeDefaultProvider = builder.Archetype.GetType().GetMembers(System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)
           .FirstOrDefault(m => m.Name == attributeData.DefaultArchetypePropertyName
             && (
@@ -296,14 +329,15 @@ namespace Meep.Tech.Data {
                 })
             ));
 
-        if(archetypeDefaultProvider is null) {
+        if (archetypeDefaultProvider is null) {
           throw new MissingMemberException($"Could not find a property or field named {attributeData.DefaultArchetypePropertyName}, on model type {property.DeclaringType}, that is of type {property.PropertyType.FullName}, or a function with the same name and the return type, with and parameters: ({nameof(IBuilder)}, {nameof(IModel)})");
         }
 
-        if(archetypeDefaultProvider is MethodInfo method) {
+        if (archetypeDefaultProvider is MethodInfo method) {
           // TODO: cache this
           return method.Invoke(builder.Archetype, new object[] { model, builder });
-        } else {
+        }
+        else {
           DefaultValueGetter defaultGetterDelegate = (archetypeDefaultProvider is PropertyInfo p
             ? new DefaultValueGetter((b, m) => p.GetValue(builder.Archetype))
             : archetypeDefaultProvider is FieldInfo f
@@ -324,36 +358,45 @@ namespace Meep.Tech.Data {
           && p.PropertyType == property.PropertyType
         );
 
-      if(archetypeDefaultProperty is not null) {
+      if (archetypeDefaultProperty is not null) {
         // TODO: cache this
         return archetypeDefaultProperty.GetValue(builder.Archetype);
       }
 
       return property.GetValue(model);
-    }
+    };
 
-    static object _getValueFromBuilderOrDefault(IModel model, IBuilder builder, PropertyInfo property, AutoBuildAttribute attributeData) {
+    /// <summary>
+    /// Used to build the default ValueGetter for non required items.
+    /// </summary>
+    public static ValueGetter BuildDefaultGetterFromBuilderOrDefault(IModel model, IBuilder builder, PropertyInfo property, AutoBuildAttribute attributeData, ValueGetter onFailureDefaultOveride = null) {
       var getter = typeof(BuilderExtensions).GetMethod(nameof(BuilderExtensions.TryToGetParam));
       getter = getter.MakeGenericMethod(property.PropertyType);
 
       // TODO: cache this
-      object[] parameters = new object[] { builder, attributeData.ParameterName ?? property.Name, null, default };
-      try {
-        if((bool)getter.Invoke(null, parameters)) {
-          return parameters[2];
-        } else return _getDefaultValue(model, builder, property, attributeData);
-      } catch(TargetInvocationException e) {
-        throw e.InnerException;
-      }
+      return new((m, b, p, a, _) => {
+        object[] parameters = new object[] { b, a.ParameterName ?? p.Name, null, default };
+        try {
+          return (bool)getter.Invoke(null, parameters) 
+            ? parameters[2] 
+            : (onFailureDefaultOveride ?? GetDefaultValue).Invoke(m, b, p, a, false);
+        }
+        catch (TargetInvocationException e) {
+          throw e.InnerException;
+        }
+      });
     }
 
-    static object _getRequiredValueFromBuilder(IBuilder builder, PropertyInfo property, AutoBuildAttribute attributeData) {
+    /// <summary>
+    /// Used to build the default ValueGetter for required items.
+    /// </summary>
+    public static ValueGetter BuildDefaultGetterForRequiredValueFromBuilder(IModel model, IBuilder builder, PropertyInfo property, AutoBuildAttribute attributeData) {
       var getter = typeof(BuilderExtensions).GetMethod(nameof(BuilderExtensions.GetAndValidateParamAs));
       getter = getter.MakeGenericMethod(property.PropertyType);
 
       // TODO: cache this
       try {
-        return getter.Invoke(null, new object[] { builder, attributeData.ParameterName ?? property.Name });
+        return (_,b,p,a,_) => getter.Invoke(null, new object[] { b, a.ParameterName ?? p.Name });
       } catch(TargetInvocationException e) {
         throw e.InnerException;
       }

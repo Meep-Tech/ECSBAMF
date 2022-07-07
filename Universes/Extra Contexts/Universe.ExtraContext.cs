@@ -227,6 +227,21 @@ namespace Meep.Tech.Data {
         { get; protected set; } = null;
 
       /// <summary>
+      /// Executed once for each xbam auto build property created when scanning models.
+      /// </summary>
+      internal protected virtual Action<System.Type, AutoBuildAttribute, PropertyInfo> OnLoaderAutoBuildPropertyCreationStart { get; protected set; } = null;
+
+      /// <summary>
+      /// Executed once for each xbam auto build property created when scanning models.
+      /// </summary>
+      internal protected virtual Action<
+        System.Type,
+        AutoBuildAttribute,
+        PropertyInfo,
+        (int, string, Func<IModel, IBuilder, IModel>)
+      > OnLoaderAutoBuildPropertyCreationComplete { get; protected set; } = null;
+
+      /// <summary>
       /// Executed once for each json property created when scanning models with the default contract resolver.
       /// </summary>
       internal protected virtual Action<MemberInfo, JsonProperty> OnLoaderModelJsonPropertyCreationComplete 

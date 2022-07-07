@@ -704,7 +704,7 @@ namespace Meep.Tech.Data {
           = GetType();
 
         /// add auto builder properties based on the model type:
-        _modelAutoBuilderSteps = AutoBuildAttribute._generateAutoBuilderSteps(constructedModelType)
+        _modelAutoBuilderSteps = AutoBuildAttribute._generateAutoBuilderSteps(constructedModelType, Id.Universe)
           .ToDictionary(
            e => e.name,
            e => e.function
