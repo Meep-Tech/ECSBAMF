@@ -151,12 +151,8 @@ namespace Meep.Tech.Data {
     /// <summary>
     /// Make a new archetype
     /// </summary>
-    protected Archetype(Identity id) {
-      if(id is null) {
-        throw new ArgumentNullException("id");
-      }
-
-      Id = id;
+    internal Archetype(Identity id, Func<Archetype, Identity> getDefaultId) {
+      Id = id ?? getDefaultId(this);
 
       if(Id is null) {
         throw new ArgumentException($"Id is null. The passed in ID May not be of the expected type. Expected:{typeof(Identity).FullName}, provided: {id.GetType().FullName}.");
@@ -570,41 +566,16 @@ namespace Meep.Tech.Data {
     #region Archetype Initialization
 
     /// <summary>
-    /// The base for making a new archetype.
-    /// This should be extended into a private constructor that will only be called once by the Loader
+    /// Used to get a default Id for this type of archetype.
     /// </summary>
-    protected Archetype(Archetype.Identity id, Collection collection = null) 
-      : base(id) 
-    {
-      if(collection is null) {
-        if (Archetypes.DefaultUniverse.Loader.IsFinished && !AllowInitializationsAfterLoaderFinalization) {
-          throw new InvalidOperationException($"Tried to initialize archetype of type {id} while the loader was sealed");
-        }
-
-        collection = (Collection)
-          // if the base of this is registered somewhere, get the registered one by default
-          (Archetypes.DefaultUniverse.Archetypes._tryToGetCollectionFor(GetType(), out var found)
-            ? found is Collection
-              ? found
-              : Archetypes.DefaultUniverse.Archetypes._collectionsByRootArchetype[typeof(TArchetypeBase).FullName]
-                = new Collection()
-            // else this is the base and we need a new one
-            : Archetypes.DefaultUniverse.Archetypes._collectionsByRootArchetype[typeof(TArchetypeBase).FullName] 
-              = new Collection());
-      } // if we have a collection, just make sure it accepts new entries
-      else if (collection.Universe.Loader.IsFinished && !AllowInitializationsAfterLoaderFinalization) {
-        throw new InvalidOperationException($"Tried to initialize archetype of type {id} while the loader was sealed");
-      }
-
-      collection.Universe.Archetypes._registerArchetype(this, collection);
-      _initialize();
-    }
+    protected static Archetype.Identity GetDefaultIdentity(Archetype @this)
+      => new Identity(@this.GetType().Name);
 
     /// <summary>
-    /// The base for making a new archetype in a universe other than the default.
+    /// The base for making a new archetype.
     /// </summary>
-    protected Archetype(Archetype.Identity id, Universe universe, Collection collection = null) 
-      : base(id) 
+    protected Archetype(Archetype.Identity id, Collection collection = null, Universe universe = null) 
+      : base(id, GetDefaultIdentity) 
     {
       if (universe is null) {
         universe = Archetypes.DefaultUniverse;
@@ -884,19 +855,6 @@ namespace Meep.Tech.Data {
     protected internal TDesiredModel Make<TDesiredModel>(IEnumerable<KeyValuePair<IModel.Builder.Param, object>> @params)
       where TDesiredModel : TModelBase
         => (TDesiredModel)Make(@params.Select(entry => new KeyValuePair<string,object>(entry.Key.Key, entry.Value)));
-
-    /// <summary>
-    /// Helper for potentially making an item without initializing a Builder object.
-    /// </summary>
-    /*protected internal TModelBase Make(params KeyValuePair<IModel.Builder.Param, object>[] @params)
-      => Make((IEnumerable<KeyValuePair<IModel.Builder.Param, object>>)@params);*/
-
-    /// <summary>
-    /// Helper for potentially making an item without initializing a dictionary object
-    /// </summary>
-    /// <returns></returns>
-    /*protected internal TModelBase Make(params KeyValuePair<string, object>[] @params)
-      => Make(@params.AsEnumerable());*/
     
     /// <summary>
     /// Helper for potentially making an item without initializing a dictionary object
@@ -918,14 +876,6 @@ namespace Meep.Tech.Data {
     /// Helper for potentially making an item without initializing a dictionary object
     /// </summary>
     /// <returns></returns>
-    /*protected internal TDesiredModel Make<TDesiredModel>(params KeyValuePair<string, object>[] @params)
-      where TDesiredModel : TModelBase
-        => (TDesiredModel)Make(@params);*/
-
-    /// <summary>
-    /// Helper for potentially making an item without initializing a dictionary object
-    /// </summary>
-    /// <returns></returns>
     protected internal TDesiredModel MakeAs<TDesiredModel>(IEnumerable<KeyValuePair<string, object>> @params, out TDesiredModel model)
       where TDesiredModel : TModelBase
         => model = (TDesiredModel)Make(@params);
@@ -937,14 +887,6 @@ namespace Meep.Tech.Data {
     protected internal TDesiredModel MakeAs<TDesiredModel>(IEnumerable<(string, object)> @params, out TDesiredModel model)
       where TDesiredModel : class, TModelBase
         => model = (TDesiredModel)Make(@params);
-
-    /// <summary>
-    /// Helper for potentially making an item without initializing a dictionary object
-    /// </summary>
-    /// <returns></returns>
-    /*protected internal TDesiredModel MakeAs<TDesiredModel>(out TDesiredModel model, params KeyValuePair<string, object>[] @params)
-      where TDesiredModel : class, TModelBase
-        => model = (TDesiredModel)Make(@params);*/
 
     #endregion
 

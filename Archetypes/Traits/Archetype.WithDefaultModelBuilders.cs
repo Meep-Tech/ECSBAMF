@@ -20,13 +20,13 @@ namespace Meep.Tech.Data {
         IExposeDefaultModelBuilderMakeMethods.Fully 
     {
 
-      ///<summary><inheritdoc/></summary>
+      /*///<summary><inheritdoc/></summary>
       protected WithAllDefaultModelBuilders(Archetype.Identity id, Collection collection = null) 
-        : base(id, collection) {}
+        : base(id, null, collection) {}*/
 
       ///<summary><inheritdoc/></summary>
-      protected WithAllDefaultModelBuilders(Archetype.Identity id, Universe universe, Collection collection = null) 
-        : base(id, universe, collection) {}
+      protected WithAllDefaultModelBuilders(Archetype.Identity id, Collection collection = null, Universe universe = null) 
+        : base(id, collection, universe) {}
 
       /// <summary>
       /// <inheritdoc/>
@@ -157,13 +157,13 @@ namespace Meep.Tech.Data {
       : Archetype<TModelBase, TArchetypeBase>,
         IExposeDefaultModelBuilderMakeMethods.WithBuilderParameters
     {
-      ///<summary><inheritdoc/></summary>
+      /*///<summary><inheritdoc/></summary>
       protected WithDefaultParamBasedModelBuilders(Archetype.Identity id, Collection collection = null) 
-        : base(id, collection) {}
+        : base(id, collection) {}*/
 
       ///<summary><inheritdoc/></summary>
-      protected WithDefaultParamBasedModelBuilders(Archetype.Identity id, Universe universe, Collection collection = null) 
-        : base(id, universe, collection) {}
+      protected WithDefaultParamBasedModelBuilders(Archetype.Identity id, Universe universe = null, Collection collection = null) 
+        : base(id, collection, universe) {}
 
       /// <summary>
       /// Make a model from this archetype using a set of params to populate the default builder.
@@ -239,14 +239,14 @@ namespace Meep.Tech.Data {
         IExposeDefaultModelBuilderMakeMethods.WithParamListParameters
     {
 
-      ///<summary><inheritdoc/></summary>
+      /*///<summary><inheritdoc/></summary>
       protected WithDefaultBuilderBasedModelBuilders(Archetype.Identity id, Collection collection = null) 
         : base(id, collection) {
-      }
+      }*/
 
       ///<summary><inheritdoc/></summary>
-      protected WithDefaultBuilderBasedModelBuilders(Archetype.Identity id, Universe universe, Collection collection = null) 
-        : base(id, universe, collection) {
+      protected WithDefaultBuilderBasedModelBuilders(Archetype.Identity id, Collection collection = null, Universe universe = null) 
+        : base(id, collection, universe) {
       }
 
       /// <summary>

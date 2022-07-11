@@ -1124,24 +1124,15 @@ namespace Meep.Tech.Data.Configuration {
             | BindingFlags.Static
         )?.Invoke(null, new object[] { Universe });
 
-        //bool testBuildRequiresGenericType = false;
-
         // assign root archetype references
         // archetype based models
         if (systemType.IsAssignableToGeneric(typeof(IModel<,>))) {
           if (!Universe.Archetypes._rootArchetypeTypesByBaseModelType.ContainsKey(key: systemType.FullName)) {
             var types = systemType.GetFirstInheritedGenericTypeParameters(typeof(IModel<,>));
-            //if (!typeof(IModel.IBuilderFactory).IsAssignableFrom(types.Last())) {
             Type rootArchetype = types.Last();
 
             Universe.Archetypes._rootArchetypeTypesByBaseModelType[systemType.FullName]
               = rootArchetype;
-
-            // if the type is an unasigned generic:
-            /*if (rootArchetype.FullName == null) {
-              testBuildRequiresGenericType = true;
-            }*/
-            //}
           }
         } // factory based models
         else {
@@ -1464,10 +1455,6 @@ namespace Meep.Tech.Data.Configuration {
           });
           accurateTargetType = lastFrame.GetMethod().DeclaringType;
         }
-
-        /*var testParams = _loadOrGetTestParams(factory, accurateTargetType);
-        builder = _loadOrGetTestBuilder(factory, out var potentialModel);
-        defaultModel = potentialModel?.model ?? factory.MakeDefaultWith(builder);*/
       }
       else throw e;
       return accurateTargetType;
@@ -1773,19 +1760,15 @@ namespace Meep.Tech.Data.Configuration {
     void _reportOnFailedTypeInitializations() {
       List<Failure> failures = new();
       foreach ((System.Type componentType, Exception ex) in _uninitializedComponents.Merge(_failedComponents)) {
-        //Console.Error.WriteLine($"Could not initialize Component Type: {componentType}, due to Internal Exception:\n\n{ex}");
         failures.Add(new("Component", componentType, ex));
       }
       foreach ((System.Type modelType, Exception ex) in _uninitializedModels.Merge(_failedModels)) {
-        //Console.Error.WriteLine($"Could not initialize Model Type: {modelType}, due to Internal Exception:\n\n{ex}");
         failures.Add(new("Model", modelType, ex));
       }
       foreach ((System.Type archetypeType, Exception ex) in _uninitializedArchetypes.Merge(_failedArchetypes)) {
-        //Console.Error.WriteLine($"Could not initialize Archetype Type: {archetypeType}, due to Internal Exception:\n\n{ex}");
         failures.Add(new("Archetype", archetypeType, ex));
       }
       foreach ((MemberInfo enumProp, Exception ex) in _failedEnumerations) {
-        //Console.Error.WriteLine($"Could not initialize Enum of Type: {(enumProp is PropertyInfo p ? p.PropertyType : "unknown")} on property with name:{enumProp.Name} on type: {enumProp.DeclaringType.FullName} due to Internal Exception:\n\n{ex}");
         failures.Add(new("Enumeration", (enumProp as PropertyInfo).PropertyType, ex) {  Metadata = enumProp});
       }
 
