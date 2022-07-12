@@ -1,5 +1,8 @@
-﻿using System;
+﻿using Meep.Tech.Collections.Generic;
+using System;
 using System.Collections.Generic;
+using Meep.Tech.Data.Reflection;
+using System.Linq;
 
 namespace Meep.Tech.Data {
 
@@ -39,6 +42,12 @@ namespace Meep.Tech.Data {
       /// Cached model base types
       /// </summary>
       internal Dictionary<string, System.Type> _byKey
+        = new();
+
+      /// <summary>
+      /// Cached linked types
+      /// </summary>
+      internal Map<System.Type, System.Type> _archetypeComponentsLinkedToModelComponents
         = new();
 
       Universe _universe;
@@ -81,9 +90,9 @@ namespace Meep.Tech.Data {
       public System.Type GetComponentBaseType(System.Type type)
         => _baseTypes.TryGetValue(type.FullName, out System.Type foundType)
           ? foundType
-          : _baseTypes[type.FullName] = _findComponentBaseType(type);
+          : _baseTypes[type.FullName] = type.GetFirstInheritedGenericTypeParameters(typeof(IComponent<>)).First();
 
-      /// <summary>
+     /* /// <summary>
       /// Calculate this model's base model type.
       /// </summary>
       System.Type _findComponentBaseType(System.Type type) {
@@ -101,7 +110,7 @@ namespace Meep.Tech.Data {
         }
 
         throw new NotImplementedException($"System.Type: {type.FullName}, does not have a base Type that inherits from IModel or Model<>.");
-      }
+      }*/
     }
   }
 }

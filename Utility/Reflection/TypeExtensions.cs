@@ -97,14 +97,13 @@ namespace Meep.Tech.Data.Reflection {
     /// Get the generic arguments from a type this inherits from
     /// </summary>
     public static IEnumerable<Type> GetFirstInheritedGenericTypeParameters(this Type type, Type genericParentType) {
-      List<Type> inheritedGenericTypes = new List<Type>();
       foreach(Type intType in type.GetParentTypes()) {
         if(intType.IsGenericType && intType.GetGenericTypeDefinition() == genericParentType) {
           return intType.GetGenericArguments();
         }
       }
 
-      return inheritedGenericTypes;
+      return Enumerable.Empty<Type>();
     }
 
     /// <summary>

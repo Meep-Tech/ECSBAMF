@@ -81,15 +81,10 @@ namespace Meep.Tech.Data {
 
     /// <summary>
     /// The initial default components to add to this archetype on it's creation, indexed by their keys. 
-    /// You can add values using the '_InitialComponents ??= base.InitialComponents .Append(' syntax.
     /// </summary>
-    protected internal virtual Dictionary<string, Archetype.IComponent> InitialComponents {
-      get => _InitialComponents ?? new();
-    } /** <summary> The backing field used to initialize and override the initail value of InitialComponents. You can this syntax to override or add to the base initial value: '=> _InitialComponents ??= base.InitialComponents.Append(...' </summary> **/
-    protected Dictionary<string, Archetype.IComponent> _InitialComponents {
-      get => _initialComponents;
-      set => _initialComponents = value;
-    } Dictionary<string, Archetype.IComponent> _initialComponents;
+    protected internal virtual IReadOnlyDictionary<string, Archetype.IComponent> InitialComponents {
+      get;
+    } = new Dictionary<string, Archetype.IComponent>();
 
     /// <summary>
     /// The Archetype components linked to model components
@@ -103,14 +98,10 @@ namespace Meep.Tech.Data {
     /// Components by key, with optional constructors used to set up the default components on a model made by this Archetype,
     /// Usually you'll want to use an Archetype.ILinkedComponent but this is here too for model components. not linked to an archetype component.
     /// If the constructor function is left null, the default component ctor is used.
-    /// Override this field by using "_InitialIUnlinkedModelComponents ??= base.InitialUnlinkedModelComponents.Append...." syntax
     /// </summary>
-    protected internal virtual Dictionary<string, Func<IBuilder, IModel.IComponent>> InitialUnlinkedModelComponents {
-      get => _InitialIUnlinkedModelComponents ?? new();
-    } /**<summary> The backing field used to initialize and override InitialIUnlinkedModelComponentConstructors </summary>**/
-    protected Dictionary<string, Func<IBuilder, IModel.IComponent>> _InitialIUnlinkedModelComponents {
-      get => _initialIUnlinkedModelComponents; set => _initialIUnlinkedModelComponents = value;
-    } Dictionary<string, Func<IBuilder, IModel.IComponent>> _initialIUnlinkedModelComponents;
+    protected internal virtual IReadOnlyDictionary<string, Func<IBuilder, IModel.IComponent>> InitialUnlinkedModelComponents {
+      get;
+    } = new Dictionary<string, Func<IBuilder, IModel.IComponent>>();
 
     /// <summary>
     /// If this is true, this Archetype can have it's component collection modified before load by mods and other libraries.
@@ -281,13 +272,13 @@ namespace Meep.Tech.Data {
     /// <summary>
     /// The accessor for the default Icomponents implimentation
     /// </summary>
-    Dictionary<string, Data.IComponent> IReadableComponentStorage._componentsByBuilderKey
+    Dictionary<string, Data.IComponent> IReadableComponentStorage.ComponentsByBuilderKey
       => _components;
     
     /// <summary>
     /// The accessor for the default Icomponents implimentation
     /// </summary>
-    Dictionary<System.Type, ICollection<Data.IComponent>> IReadableComponentStorage._componentsWithWaitingContracts { get; }
+    Dictionary<System.Type, ICollection<Data.IComponent>> IReadableComponentStorage.ComponentsWithWaitingContracts { get; }
       = new();
 
     /// <summary>

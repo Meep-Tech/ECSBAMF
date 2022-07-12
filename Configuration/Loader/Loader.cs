@@ -1,5 +1,6 @@
 ﻿using Meep.Tech.Collections.Generic;
 using Meep.Tech.Data.Reflection;
+using Meep.Tech.Data.Utility;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
@@ -939,8 +940,8 @@ namespace Meep.Tech.Data.Configuration {
           if (!_tryToBuildDefaultModelForArchetype(archetype.GetType(), archetype, out var failureException)) {
             if (attemptsRemaining == 0) {
               _initializedArchetypes.Remove(archetype);
-              _uninitializedArchetypes.Add(archetype.GetType(), failureException);
-              _failedArchetypes.Add(archetype.GetType(), failureException);
+              _uninitializedArchetypes.TryAdd(archetype.GetType(), failureException);
+              _failedArchetypes.TryAdd(archetype.GetType(), failureException);
               archetype.TryToUnload();
             }
           }
@@ -1269,6 +1270,10 @@ namespace Meep.Tech.Data.Configuration {
       if (typeof(IComponent.IHaveContract).IsAssignableFrom(systemType)) {
         _cacheContractsForComponentType(systemType);
       }
+
+      systemType.GetFirstInheritedGenericTypeParameters(typeof(Archetype.IComponent.IAmLinkedTo<>))
+        .FirstOrDefault()?
+        .ThenDo(t => Universe.Components._archetypeComponentsLinkedToModelComponents.Add(systemType, t));
     }
 
     void _cacheContractsForComponentType(Type systemType) {
@@ -1456,7 +1461,7 @@ namespace Meep.Tech.Data.Configuration {
           accurateTargetType = lastFrame.GetMethod().DeclaringType;
         }
       }
-      else throw e;
+      else throw new FailedToConfigureTypeException($"Cannot Calulate Accurate Builder Type from Inner Exception", e);
       return accurateTargetType;
     }
 
@@ -1544,12 +1549,38 @@ namespace Meep.Tech.Data.Configuration {
         IBuilder builder = builderCtor.Invoke(
           factory,
           @params
-        ); ;
+        );
+
+        TestParentFactoryAttribute testParentData;
+        if (typeof(IComponent).IsAssignableFrom(factory.ModelTypeProduced)) {
+          if ((testParentData = factory.ModelTypeProduced.GetCustomAttribute<TestParentFactoryAttribute>()) != null) {
+            builder.Parent = new DummyParent() { 
+              Factory = testParentData.TestArchetypeType.AsArchetype()
+            };
+          }
+        }
 
         return builder;
       }
 
       return null;
+    }
+
+    [Settings.DoNotBuildInInitialLoad]
+    internal class DummyParent : IModel, IReadableComponentStorage, IWriteableComponentStorage {
+      internal IFactory Factory { get; init; }
+
+      IFactory IModel.Factory => Factory;
+
+      Universe IModel.Universe { get; set; }
+
+      /*internal IEnumerable<IModel.IComponent> Components { init 
+        => value.ForEach(this.AddComponent); 
+      }*/
+
+      Dictionary<string, IComponent> IReadableComponentStorage.ComponentsByBuilderKey { get; } = new();
+
+      Dictionary<Type, ICollection<IComponent>> IReadableComponentStorage.ComponentsWithWaitingContracts { get; } = new();
     }
 
     Dictionary<string, object> _loadOrGetTestParams(Archetype factoryType, System.Type modelType) {
@@ -1759,13 +1790,13 @@ namespace Meep.Tech.Data.Configuration {
 
     void _reportOnFailedTypeInitializations() {
       List<Failure> failures = new();
-      foreach ((System.Type componentType, Exception ex) in _uninitializedComponents.Merge(_failedComponents)) {
+      foreach ((System.Type componentType, Exception ex) in _uninitializedComponents.WithVauesFrom(_failedComponents)) {
         failures.Add(new("Component", componentType, ex));
       }
-      foreach ((System.Type modelType, Exception ex) in _uninitializedModels.Merge(_failedModels)) {
+      foreach ((System.Type modelType, Exception ex) in _uninitializedModels.WithVauesFrom(_failedModels)) {
         failures.Add(new("Model", modelType, ex));
       }
-      foreach ((System.Type archetypeType, Exception ex) in _uninitializedArchetypes.Merge(_failedArchetypes)) {
+      foreach ((System.Type archetypeType, Exception ex) in _uninitializedArchetypes.WithVauesFrom(_failedArchetypes)) {
         failures.Add(new("Archetype", archetypeType, ex));
       }
       foreach ((MemberInfo enumProp, Exception ex) in _failedEnumerations) {
@@ -1819,17 +1850,17 @@ namespace Meep.Tech.Data.Configuration {
       public override string ToString() {
         StringBuilder builder = new();
         builder.Append($"\n====:{XbamType}::{SystemType.ToFullHumanReadableNameString()}:====");
-        builder.Append($"\n\t==Exception:==");
+        builder.Append($"\n\t==Exception:== ");
         builder.Append(Exception.Message?.Replace("\r\n", "\n").Replace("\r", "\n").Replace("\n", "\n\t\t\t\t"));
-        builder.Append($"\n\t\t====Stack Trace:==");
+        builder.Append($"\n\t\t====Stack Trace:== ({Exception.GetType().ToFullHumanReadableNameString()})\n\t\t\t\t");
         builder.Append(Exception.StackTrace?.Replace("\r\n", "\n").Replace("\r", "\n").Replace("\n", "\n\t\t\t\t"));
         builder.Append($"\n\t\t======");
 
         var ie = Exception.InnerException;
         while (ie is not null) {
-          builder.Append($"\n\n\t\t====Inner Exception:==");
+          builder.Append($"\n\n\t\t====Inner Exception:== ");
           builder.Append(ie.Message?.Replace("\r\n", "\n").Replace("\r", "\n").Replace("\n", "\n\t\t\t\t"));
-          builder.Append($"\n\t\t\t======Stack Trace:==");
+          builder.Append($"\n\t\t\t======Stack Trace:== ({ie.GetType().ToFullHumanReadableNameString()})\n\t\t\t\t");
           builder.Append(ie.StackTrace?.Replace("\r\n", "\n").Replace("\r", "\n").Replace("\n", "\n\t\t\t\t"));
           builder.Append($"\n\t\t\t========");
           builder.Append($"\n\t\t======");

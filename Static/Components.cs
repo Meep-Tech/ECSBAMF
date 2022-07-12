@@ -18,6 +18,12 @@ namespace Meep.Tech.Data {
     /// <summary>
     /// Get the builder for a given component by type.d
     /// </summary>
+    public static string GetKey(Type type)
+      => DefaultUniverse.Components.GetBuilderFactoryFor(type).Key;
+
+    /// <summary>
+    /// Get the builder for a given component by type.d
+    /// </summary>
     public static IComponent.IBuilderFactory GetBuilderFactory(Type type)
       => DefaultUniverse.Components.GetBuilderFactoryFor(type);
 

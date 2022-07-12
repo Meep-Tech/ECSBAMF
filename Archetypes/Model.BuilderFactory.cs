@@ -15,15 +15,6 @@ namespace Meep.Tech.Data {
   }
 
   public partial class Model<TModelBase> where TModelBase : Model<TModelBase> {
-
-    /// <summary>
-    /// The factory that was used to make this object
-    /// </summary>
-    [ArchetypeProperty]
-    public IModel.IBuilderFactory Factory {
-      get;
-      private set;
-    }
   }
 
   public partial interface IModel<TModelBase> where TModelBase : IModel<TModelBase> {

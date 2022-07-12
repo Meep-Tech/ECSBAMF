@@ -15,7 +15,7 @@ namespace Meep.Tech.Data {
       /// <summary>
       /// The param collection.
       /// </summary>
-      public IEnumerable<KeyValuePair<string, object>> @params {
+      protected internal IEnumerable<KeyValuePair<string, object>> _params {
         get;
       }
     }
@@ -97,10 +97,9 @@ namespace Meep.Tech.Data {
       /// <summary>
       /// The param collection.
       /// </summary>
-      public IEnumerable<KeyValuePair<string, object>> @params {
-        get;
-        private set;
-      }
+      IEnumerable<KeyValuePair<string, object>> _params;
+      IEnumerable<KeyValuePair<string, object>> ILiteBuilder._params
+        => _params;
 
       /// <summary>
       /// The universe this builder is part of
@@ -111,7 +110,7 @@ namespace Meep.Tech.Data {
 
       ///<summary><inheritdoc/></summary>
       public IEnumerable<(string name, object value)> Parameters 
-        => @params.Select(e => (e.Key, e.Value));
+        => _params.Select(e => (e.Key, e.Value));
 
       public LiteBuilder(Archetype forArchetype, IModel parent = null, Universe universe = null) {
         Archetype = forArchetype;
@@ -119,37 +118,37 @@ namespace Meep.Tech.Data {
           builder => (TComponentBase)((IFactory)forArchetype).ModelConstructor(builder);
         ConfigureModel = null;
         FinalizeModel = null;
-        @params = null;
+        _params = null;
         Universe = universe ?? Components.DefaultUniverse;
         Parent = parent;
       }
 
       public LiteBuilder(Archetype forArchetype, IModel parent, Universe universe, params KeyValuePair<string, object>[] @params)
         : this(forArchetype, parent, universe) {
-        this.@params = @params;
+        _params = @params;
       }
 
       public LiteBuilder(Archetype forArchetype, params KeyValuePair<string, object>[] @params)
         : this(forArchetype) {
-        this.@params = @params;
+        _params = @params;
       }
 
       public LiteBuilder(Archetype forArchetype, IModel parent, params KeyValuePair<string, object>[] @params)
         : this(forArchetype, parent) {
-        this.@params = @params;
+        _params = @params;
       }
 
       public LiteBuilder(Archetype forArchetype, IEnumerable<KeyValuePair<string, object>> @params, IModel parent = null, Universe universe = null)
         : this(forArchetype, parent, universe) {
-        this.@params = @params;
+        _params = @params;
       }
 
       void IBuilder._add(string key, object value) {
-        @params = @params.Append(new KeyValuePair<string, object>(key, value));
+        _params = _params.Append(new KeyValuePair<string, object>(key, value));
       }
 
       bool IBuilder._tryToGetRawValue(string key, out object value) {
-        value = @params?.FirstOrDefault(entry => entry.Key == key).Value;
+        value = _params?.FirstOrDefault(entry => entry.Key == key).Value;
         return !(value is null);
       }
 
@@ -178,13 +177,22 @@ namespace Meep.Tech.Data {
       /// Do something with each paramter in the builder.
       /// </summary>
       public void ForEachParam(Action<(string key, object value)> @do)
-        => @params.ForEach(entry => @do((entry.Key, entry.Value)));
+        => _params.ForEach(entry => @do((entry.Key, entry.Value)));
 
       TComponentBase IBuilder<TComponentBase>.Build() 
         => Build();
 
       void IBuilder.ForEachParam(Action<(string key, object value)> @do)
         => ForEachParam(@do);
+
+      /// <summary>
+      /// append and return.
+      /// </summary>
+      public IBuilder Append(string key, object value) {
+        var copy = this;
+        copy._params = copy._params.Append(new(key, value));
+        return copy;
+      }
     }
   }
 }

@@ -89,7 +89,7 @@ namespace Meep.Tech.Data {
           original is Dictionary<string, object> dictionary 
             ? dictionary 
             : original is Data.IComponent.ILiteBuilder liteBuilder
-              ? liteBuilder.@params.ToDictionary(e => e.Key, e => e.Value)
+              ? liteBuilder._params.ToDictionary(e => e.Key, e => e.Value)
               : throw new NotSupportedException()
         );
       } 
@@ -146,6 +146,9 @@ namespace Meep.Tech.Data {
       public void ForEachParam(Action<(string key, object value)> @do) 
         => this.ForEach(entry => @do((entry.Key, entry.Value)));
 
+      ///<summary><inheritdoc/></summary>
+      public abstract IBuilder Append(string key, object value);
+
       /// <summary>
       /// Can be used for preventing a mappable type from retries while being built
       /// </summary>
@@ -163,6 +166,31 @@ namespace Meep.Tech.Data {
     /// A modifyable parameter container that is used to build a model.
     /// </summary>
     public new partial class Builder : IModel.Builder, IBuilder<TModelBase> {
+
+      /// <summary>
+      /// Produce a new instance of the model type.
+      /// this usually is just calling => new Model(this) to help set the type variable or something.
+      /// </summary>
+      public virtual Func<Builder, TModelBase> InitializeModel {
+        get;
+        set;
+      } = builder => (TModelBase)((IFactory)builder.Archetype).ModelConstructor(builder);
+
+      /// <summary>
+      /// Configure and set param on the empty new model from InitializeModel.
+      /// </summary>
+      public virtual Func<Builder, TModelBase, TModelBase> ConfigureModel {
+        get;
+        set;
+      } = (_, model) => model;
+
+      /// <summary>
+      /// Logic to finish setting up the model.
+      /// </summary>
+      public virtual Func<Builder, TModelBase, TModelBase> FinalizeModel {
+        get;
+        set;
+      } = (_, model) => model;
 
       /// <summary>
       /// Empty new builder
@@ -194,30 +222,21 @@ namespace Meep.Tech.Data {
         param => param.Value
       ), universe) { }
 
-      /// <summary>
-      /// Produce a new instance of the model type.
-      /// this usually is just calling => new Model(this) to help set the type variable or something.
-      /// </summary>
-      public virtual Func<Builder, TModelBase> InitializeModel {
-        get;
-        set;
-      } = builder => (TModelBase)((IFactory)builder.Archetype).ModelConstructor(builder);
-
-      /// <summary>
-      /// Configure and set param on the empty new model from InitializeModel.
-      /// </summary>
-      public virtual Func<Builder, TModelBase, TModelBase> ConfigureModel {
-        get;
-        set;
-      } = (_, model) => model;
-
-      /// <summary>
-      /// Logic to finish setting up the model.
-      /// </summary>
-      public virtual Func<Builder, TModelBase, TModelBase> FinalizeModel {
-        get;
-        set;
-      } = (_, model) => model;
+      ///<summary><inheritdoc/></summary>
+      public override IBuilder Append(string key, object value)
+        => new Builder(
+          Archetype, 
+          Parameters
+            .Append((name: key, value))
+            .ToDictionary(p => p.name, p => p.value),
+          Universe
+        ) {
+          _isImmutable = _isImmutable,
+          Parent = Parent,
+          InitializeModel = InitializeModel,
+          ConfigureModel = ConfigureModel,
+          FinalizeModel = FinalizeModel
+        };
 
       /// <summary>
       /// Build the model.
@@ -285,6 +304,7 @@ namespace Meep.Tech.Data {
             // TOOD: cache this
             var componentType = Components.DefaultUniverse.Components.Get(key);
             // Make a builder to match this component with the params from the parent:
+            // TODO: could we just internaly update the builder's archetype here then revert it after. that would be faste?
             IBuilder componentBuilder
               = MakeNewBuilderAndCopyParams(
                   this,
@@ -316,7 +336,7 @@ namespace Meep.Tech.Data {
       /// </summary>
       protected TModelBase _finalizeModelComponents(IReadableComponentStorage model) {
         Parent = model as IModel;
-        foreach (IModel.IComponent component in model._componentsByBuilderKey.Values) {
+        foreach (IModel.IComponent component in model.ComponentsByBuilderKey.Values) {
           component.FinalizeAfterParent(model as IModel, this);
         }
 

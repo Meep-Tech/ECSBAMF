@@ -16,14 +16,14 @@ namespace Meep.Tech.Data {
     /// <summary>
     /// Internal holder for components data
     /// </summary>
-    internal protected Dictionary<string, IComponent> _componentsByBuilderKey {
+    internal protected Dictionary<string, IComponent> ComponentsByBuilderKey {
       get;
     }
 
     /// <summary>
     /// Internal holder for components data
     /// </summary>
-    internal protected Dictionary<System.Type, ICollection<IComponent>> _componentsWithWaitingContracts {
+    internal protected Dictionary<System.Type, ICollection<IComponent>> ComponentsWithWaitingContracts {
       get;
     }
 
@@ -32,7 +32,7 @@ namespace Meep.Tech.Data {
     /// TODO: impliment this in the WithComponents models
     /// </summary>
     public static bool Equals(IReadableComponentStorage model, IReadableComponentStorage other) {
-      foreach((_, IComponent dataComponent) in model._componentsByBuilderKey) {
+      foreach((_, IComponent dataComponent) in model.ComponentsByBuilderKey) {
         // check each child component that we need to:
         if(Meep.Tech.Data.Components.GetBuilderFactory(dataComponent.GetType()).IncludeInParentModelEqualityChecks) {
           // if the other item doesn't have any components, is missing this component, or the other component doesn't equal the one from this model, it's not ==
@@ -165,7 +165,7 @@ namespace Meep.Tech.Data {
     /// Overriding this overrides Get component and all other Has component functionalities
     /// </summary>
     public static bool TryToGetComponent(this IReadableComponentStorage storage, string componentBaseKey, out IComponent component)
-      => storage._componentsByBuilderKey.TryGetValue(componentBaseKey, out component);
+      => storage.ComponentsByBuilderKey.TryGetValue(componentBaseKey, out component);
 
     /// <summary>
     /// Get a component if this has a component of that given type
@@ -220,7 +220,7 @@ namespace Meep.Tech.Data {
       _updateComponentUniverse(storage, toAdd);
 
       /// add
-      storage._componentsByBuilderKey.Add(toAdd.Key, toAdd);
+      storage.ComponentsByBuilderKey.Add(toAdd.Key, toAdd);
 
       /// do on add
       if(toAdd is IComponent.IDoOnAdd doer) {
@@ -228,14 +228,14 @@ namespace Meep.Tech.Data {
       }
 
       /// execute waiting contracts where toAdd is b
-      if (storage._componentsWithWaitingContracts.TryGetValue(toAdd.GetType(), out var componentsWithContractsWaitingForThisComponent)) {
+      if (storage.ComponentsWithWaitingContracts.TryGetValue(toAdd.GetType(), out var componentsWithContractsWaitingForThisComponent)) {
         foreach(IComponent waitingComponent in componentsWithContractsWaitingForThisComponent) {
           IComponent a = storage.GetComponent(waitingComponent.Key);
           (a, toAdd) = IComponent.IHaveContract._contracts[a.GetType()][toAdd.GetType()](a, toAdd);
           storage.UpdateComponent(a);
           storage.UpdateComponent(toAdd);
         }
-        storage._componentsWithWaitingContracts.Remove(toAdd.GetType());
+        storage.ComponentsWithWaitingContracts.Remove(toAdd.GetType());
       }
 
       /// execute contracts where toAdd is a
@@ -248,7 +248,7 @@ namespace Meep.Tech.Data {
             storage.UpdateComponent(b);
           }
           else
-            storage._componentsWithWaitingContracts.AddToValueCollection(bType, contractedComponent);
+            storage.ComponentsWithWaitingContracts.AddToValueCollection(bType, contractedComponent);
         }
       }
     }
@@ -270,11 +270,11 @@ namespace Meep.Tech.Data {
     /// </summary>
     internal static void AddOrUpdateComponent(this IReadableComponentStorage storage, IComponent toSet) {
       _updateComponentUniverse(storage, toSet);
-      if(!storage._componentsByBuilderKey.ContainsKey(toSet.Key)) {
+      if(!storage.ComponentsByBuilderKey.ContainsKey(toSet.Key)) {
         storage.AddComponent(toSet);
       }
       else {
-        storage._componentsByBuilderKey[toSet.Key] = toSet;
+        storage.ComponentsByBuilderKey[toSet.Key] = toSet;
       }
     }
 
@@ -284,7 +284,7 @@ namespace Meep.Tech.Data {
     internal static void UpdateComponent(this IReadableComponentStorage storage, IComponent toUpdate) {
       _updateComponentUniverse(storage, toUpdate);
       if(storage.HasComponent(toUpdate.Key)) {
-        storage._componentsByBuilderKey[toUpdate.Key] = toUpdate;
+        storage.ComponentsByBuilderKey[toUpdate.Key] = toUpdate;
       }
       else
         throw new KeyNotFoundException($"Could not find compoennt of type {toUpdate.Key} to update.");
@@ -296,7 +296,7 @@ namespace Meep.Tech.Data {
     internal static void UpdateComponent<TComponentType>(this IReadableComponentStorage storage, Func<TComponentType, TComponentType> UpdateComponent)
       where TComponentType : IComponent {
       if(storage.TryToGetComponent(typeof(TComponentType), out IComponent current)) {
-        storage._componentsByBuilderKey[current.Key] = UpdateComponent((TComponentType)current);
+        storage.ComponentsByBuilderKey[current.Key] = UpdateComponent((TComponentType)current);
       }
       else
         throw new KeyNotFoundException($"Could not find compoennt with the key of type {typeof(TComponentType).FullName} to update.");
@@ -339,8 +339,8 @@ namespace Meep.Tech.Data {
     /// This should be the only one you need to override for all removal logic
     /// </summary>
     internal static bool RemoveComponent(this IReadableComponentStorage storage, string componentKey, out IComponent removedComponent) {
-      if(storage._componentsByBuilderKey.TryGetValue(componentKey, out removedComponent)) {
-        storage._componentsByBuilderKey.Remove(componentKey);
+      if(storage.ComponentsByBuilderKey.TryGetValue(componentKey, out removedComponent)) {
+        storage.ComponentsByBuilderKey.Remove(componentKey);
         return true;
       }
 

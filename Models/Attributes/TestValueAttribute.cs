@@ -196,4 +196,23 @@ namespace Meep.Tech.Data {
     /// </summary>
     public TestValueIsEmptyEnumerableAttribute() : base() { }
   }
+
+  /// <summary>
+  /// An attribute that tells the testing system in xbam to use an archetype with a dummy parent.
+  /// </summary>
+  [AttributeUsage(AttributeTargets.Class, Inherited = true)]
+  public class TestParentFactoryAttribute : Attribute {
+
+    /// <summary>
+    /// The parent type to use in tests.
+    /// </summary>
+    public Type TestArchetypeType { get; }
+
+    /// <summary>
+    /// An attribute that tells the testing system in xbam to use a dummy archetype component with a dummy parent.
+    /// </summary>
+    public TestParentFactoryAttribute(System.Type TestArchetypeComponentType) : base() {
+      this.TestArchetypeType = TestArchetypeComponentType;
+    }
+  }
 }

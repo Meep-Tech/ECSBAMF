@@ -52,6 +52,9 @@ namespace Meep.Tech.Data {
       set => Universe = value; 
     }
 
+    IFactory IModel.Factory 
+      => throw new NotImplementedException();
+
     ///<summary><inheritdoc/></summary>
     public override bool Equals(object obj) {
       // must be this type or a child
@@ -77,8 +80,18 @@ namespace Meep.Tech.Data {
   /// </summary>
   public abstract partial class Model<TModelBase>
     : Model, IModel<TModelBase>
-    where TModelBase : Model<TModelBase>
+    where TModelBase : Model<TModelBase> 
   {
+
+    /// <summary>
+    /// The factory that was used to make this object
+    /// </summary>
+    [ArchetypeProperty]
+    public IModel.IBuilderFactory Factory {
+      get;
+      private set;
+    } IFactory IModel.Factory 
+      => Factory;
 
     /// <summary>
     /// Deserialize a model from json as a TModelBase

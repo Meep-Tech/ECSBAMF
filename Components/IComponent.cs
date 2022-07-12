@@ -28,6 +28,8 @@ namespace Meep.Tech.Data {
     /// </summary>
     public Data.IComponent.IBuilderFactory Factory
       => (Universe ?? Components.DefaultUniverse).Components.GetBuilderFactoryFor(GetType());
+    IFactory IModel.Factory
+      => Factory;
 
     /// <summary>
     /// A key used to index this type of component. There can only be one componet per key on a model or archetype

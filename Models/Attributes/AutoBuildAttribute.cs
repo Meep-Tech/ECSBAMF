@@ -173,7 +173,8 @@ namespace Meep.Tech.Data {
 
         object value = getter(
           m,
-          b, p,
+          b,
+          p,
           attributeData,
           attributeData.IsRequiredAsAParameter
         );
@@ -315,8 +316,42 @@ namespace Meep.Tech.Data {
       }
 
       /// get via name on the archetype
+      System.Type linkedArchetypeComponentType = null;
+      Func<IBuilder, object> valueSource = b => b.Archetype;
       if (attributeData.DefaultArchetypePropertyName is not null) {
-        var archetypeDefaultProvider = builder.Archetype.GetType().GetMembers(System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)
+        MemberInfo archetypeDefaultProvider = null;
+
+        /// components check their linked component first
+        if (model is IModel.IComponent component 
+          && builder.Archetype.Id.Universe.Components._archetypeComponentsLinkedToModelComponents
+            .Reverse
+            .TryGetValue(
+              Components.GetComponentBaseType(component.GetType()),
+              out linkedArchetypeComponentType
+            )
+        ) {
+          archetypeDefaultProvider = linkedArchetypeComponentType.GetMembers(System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)
+            .FirstOrDefault(m => m.Name == attributeData.DefaultArchetypePropertyName
+              && (
+                (m is PropertyInfo p) && p.PropertyType == property.PropertyType
+                || (m is FieldInfo f) && f.FieldType == property.PropertyType
+                || (m is MethodInfo l)
+                  && (l.ReturnType == typeof(object) || l.ReturnType == property.PropertyType)
+                  && l.GetParameters().Select(p => p.GetType()).SequenceEqual(new System.Type[] {
+                  typeof(IBuilder),
+                  typeof(IModel)
+                  })
+              ));
+
+          if (archetypeDefaultProvider is not null) {
+            valueSource = b => b.Parent?.Factory is Archetype a 
+              && a.TryToGetComponent(Components.GetKey(linkedArchetypeComponentType), out var component) 
+                ? component 
+                : null;
+          }
+        }
+
+        archetypeDefaultProvider ??= builder.Archetype.GetType().GetMembers(System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)
           .FirstOrDefault(m => m.Name == attributeData.DefaultArchetypePropertyName
             && (
               (m is PropertyInfo p) && p.PropertyType == property.PropertyType
@@ -335,13 +370,13 @@ namespace Meep.Tech.Data {
 
         if (archetypeDefaultProvider is MethodInfo method) {
           // TODO: cache this
-          return method.Invoke(builder.Archetype, new object[] { model, builder });
+          return method.Invoke(valueSource(builder), new object[] { model, builder });
         }
         else {
           DefaultValueGetter defaultGetterDelegate = (archetypeDefaultProvider is PropertyInfo p
-            ? new DefaultValueGetter((b, m) => p.GetValue(builder.Archetype))
+            ? new DefaultValueGetter((b, m) => p.GetValue(valueSource(b)))
             : archetypeDefaultProvider is FieldInfo f
-              ? new((b, m) => f.GetValue(builder.Archetype))
+              ? new((b, m) => f.GetValue(valueSource(b)))
               : throw new System.Exception($"Unknown member type for default builder attribute default value")
           );
 
@@ -351,7 +386,18 @@ namespace Meep.Tech.Data {
       }
 
       /// try to find the standard default property:
-      PropertyInfo archetypeDefaultProperty = builder.Archetype.GetType().GetProperties(System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)
+      // if this ia component with a linked component we check the linked type first.
+      PropertyInfo archetypeDefaultProperty = null;
+      if (linkedArchetypeComponentType is not null) {
+        archetypeDefaultProperty = linkedArchetypeComponentType.GetProperties(System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)
+          .FirstOrDefault(p =>
+            ((p.Name == "Default" + (attributeData.ParameterName ?? property.Name))
+              || (p.Name.Trim('_').ToLower() == ("Default" + (attributeData.ParameterName ?? property.Name)).ToLower()))
+            && p.PropertyType == property.PropertyType
+          );
+      }
+
+      archetypeDefaultProperty ??= builder.Archetype.GetType().GetProperties(System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)
         .FirstOrDefault(p =>
           ((p.Name == "Default" + (attributeData.ParameterName ?? property.Name))
             || (p.Name.Trim('_').ToLower() == ("Default" + (attributeData.ParameterName ?? property.Name)).ToLower()))
@@ -360,7 +406,7 @@ namespace Meep.Tech.Data {
 
       if (archetypeDefaultProperty is not null) {
         // TODO: cache this
-        return archetypeDefaultProperty.GetValue(builder.Archetype);
+        return archetypeDefaultProperty.GetValue(valueSource(builder));
       }
 
       return property.GetValue(model);

@@ -17,6 +17,11 @@ namespace Meep.Tech.Data {
   public partial interface IModel {
 
     /// <summary>
+    /// The factory or archetype used to build this model
+    /// </summary>
+    public IFactory Factory { get; }
+
+    /// <summary>
     /// The universe this model was made in
     /// </summary>
     public Universe Universe {
@@ -150,7 +155,8 @@ namespace Meep.Tech.Data {
     public TArchetypeBase Archetype {
       get;
       internal set;
-    }
+    } IFactory IModel.Factory
+      => Archetype;
 
     /// <summary>
     /// For the base configure calls

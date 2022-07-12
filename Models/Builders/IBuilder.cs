@@ -4,6 +4,9 @@ using System.Collections.Generic;
 
 namespace Meep.Tech.Data {
 
+  /// <summary>
+  /// The base interface for builders
+  /// </summary>
   public interface IBuilder {
 
     /// <summary>
@@ -40,11 +43,19 @@ namespace Meep.Tech.Data {
     /// </summary>
     void ForEachParam(Action<(string key, object value)> @do);
 
+    /// <summary>
+    /// Return a copy of the builder with a new value appended.
+    /// </summary>
+    IBuilder Append(string key, object value);
+
     internal bool _tryToGetRawValue(string key, out object value);
 
     internal void _add(string key, object value);
   }
 
+  /// <summary>
+  /// The base interface for builders
+  /// </summary>
   public interface IBuilder<TModelBase>
     : IBuilder
     where TModelBase : IModel<TModelBase> 
