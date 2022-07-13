@@ -9,6 +9,12 @@ namespace Meep.Tech.Data {
   /// </summary>
   public static class XbamSpecificDictionaryExtensions {
 
+    /// <summary>
+    /// Append a value to a dictionary and return the collection
+    /// </summary>
+    public static Dictionary<string, object> Append(this Dictionary<string, object> current, string key, object value)
+        => new Dictionary<string, object>(current).WithAddedPair(key, value);
+
     #region Model Component Helpers
 
     /// <summary>

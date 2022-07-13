@@ -499,10 +499,10 @@ namespace Meep.Tech.Data {
     /// <summary>
     /// Used to serialize a model with this archetype to a jobject by default
     /// </summary>
-    protected internal virtual JObject SerializeModelToJson(IModel model)
+    protected internal virtual JObject SerializeModelToJson(IModel model, JsonSerializer serializerOverride = null)
       => JObject.FromObject(
         model,
-        Id.Universe.ModelSerializer.JsonSerializer
+        serializerOverride ?? Id.Universe.ModelSerializer.JsonSerializer
       );
   }
 

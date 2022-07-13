@@ -58,6 +58,14 @@ namespace Meep.Tech.Data {
     }
 
     /// <summary>
+    /// An overrideable validator
+    /// </summary>
+    public virtual ValueValidator Validator {
+      get;
+      set;
+    }
+
+    /// <summary>
     /// Optional override name for the parameter expected by the builder to build this property with.
     /// Defaults to the name of the property this is attached to.
     /// </summary>
@@ -179,11 +187,14 @@ namespace Meep.Tech.Data {
           attributeData.IsRequiredAsAParameter
         );
 
-        if (attributeData.ValueValidatorName is not null) {
+        if (attributeData.Validator is null && attributeData.ValueValidatorName is not null) {
           // TODO: cache this
-          ValueValidator validator = _generateValidator(attributeData.ValueValidatorName, m, p);
+          attributeData.Validator = _generateValidator(attributeData.ValueValidatorName, m, p);
+        }
+
+        if (attributeData.Validator is not null) {
           try {
-            if (!validator.Invoke(value, b, m, out string message, out System.Exception exception)) {
+            if (!attributeData.Validator.Invoke(value, b, m, out string message, out System.Exception exception)) {
               throw new ArgumentException($"Invalid Value: {value}, tried to set to parameter/property: {attributeData.ParameterName ?? p.Name}, via auto builder: {message}", exception);
             }
           }

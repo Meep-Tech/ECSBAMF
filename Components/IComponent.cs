@@ -1,4 +1,5 @@
 ﻿using Meep.Tech.Collections.Generic;
+using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
@@ -60,8 +61,8 @@ namespace Meep.Tech.Data {
     /// <summary>
     /// Turn the component into a serialized data object.
     /// </summary>
-    public JObject ToJson(Universe universe = null) {
-      var json = JToken.FromObject(this, (universe ?? Universe ?? Components.DefaultUniverse).ModelSerializer.JsonSerializer);
+    public JObject ToJson(JsonSerializer overrideSerializer = null) {
+      var json = JToken.FromObject(this, overrideSerializer ?? (Universe ?? Components.DefaultUniverse).ModelSerializer.JsonSerializer);
       if (json is JObject jsonObject) {
         jsonObject.Add(Model.Serializer.ComponentKeyPropertyName, Key);
         return jsonObject;
@@ -74,7 +75,8 @@ namespace Meep.Tech.Data {
       else
         throw new NotImplementedException($"Component of type {Key} must be serializable to a JObject or JArray by default using it's Universe.ModelSerializer.ComponentJsonSerializer.");
     }
-    JObject IModel.ToJson()
+
+    JObject IModel.ToJson(JsonSerializer overrideSerializer = null)
       => ToJson();
 
     /// <summary>

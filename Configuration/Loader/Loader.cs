@@ -1721,6 +1721,7 @@ namespace Meep.Tech.Data.Configuration {
 
       _clearUnnesisaryFields();
       _clearNonLazySplayedTypesFromMemory();
+      _clearCache();
 
       IsFinished = true;
       Universe.ExtraContexts.OnLoaderIsFinished();
@@ -1768,6 +1769,10 @@ namespace Meep.Tech.Data.Configuration {
 
       _successfullyTestedArchetypes = null;
       _initializedArchetypes = null;
+    }
+
+    void _clearCache() {
+      ICached.ClearAll();
     }
 
     void _finalizeModelSerializerSettings() {

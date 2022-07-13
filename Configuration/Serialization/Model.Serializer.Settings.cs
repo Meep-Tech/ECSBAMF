@@ -79,6 +79,14 @@ namespace Meep.Tech.Data {
         };
 
         /// <summary>
+        /// The default way models are copied
+        /// </summary>
+        public Func<IModel, IModel> DefaultCopyMethod {
+          get;
+          set;
+        } = model => IModel.FromJson(model.ToJson()); 
+
+        /// <summary>
         /// Can be used to build and configure copies of the built in json serializer settings.
         /// </summary>
         public JsonSerializerSettings BuildJsonSerializationSettings(Action<JsonSerializerSettings> configure = null, Func<DefaultContractResolver, IEnumerable<Newtonsoft.Json.JsonConverter>, JsonSerializerSettings> construct = null) {

@@ -1,5 +1,7 @@
-﻿using System;
+﻿using Meep.Tech.Collections.Generic;
+using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace Meep.Tech.Data {
 
@@ -7,7 +9,6 @@ namespace Meep.Tech.Data {
   /// Base functionality for cacheable models
   /// </summary>
   public interface ICached : IUnique {
-
     internal static Dictionary<string, IUnique> _cache
       = new();
 
@@ -27,6 +28,18 @@ namespace Meep.Tech.Data {
     /// </summary>
     public static IUnique GetFromCache(string modelId)
       => _cache[modelId];
+
+    /// <summary>
+    /// Clear the cached model
+    /// </summary>
+    public static void Clear(string modelId) 
+      => _cache.Remove(modelId);
+
+    /// <summary>
+    /// Clear all caches fully
+    /// </summary>
+    public static void ClearAll() 
+      => _cache = new();
   }
 
   /// <summary>
@@ -63,12 +76,29 @@ namespace Meep.Tech.Data {
     /// <summary>
     /// Cache an item of the given type.
     /// </summary>
-    public static void Cache(T thingToCache) {
-      _cache[thingToCache.Id] = thingToCache;
+    public static void Cache(T thingToCache) 
+      => _cache[thingToCache.Id] = thingToCache;
+
+    /// <summary>
+    /// Clear the cached model of this type
+    /// </summary>
+    public new static void Clear(string modelId) {
+      if (_cache.Remove(modelId, out IUnique value)) {
+        if (value is not T) {
+          _cache.Add(modelId, value);
+          throw new InvalidCastException();
+        }
+      }
     }
 
-    void IModel.FinishDeserialization() {
-      Cache((T)this);
-    }
+    /// <summary>
+    /// Clear the cache fully of items of this type
+    /// </summary>
+    public new static void ClearAll() 
+      => _cache.Values.Where(m => m is T)
+        .ForEach(m => _cache.Remove(m.Id));
+
+    void IModel.FinishDeserialization() 
+      => Cache((T)this);
   }
 }

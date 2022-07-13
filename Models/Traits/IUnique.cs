@@ -17,7 +17,7 @@ namespace Meep.Tech.Data {
       /// </summary>
       public static IModel.Builder.Param UniqueId {
         get;
-      } = new IModel.Builder.Param("Unique Id");
+      } = new IModel.Builder.Param("Id");
     }
 
     /// <summary>

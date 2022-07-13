@@ -58,15 +58,15 @@ namespace Meep.Tech.Data {
     /// Copy the model by serializing and deserializing it.
     /// </summary>
     public IModel Copy() =>
-       FromJson(ToJson());
+      Universe.Loader.Options.ModelSerializerOptions.DefaultCopyMethod(this);
 
     #region Json Serialization
 
     /// <summary>
     /// Turn the model into a serialized data object.
     /// </summary>
-    public JObject ToJson() {
-      JsonSerializer serializer = (Universe ?? Models.DefaultUniverse).ModelSerializer.JsonSerializer;
+    public JObject ToJson(JsonSerializer serializerOverride = null) {
+      JsonSerializer serializer = serializerOverride ?? (Universe ?? Models.DefaultUniverse).ModelSerializer.JsonSerializer;
       var json = JObject.FromObject(
         this,
         serializer
@@ -172,8 +172,8 @@ namespace Meep.Tech.Data {
     /// <summary>
     /// Turn the model into a serialized data object.
     /// </summary>
-    JObject IModel.ToJson()
-      => Archetype.SerializeModelToJson(this);
+    JObject IModel.ToJson(JsonSerializer serializerOverride = null)
+      => Archetype.SerializeModelToJson(this, serializerOverride);
 
     /// <summary>
     /// Deserialize a model from json as a TModelBase
@@ -197,8 +197,8 @@ namespace Meep.Tech.Data {
     /// <summary>
     /// Turn the model into a serialized data object.
     /// </summary>
-    public static JObject ToJson(this IModel model)
-      => model.ToJson();
+    public static JObject ToJson(this IModel model, JsonSerializer serializerOverride = null)
+      => model.ToJson(serializerOverride);
 
     /// <summary>
     /// Copy the model by serializing and deserializing it.
