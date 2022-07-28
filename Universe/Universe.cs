@@ -2,7 +2,6 @@
 using Meep.Tech.Data.Configuration;
 using System;
 using System.Collections.Generic;
-using System.Linq;
 
 namespace Meep.Tech.Data {
 
@@ -10,7 +9,7 @@ namespace Meep.Tech.Data {
   /// A global collection of arechetypes.
   /// This is what the loader builds.
   /// </summary>
-  public partial class Universe {
+  public sealed partial class Universe {
 
     /// <summary>
     /// All Universes

@@ -144,6 +144,13 @@ namespace Meep.Tech.Data.Configuration {
       => _initializedTypes;
 
     /// <summary>
+    /// The assemblies included in the pre-included assemblies as well as the ones the main one is dependent on.
+    /// These are not considered mods.
+    /// </summary>
+    public IEnumerable<Assembly> CoreAssemblies 
+      { get; private set; }
+
+    /// <summary>
     /// The total count of currently uninitialized types.
     /// </summary>
     public int UninitializedTypesCount
@@ -490,6 +497,8 @@ namespace Meep.Tech.Data.Configuration {
 
         defaultAssemblies.AddRange(moreAssemblies);
       }
+
+      CoreAssemblies = defaultAssemblies.ToList().AsEnumerable();
 
       // get ones added to the load order.
       List<Assembly> externalAssemblies = new();

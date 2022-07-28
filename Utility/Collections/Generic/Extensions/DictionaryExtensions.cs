@@ -21,6 +21,13 @@ namespace Meep.Tech.Collections.Generic {
         => dictionary.TryGetValue(key, out var found) ? found : default;
 
     /// <summary>
+    /// Try tho get a value. Returns default on failure.
+    /// </summary>
+    public static TValue TryToGet<TDictionary, TKey, TValue>(this TDictionary dictionary, TKey key, TValue @default)
+      where TDictionary : IDictionary<TKey, TValue>
+        => dictionary.TryGetValue(key, out var found) ? found : (dictionary[key] = @default);
+
+    /// <summary>
     /// Add an item inline without needing to make it if it contains it's own key
     /// </summary>
     public static void Add<TDictionary, TKey, TValue>(this TDictionary dictionary, TValue value, Func<TValue, TKey> getKey)
@@ -43,6 +50,17 @@ namespace Meep.Tech.Collections.Generic {
     /// </summary>
     public static void AddToValueCollection<TKey, TValue>(this IDictionary<TKey, ICollection<TValue>> dictionary, TKey key, TValue value) {
       if (dictionary.TryGetValue(key, out ICollection<TValue> valueCollection)) {
+        valueCollection.Add(value);
+      }
+      else
+        dictionary.Add(key, new List<TValue> { value });
+    }
+
+    /// <summary>
+    /// Add an item to a ICollection within a dictionary at the given key
+    /// </summary>
+    public static void AddToValueCollection<TKey, TValue>(this Dictionary<TKey, List<TValue>> dictionary, TKey key, TValue value) {
+      if (dictionary.TryGetValue(key, out List<TValue> valueCollection)) {
         valueCollection.Add(value);
       }
       else
@@ -105,6 +123,22 @@ namespace Meep.Tech.Collections.Generic {
     /// </summary>
     public static bool RemoveFromValueCollection<TKey, TValue>(this IDictionary<TKey, ICollection<TValue>> dictionary, TKey key, TValue value) {
       if (dictionary.TryGetValue(key, out ICollection<TValue> valueCollection)) {
+        if (valueCollection.Remove(value)) {
+          if (!valueCollection.Any()) {
+            dictionary.Remove(key);
+          }
+          return true;
+        }
+      }
+
+      return false;
+    }
+
+    /// <summary>
+    /// Remove an item from an ICollection within a dictionary at the given key
+    /// </summary>
+    public static bool RemoveFromValueCollection<TKey, TValue>(this Dictionary<TKey, List<TValue>> dictionary, TKey key, TValue value) {
+      if (dictionary.TryGetValue(key, out List<TValue> valueCollection)) {
         if (valueCollection.Remove(value)) {
           if (!valueCollection.Any()) {
             dictionary.Remove(key);

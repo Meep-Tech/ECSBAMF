@@ -158,6 +158,15 @@ namespace Meep.Tech.Data {
   public class TestValueIsTestModel : TestValueBaseAttribute {
 
     /// <summary>
+    /// Can be used to specify a test model type for generic base classes.
+    /// TODO: implement
+    /// </summary>
+    public System.Type TestModelType {
+      get;
+      init;
+    }
+
+    /// <summary>
     /// Set the test value of this field to 'new()';
     /// </summary>
     public TestValueIsTestModel() : base() { }

@@ -30,6 +30,12 @@ namespace Meep.Tech.Data {
       /// Stores simple access to all model types that can be produced.
       /// </summary>
       public IEnumerable<System.Type> All
+        => _modelTypesProducedByArchetypes.Values.Distinct();
+
+      /// <summary>
+      /// Stores simple access to all model base types.
+      /// </summary>
+      public IEnumerable<System.Type> BaseTypes
         => _baseTypes.Values;
 
       /// <summary>

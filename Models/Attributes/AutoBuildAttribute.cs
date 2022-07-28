@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Meep.Tech.Data.Reflection;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
@@ -32,13 +33,18 @@ namespace Meep.Tech.Data {
     public delegate object ValueGetter(IModel model, IBuilder builder, PropertyInfo propertyInfo, AutoBuildAttribute attribute, bool isRequired);
 
     /// <summary>
+    /// A value setter.
+    /// </summary>
+    public delegate void ValueSetter(IModel model, object value);
+
+    /// <summary>
     /// If this field must not be null before being returned by the auto build step.
     /// </summary>
     public bool NotNull {
       get;
       set;
     } = false;
-    internal bool _checkedNotNull;
+    internal bool _checkedForNotNullAttribute;
 
     /// <summary>
     /// If this field's parameter must be provided to the builder
@@ -63,6 +69,14 @@ namespace Meep.Tech.Data {
     public virtual ValueValidator Validator {
       get;
       set;
+    }
+
+    /// <summary>
+    /// The setter
+    /// </summary>
+    protected internal virtual ValueSetter Setter {
+      get;
+      protected set;
     }
 
     /// <summary>
@@ -112,6 +126,15 @@ namespace Meep.Tech.Data {
     } = 0;
 
     /// <summary>
+    /// If this is true, this field can NOT be passed in as a parameter by a user or it will throw an exception.
+    /// TODO: impliment this. (this is not yet implemented)
+    /// </summary>
+    public bool Internal {
+      get;
+      init;
+    } = false;
+
+    /// <summary>
     /// Mark a field for auto-inclusion in the default builder ctor
     /// </summary>
     public AutoBuildAttribute() { }
@@ -120,7 +143,13 @@ namespace Meep.Tech.Data {
     /// An exception thrown by the auto-builder.
     /// </summary>
     public class Exception : System.ArgumentException {
+
+      /// <summary>
+      /// The model type that threw the exepction 
+      /// </summary>
       public System.Type ModelTypeBeingBuilt { get; }
+
+      ///<summary><inheritdoc/></summary>
       public Exception(System.Type modelType, string message, System.Exception innerException) 
         : base(message, innerException) { ModelTypeBeingBuilt = modelType; }
     }
@@ -149,20 +178,20 @@ namespace Meep.Tech.Data {
     /// </summary>
     static IModel _autoBuildModelProperty(IModel m, IBuilder b, PropertyInfo p, AutoBuildAttribute attributeData, System.Type modelType) {
       try {
-        System.Reflection.MethodInfo setter = p.GetSetMethod(true);
+        ValueSetter setter = attributeData.Setter ?? new((m,v) => p.Set(m, v));
         if (setter is null) {
           System.Type baseType = p.DeclaringType;
           while (setter is null && baseType is not null) {
             PropertyInfo propertyInfo = baseType.GetProperty(
               p.Name,
-              System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic
+              BindingFlags.Public | BindingFlags.Instance | BindingFlags.NonPublic
             );
 
             if (propertyInfo is null) {
               break;
             }
 
-            setter = propertyInfo.GetSetMethod(true);
+            setter = new((m, v) => propertyInfo.Set(m, v));
             baseType = baseType.BaseType;
           }
 
@@ -175,9 +204,12 @@ namespace Meep.Tech.Data {
         }
 
         ValueGetter getter = attributeData.Getter
-          ??= attributeData.IsRequiredAsAParameter
-            ? BuildDefaultGetterForRequiredValueFromBuilder(m, b, p, attributeData)
-            : BuildDefaultGetterFromBuilderOrDefault(m, b, p, attributeData);
+          ??= attributeData.Internal
+            ? (IModel model, IBuilder builder, PropertyInfo property, AutoBuildAttribute attributeData, bool isRequired) 
+              => GetDefaultValue(m, _validateInternalNotPassedIn(b, attributeData.ParameterName ?? p.Name, m), p, attributeData, isRequired)
+            : attributeData.IsRequiredAsAParameter
+              ? BuildDefaultGetterForRequiredValueFromBuilder(m, b, p, attributeData)
+              : BuildDefaultGetterFromBuilderOrDefault(m, b, p, attributeData);
 
         object value = getter(
           m,
@@ -186,10 +218,10 @@ namespace Meep.Tech.Data {
           attributeData,
           attributeData.IsRequiredAsAParameter
         );
-
-        if (attributeData.Validator is null && attributeData.ValueValidatorName is not null) {
-          // TODO: cache this
-          attributeData.Validator = _generateValidator(attributeData.ValueValidatorName, m, p);
+        
+        // get the validator if we need to
+        if (attributeData.ValueValidatorName is not null) {
+          attributeData.Validator ??= _generateValidator(attributeData.ValueValidatorName, m, p);
         }
 
         if (attributeData.Validator is not null) {
@@ -203,25 +235,29 @@ namespace Meep.Tech.Data {
           }
         }
 
-        if (!attributeData._checkedNotNull) {
+        if (!attributeData._checkedForNotNullAttribute) {
           attributeData.NotNull = attributeData.NotNull
             || p.GetCustomAttributes()
               .Where(a => a.GetType().Name == "NotNullAttribute")
               .Any();
-          attributeData._checkedNotNull = true;
+          attributeData._checkedForNotNullAttribute = true;
         }
 
         if (attributeData.NotNull && value is null) {
           throw new ArgumentNullException(attributeData.ParameterName ?? p.Name);
         }
 
-        // TODO: cache this
-        setter.Invoke(m, new object[] { value });
+        setter.Invoke(m, value);
         return m;
       } catch (System.Exception e) {
         throw new Exception(modelType, $"Field: {p.Name} on Model Type: {modelType}, could not be auto-built due to an inner exception.", e);
       }
     }
+
+    static IBuilder _validateInternalNotPassedIn(IBuilder builder, string parameterName, IModel model) 
+      => builder.HasParam(parameterName)
+        ? throw new AccessViolationException($"Cannot pass a value in for Internal Autobuild Parameter: {parameterName}, on model: {model.GetType().FullName}.")
+        : builder;
 
     static ValueValidator _generateValidator(string valueValidatorName, IModel model, PropertyInfo property) {
       var @delegate = property.DeclaringType.GetMembers(System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)
@@ -267,7 +303,7 @@ namespace Meep.Tech.Data {
       }
       else {
         ValueValidator defaultValidatorDelegate = (@delegate is PropertyInfo p
-            ? p.GetValue(model)
+            ? p.Get(model)
             : @delegate is FieldInfo f
               ? f.GetValue(model)
               : throw new System.Exception($"Unknown member type for default builder attribute default value")

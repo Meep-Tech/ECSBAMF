@@ -36,6 +36,12 @@
 	  <PackageReference Include="Newtonsoft.Json" Version="12.0.3" />
 	</ItemGroup>
 
+	<ItemGroup>
+	  <Reference Include="PropertyAccess">
+	    <HintPath>..\..\_external\PropertyAccess\src\PropertyAccess\bin\Release\PropertyAccess.dll</HintPath>
+	  </Reference>
+	</ItemGroup>
+
 	<Import Project="post-build-copy.csproj" Condition="Exists('post-build-copy.csproj')" />
 
 </Project>

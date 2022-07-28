@@ -12,7 +12,10 @@ namespace Meep.Tech.Data {
     internal static Dictionary<string, IUnique> _cache
       = new();
 
-    internal static void _cacheItem(ICached thingToCache) 
+    /// <summary>
+    /// Set an item to the cache
+    /// </summary>
+    public static void Set(ICached thingToCache) 
       => _cache.Add(thingToCache.Id, thingToCache);
 
     /// <summary>

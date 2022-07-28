@@ -10,7 +10,7 @@ namespace Meep.Tech.Data {
   /// <summary>
   /// A singleton data store and factory.
   /// </summary>
-  public abstract partial class Archetype : IFactory, IReadableComponentStorage, IEquatable<Archetype> {
+  public abstract partial class Archetype : IFactory, IBuilderSource, IReadableComponentStorage, IEquatable<Archetype> {
     internal DelegateCollection<Func<IModel, IBuilder, IModel>>
       _modelAutoBuilderSteps;
 
@@ -209,6 +209,12 @@ namespace Meep.Tech.Data {
     #endregion
 
     #region Make/Model Construction
+
+    IBuilder IBuilderSource.MakeDefaultBuilder() 
+      {throw new NotImplementedException();}
+
+    IBuilder IBuilderSource.MakeBuilder(Dictionary<string, object> @params) 
+      {throw new NotImplementedException();}
 
     /// <summary>
     /// Base make helper
@@ -511,7 +517,7 @@ namespace Meep.Tech.Data {
   /// Can be used as a static key.
   /// </summary>
   public abstract partial class Archetype<TModelBase, TArchetypeBase> 
-    : Archetype, IFactory
+    : Archetype, IFactory, IBuilderSource
     where TModelBase : IModel<TModelBase>
     where TArchetypeBase : Archetype<TModelBase, TArchetypeBase> 
   {
@@ -705,6 +711,26 @@ namespace Meep.Tech.Data {
       = null;
 
     /// <summary>
+    /// The builder for the base model type of this archetype.
+    /// You can override this and add more default props to the return for utility.
+    /// </summary>
+    public virtual IBuilder<TModelBase> MakeDefaultBuilder()
+      => (IBuilder<TModelBase>)GetGenericBuilderConstructor()(this, null);
+
+    IBuilder IBuilderSource.MakeDefaultBuilder()
+      => MakeDefaultBuilder();
+
+    /// <summary>
+    /// The builder for the base model type of this archetype.
+    /// You can override this and add more default props to the return for utility.
+    /// </summary>
+    public IBuilder<TModelBase> MakeBuilder(Dictionary<string, object> @params)
+      => (IBuilder<TModelBase>)GetGenericBuilderConstructor()(this, @params);
+
+    IBuilder IBuilderSource.MakeBuilder(Dictionary<string, object> @params)
+      => MakeBuilder(@params);
+
+    /// <summary>
     /// The default way a new builder is created.
     /// The dictionary passed in has the potential to be null
     /// </summary>
@@ -722,20 +748,6 @@ namespace Meep.Tech.Data {
     /// </summary>
     protected internal sealed override Func<Archetype, Dictionary<string, object>, IBuilder> GetGenericBuilderConstructor()
       => (archetype, @params) => BuilderConstructor(archetype, @params, null);
-
-    /// <summary>
-    /// The builder for the base model type of this archetype.
-    /// You can override this and add more default props to the return for utility.
-    /// </summary>
-    protected virtual IBuilder<TModelBase> MakeDefaultBuilder()
-      => (IBuilder<TModelBase>)GetGenericBuilderConstructor()(this, null);
-
-    /// <summary>
-    /// The builder for the base model type of this archetype.
-    /// You can override this and add more default props to the return for utility.
-    /// </summary>
-    protected IBuilder<TModelBase> MakeBuilder(Dictionary<string, object> @params)
-      => (IBuilder<TModelBase>)GetGenericBuilderConstructor()(this, @params);
 
     /// <summary>
     /// Gets an immutable empty builder for this type to use when null was passed in:

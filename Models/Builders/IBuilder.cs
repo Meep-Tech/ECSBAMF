@@ -94,18 +94,18 @@ namespace Meep.Tech.Data {
     /// Fetch a param from a collection, or the default if it's not provided, or the provided is a nullable and null is provided
     /// </summary>
     public static T GetViaParam<T>(this IBuilder builder, IModel.Builder.Param toFetch, T defaultValue = default) {
-      if(toFetch.ValueType != null && !toFetch.ValueType.IsAssignableFrom(typeof(T))) {
+      if (toFetch.ValueType != null && !toFetch.ValueType.IsAssignableFrom(typeof(T))) {
         throw new IModel.Builder.Param.MissmatchException($"Param {toFetch.Key}, is clamped to the type: {toFetch.ValueType.FullName}. {typeof(T).FullName} is not a valid type to try to fetch.");
       }
-      if(builder._tryToGetRawValue(toFetch.Key, out object value)) {
+      if (builder._tryToGetRawValue(toFetch.Key, out object value)) {
         // if the value is of the requested type, return it
-        if(value is T typedValue) {
+        if (value is T typedValue) {
           return typedValue;
         }
 
         // if the provided value is null, and this is nullable, return the default value
         bool canBeNull = !toFetch.ValueType.IsValueType || (Nullable.GetUnderlyingType(toFetch.ValueType) != null);
-        if(canBeNull && value == null) {
+        if (canBeNull && value == null) {
           return toFetch.HasDefaultValue ? (T)toFetch.DefaultValue : defaultValue;
         }
 
@@ -113,7 +113,7 @@ namespace Meep.Tech.Data {
         try {
           return (T)value.CastTo(toFetch.ValueType);
         }
-        catch(Exception e) {
+        catch (Exception e) {
           throw new IModel.Builder.Param.MissmatchException($"Tried to get param as type {typeof(T).FullName}. The provided invalid value has Type {value?.GetType().FullName ?? "null"}, but should be of Type: {toFetch.ValueType.FullName}", e);
         }
       }
@@ -125,12 +125,12 @@ namespace Meep.Tech.Data {
     /// Fetch a param from a collection, or the default if it's not provided, or the provided is a nullable and null is provided
     /// </summary>
     public static bool TryToGetViaParam<T>(this IBuilder builder, IModel.Builder.Param toFetch, out T result, T defaultValue = default) {
-      if(toFetch.ValueType != null && !toFetch.ValueType.IsAssignableFrom(typeof(T))) {
+      if (toFetch.ValueType != null && !toFetch.ValueType.IsAssignableFrom(typeof(T))) {
         throw new IModel.Builder.Param.MissmatchException($"Param {toFetch.Key}, is clamped to the type: {toFetch.ValueType.FullName}. {typeof(T).FullName} is not a valid type to try to fetch.");
       }
-      if(builder._tryToGetRawValue(toFetch.Key, out object value)) {
+      if (builder._tryToGetRawValue(toFetch.Key, out object value)) {
         // if the value is of the requested type, return it
-        if(value is T typedValue) {
+        if (value is T typedValue) {
           result = typedValue;
 
           return true;
@@ -138,7 +138,7 @@ namespace Meep.Tech.Data {
 
         // if the provided value is null, and this is nullable, return the default value
         bool canBeNull = !toFetch.ValueType.IsValueType || (Nullable.GetUnderlyingType(toFetch.ValueType) != null);
-        if(canBeNull && value == null) {
+        if (canBeNull && value == null) {
           result = toFetch.HasDefaultValue ? (T)toFetch.DefaultValue : defaultValue;
           return false;
         }
@@ -148,7 +148,7 @@ namespace Meep.Tech.Data {
           result = (T)value.CastTo(toFetch.ValueType);
           return true;
         }
-        catch(Exception e) {
+        catch (Exception e) {
           throw new IModel.Builder.Param.MissmatchException($"Tried to get param as type {typeof(T).FullName}. The provided invalid value has Type {value?.GetType().FullName ?? "null"}, but should be of Type: {toFetch.ValueType.FullName}.", e);
         }
       }
@@ -161,18 +161,18 @@ namespace Meep.Tech.Data {
     /// Fetch a param from a collection. The param cannot be left out, and no defaults will be replaced.
     /// </summary>
     public static T GetAndValidateViaParamAs<T>(this IBuilder builder, IModel.Builder.Param toFetch) {
-      if(toFetch.ValueType != null && !toFetch.ValueType.IsAssignableFrom(typeof(T))) {
+      if (toFetch.ValueType != null && !toFetch.ValueType.IsAssignableFrom(typeof(T))) {
         throw new IModel.Builder.Param.MissmatchException($"Tried to get param as type {typeof(T).FullName}, but the provided Param object expects a value of Type: {toFetch.ValueType.FullName}.");
       }
-      if(builder._tryToGetRawValue(toFetch.Key, out object value)) {
+      if (builder._tryToGetRawValue(toFetch.Key, out object value)) {
         // if the value is of the requested type, return it
-        if(value is T typedValue) {
+        if (value is T typedValue) {
           return typedValue;
         }
 
         // if the provided value is null, and this is nullable, return the provided null
         bool canBeNull = !toFetch.ValueType.IsValueType || (Nullable.GetUnderlyingType(toFetch.ValueType) != null);
-        if(canBeNull && value == null) {
+        if (canBeNull && value == null) {
           return default;
         }
 
@@ -180,7 +180,7 @@ namespace Meep.Tech.Data {
         try {
           return (T)value.CastTo(toFetch.ValueType);
         }
-        catch(Exception e) {
+        catch (Exception e) {
           throw new IModel.Builder.Param.MissmatchException($"Tried to get param: {toFetch.ExternalId}, as Type: {typeof(T).FullName}. The provided invalid value has Type {value?.GetType().FullName ?? "null"}, but should be of Type: {toFetch.ValueType}.", e);
         }
       }
@@ -192,10 +192,10 @@ namespace Meep.Tech.Data {
     /// Add a default value to the param collection if there isn't one set already
     /// </summary>
     public static void SetViaParam<T>(this IBuilder builder, IModel.Builder.Param toSet, T value = default) {
-      if(builder is IModel.Builder modelBuilder && modelBuilder._isImmutable) {
+      if (builder is IModel.Builder modelBuilder && modelBuilder._isImmutable) {
         throw new AccessViolationException($"Cannot change params on an immutable builder");
       }
-      if(toSet.ValueType != null && !toSet.ValueType.IsAssignableFrom(typeof(T))) {
+      if (toSet.ValueType != null && !toSet.ValueType.IsAssignableFrom(typeof(T))) {
         throw new IModel.Builder.Param.MissmatchException($"Param {toSet.Key}, is clamped to the type: {toSet.ValueType.FullName}. {typeof(T).FullName} is not a valid type to try to fetch.");
       }
 
@@ -206,13 +206,13 @@ namespace Meep.Tech.Data {
     /// Add a default value to the param collection if there isn't one set already
     /// </summary>
     public static void SetDefaultValueViaParam<T>(this IBuilder builder, IModel.Builder.Param toSet, T defaultValue) {
-      if(builder is IModel.Builder modelBuilder && modelBuilder._isImmutable) {
+      if (builder is IModel.Builder modelBuilder && modelBuilder._isImmutable) {
         throw new AccessViolationException($"Cannot change params on an immutable builder");
       }
-      if(toSet.ValueType != null && !toSet.ValueType.IsAssignableFrom(typeof(T))) {
+      if (toSet.ValueType != null && !toSet.ValueType.IsAssignableFrom(typeof(T))) {
         throw new IModel.Builder.Param.MissmatchException($"Param {toSet.Key}, is clamped to the type: {toSet.ValueType.FullName}. {typeof(T).FullName} is not a valid type to try to fetch.");
       }
-      if(!builder._tryToGetRawValue(toSet.Key, out _)) {
+      if (!builder._tryToGetRawValue(toSet.Key, out _)) {
         builder._add(toSet.Key, defaultValue);
       }
     }
@@ -221,13 +221,13 @@ namespace Meep.Tech.Data {
     /// Add a default value to the param collection if there isn't one set already
     /// </summary>
     public static void SetViaParamToDefault<T>(this IBuilder builder, IModel.Builder.Param toSet) {
-      if(builder is IModel.Builder modelBuilder && modelBuilder._isImmutable) {
+      if (builder is IModel.Builder modelBuilder && modelBuilder._isImmutable) {
         throw new AccessViolationException($"Cannot change params on an immutable builder");
       }
-      if(toSet.ValueType != null && !toSet.ValueType.IsAssignableFrom(typeof(T))) {
+      if (toSet.ValueType != null && !toSet.ValueType.IsAssignableFrom(typeof(T))) {
         throw new IModel.Builder.Param.MissmatchException($"Param {toSet.Key}, is clamped to the type: {toSet.ValueType.FullName}. {typeof(T).FullName} is not a valid type to try to fetch.");
       }
-      if(!builder._tryToGetRawValue(toSet.Key, out _)) {
+      if (!builder._tryToGetRawValue(toSet.Key, out _)) {
         builder._add(toSet.Key, toSet.HasDefaultValue
           ? toSet.DefaultValue
           : throw new IModel.Builder.Param.MissingException($"Param {toSet.Key} tried to set using a default value, but it does not have one set up."));
@@ -299,6 +299,25 @@ namespace Meep.Tech.Data {
       }
 
       result = defaultValue;
+      return false;
+    }
+
+    /// <summary>
+    /// Check if this has the given param
+    /// </summary>
+    public static bool HasParam(this IBuilder builder, string paramName)
+      => builder is not null && builder._tryToGetRawValue(paramName, out _);
+
+    /// <summary>
+    /// Check if this has the given param
+    /// </summary>
+    public static bool HasParam(this IBuilder builder, string paramName, out System.Type paramType) { 
+      if (builder._tryToGetRawValue(paramName, out var parameter)) {
+        paramType = parameter.GetType();
+        return true;
+      }
+
+      paramType = null;
       return false;
     }
 

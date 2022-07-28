@@ -349,6 +349,13 @@ namespace Meep.Tech.Data {
       /// <summary>
       /// Check if this has a given component by base type
       /// </summary>
+      public virtual bool HasComponent<TComponent>() 
+        where TComponent : IComponent
+          => ReadableComponentStorageExtensions.HasComponent(this, typeof(TComponent));
+
+      /// <summary>
+      /// Check if this has a given component by base type
+      /// </summary>
       public virtual bool HasComponent(System.Type componentType)
         => ReadableComponentStorageExtensions.HasComponent(this, componentType);
 

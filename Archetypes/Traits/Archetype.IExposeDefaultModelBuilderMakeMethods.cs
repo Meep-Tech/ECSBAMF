@@ -307,7 +307,7 @@ namespace Meep.Tech.Data {
     /// The builder for the base model type of this archetype.
     /// You can override this and add more default props to the return for utility.
     /// </summary>
-    public static IBuilder<TModelBase> MakeDefaultBuilder<TModelBase, TArchetypeBase>(this Archetype<TModelBase, TArchetypeBase>.IExposeDefaultModelBuilderMakeMethods.WithBuilderParameters @this)
+    /*public static IBuilder<TModelBase> MakeDefaultBuilder<TModelBase, TArchetypeBase>(this Archetype<TModelBase, TArchetypeBase>.IExposeDefaultModelBuilderMakeMethods.WithBuilderParameters @this)
       where TModelBase : IModel<TModelBase>
       where TArchetypeBase : Archetype<TModelBase, TArchetypeBase>
         => @this.MakeDefaultBuilder();
@@ -319,7 +319,7 @@ namespace Meep.Tech.Data {
     public static IBuilder<TModelBase> MakeBuilder<TModelBase, TArchetypeBase>(this Archetype<TModelBase, TArchetypeBase>.IExposeDefaultModelBuilderMakeMethods.WithBuilderParameters @this, Dictionary<string, object> @params)
       where TModelBase : IModel<TModelBase>
       where TArchetypeBase : Archetype<TModelBase, TArchetypeBase>
-        => @this.MakeBuilder(@params);
+        => @this.MakeBuilder(@params);*/
 
     /// <summary>
     /// Gets the exposed model builder Make functions for this archetype.
