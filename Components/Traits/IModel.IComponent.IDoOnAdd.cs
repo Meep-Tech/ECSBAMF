@@ -1,6 +1,4 @@
-﻿using System;
-
-namespace Meep.Tech.Data {
+﻿namespace Meep.Tech.Data {
 
   public partial interface IComponent {
 

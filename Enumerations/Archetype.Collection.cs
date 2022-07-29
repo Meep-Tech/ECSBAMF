@@ -392,6 +392,6 @@ namespace Meep.Tech.Data {
     /// </summary>
     public static Collection DefaultCollection
       => (Collection)
-        Archetypes.DefaultUniverse.Archetypes.GetCollectionFor(typeof(TArchetypeBase));
+        Archetypes.DefaultUniverse.Archetypes.GetCollection(typeof(TArchetypeBase));
   }
 }

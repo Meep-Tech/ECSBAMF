@@ -1,23 +1,29 @@
-﻿using Meep.Tech.Collections.Generic;
-using System;
+﻿using Meep.Tech.Data.Reflection;
+using System.Collections;
 using System.Collections.Generic;
-using System.Linq;
 
 namespace Meep.Tech.Data {
 
   public partial interface IComponent {
 
     /// <summary>
-    /// A simpler, struct based builder for components
+    /// A builder for components.
     /// </summary>
-    public interface ILiteBuilder : IBuilder {
+    public new interface IBuilder : Data.IBuilder {
 
       /// <summary>
-      /// The param collection.
+      /// The parent model.
       /// </summary>
-      protected internal IEnumerable<KeyValuePair<string, object>> _params {
+      IModel Parent {
         get;
+        internal set;
       }
+      
+      /// <summary>
+      /// internal setter for parameters.
+      /// </summary>
+      internal protected Dictionary<string, object> __parameters
+        { set; }
     }
   }
 
@@ -30,168 +36,152 @@ namespace Meep.Tech.Data {
     /// <summary>
     /// Default builder class for components. Pretty much the same as the model based one.
     /// </summary>
-    public new class Builder : IModel<TComponentBase>.Builder {
-
-      public Builder(Archetype forArchetype, Universe universe = null) 
-        : base(forArchetype, universe) {}
-
-      public Builder(Archetype forArchetype, Dictionary<string, object> @params, Universe universe = null) 
-        : base(forArchetype, @params, universe) {}
-
-      public Builder(Archetype forArchetype, Dictionary<Param, object> @params, Universe universe = null) 
-        : base(forArchetype, @params, universe) {}
-
-      public Builder(Archetype forArchetype, bool Immutable) 
-        : base(forArchetype, Immutable) {}
-    }
-
-    /// <summary>
-    /// A simpler builder for components
-    /// </summary>
-    public struct LiteBuilder : IBuilder<TComponentBase>, ILiteBuilder {
+    public new partial struct Builder : Data.IBuilder<TComponentBase>, IComponent.IBuilder {
+      Dictionary<string, object> _parameters
+        => __parameters ??= new();
+      internal Dictionary<string, object> __parameters;
 
       /// <summary>
-      /// The factory this is for.
+      /// The archetype/factory using this builder.
       /// </summary>
-      public Archetype Archetype {
+      public Data.Archetype Archetype {
         get;
       }
 
-      IModel IBuilder.Parent {
-        get => Parent;
-        set => Parent = value;
-      } 
       /// <summary>
-      /// If this builder is passed to a child model or component, the original is made the parent.
-      /// </summary>
-      public IModel Parent {
-        get;
-        private set;
-      }
-
-      /// <summary>
-      /// Produce a new instance of the model type.
-      /// this usually is just calling => new Model(this) to help set the type variable or something.
-      /// </summary>
-      public Func<LiteBuilder, TComponentBase> InitializeModel {
-        get;
-        set;
-      }
-
-      /// <summary>
-      /// Configure and set param on the empty new model from InitializeModel.
-      /// </summary>
-      public Func<LiteBuilder, TComponentBase, TComponentBase> ConfigureModel {
-        get;
-        set;
-      }
-
-      /// <summary>
-      /// Logic to finish setting up the model.
-      /// </summary>
-      public Func<LiteBuilder, TComponentBase, TComponentBase> FinalizeModel {
-        get;
-        set;
-      }
-
-      /// <summary>
-      /// The param collection.
-      /// </summary>
-      IEnumerable<KeyValuePair<string, object>> _params;
-      IEnumerable<KeyValuePair<string, object>> ILiteBuilder._params
-        => _params;
-
-      /// <summary>
-      /// The universe this builder is part of
+      /// The universe this builder is building in
       /// </summary>
       public Universe Universe {
         get;
       }
 
+      /// <summary>
+      /// The parent model of this component, if there is one.
+      /// </summary>
+      public IModel Parent {
+        get;
+        internal set;
+      }
+
+      IModel IBuilder.Parent { 
+        get => Parent;
+        set => Parent = value;
+      }
+
       ///<summary><inheritdoc/></summary>
-      public IEnumerable<(string name, object value)> Parameters 
-        => _params.Select(e => (e.Key, e.Value));
+      public IEnumerable<KeyValuePair<string, object>> Parameters
+        => this;
 
-      public LiteBuilder(Archetype forArchetype, IModel parent = null, Universe universe = null) {
-        Archetype = forArchetype;
-        InitializeModel =
-          builder => (TComponentBase)((IFactory)forArchetype).ModelConstructor(builder);
-        ConfigureModel = null;
-        FinalizeModel = null;
-        _params = null;
-        Universe = universe ?? Components.DefaultUniverse;
+      ///<summary><inheritdoc/></summary>
+      public IEnumerable<string> Keys
+        => ((IReadOnlyDictionary<string, object>)_parameters).Keys;
+
+      ///<summary><inheritdoc/></summary>
+      public IEnumerable<object> Values
+        => ((IReadOnlyDictionary<string, object>)_parameters).Values;
+
+      ///<summary><inheritdoc/></summary>
+      public int Count
+        => ((IReadOnlyCollection<KeyValuePair<string, object>>)_parameters).Count;
+
+      Dictionary<string, object> IBuilder.__parameters 
+        { set => __parameters = value; }
+
+      /// <summary>
+      /// get the param
+      /// </summary>
+      public object this[Param param]
+        => this[param.Key].CastTo(param.ValueType);
+
+      /// <summary>
+      /// get the param
+      /// </summary>
+      public object this[string param]
+        => this[param];
+
+
+      /// <summary>
+      /// Empty new builder
+      /// </summary>
+      public Builder(Data.Archetype type, IModel parent = null, Universe universe = null) {
+        Archetype = type;
+        Universe = universe ?? type.Id.Universe;
         Parent = parent;
-      }
-
-      public LiteBuilder(Archetype forArchetype, IModel parent, Universe universe, params KeyValuePair<string, object>[] @params)
-        : this(forArchetype, parent, universe) {
-        _params = @params;
-      }
-
-      public LiteBuilder(Archetype forArchetype, params KeyValuePair<string, object>[] @params)
-        : this(forArchetype) {
-        _params = @params;
-      }
-
-      public LiteBuilder(Archetype forArchetype, IModel parent, params KeyValuePair<string, object>[] @params)
-        : this(forArchetype, parent) {
-        _params = @params;
-      }
-
-      public LiteBuilder(Archetype forArchetype, IEnumerable<KeyValuePair<string, object>> @params, IModel parent = null, Universe universe = null)
-        : this(forArchetype, parent, universe) {
-        _params = @params;
-      }
-
-      void IBuilder._add(string key, object value) {
-        _params = _params.Append(new KeyValuePair<string, object>(key, value));
-      }
-
-      bool IBuilder._tryToGetRawValue(string key, out object value) {
-        value = _params?.FirstOrDefault(entry => entry.Key == key).Value;
-        return !(value is null);
+        __parameters = null;
       }
 
       /// <summary>
-      /// Build the model.
+      /// New builder from a collection of param names
       /// </summary>
-      public TComponentBase Build() {
-        TComponentBase model = InitializeModel(this);
-        model = (TComponentBase)(model as IModel).Initialize(this);
-        model = (TComponentBase)(model as IModel).Configure(this);
-
-        if(ConfigureModel != null) {
-          model = ConfigureModel.Invoke(this, model) ?? model;
-        }
-        model = (TComponentBase)Archetype.ConfigureModel(this, model);
-
-        if(FinalizeModel != null) {
-          model = FinalizeModel(this, model);
-        }
-        model = (TComponentBase)Archetype.FinalizeModel(this, model);
-
-        return model;
+      public Builder(Data.Archetype type, IEnumerable<KeyValuePair<string, object>> @params, IModel parent = null, Universe universe = null) {
+        Archetype = type;
+        Universe = universe ?? Archetype.Id.Universe;
+        Parent = parent;
+        __parameters = @params is not null 
+          ? new(@params) 
+          : null;
       }
 
+      ///<summary><inheritdoc/></summary>
+      public bool ContainsKey(string key) {
+        return ((IReadOnlyDictionary<string, object>)_parameters).ContainsKey(key);
+      }
+
+      ///<summary><inheritdoc/></summary>
+      public bool TryGetValue(string key, out object value) {
+        return ((IReadOnlyDictionary<string, object>)_parameters).TryGetValue(key, out value);
+      }
+
+      ///<summary><inheritdoc/></summary>
+      public IEnumerator<KeyValuePair<string, object>> GetEnumerator() {
+        return ((IEnumerable<KeyValuePair<string, object>>)_parameters).GetEnumerator();
+      }
+
+      IEnumerator IEnumerable.GetEnumerator() {
+        return ((IEnumerable)_parameters).GetEnumerator();
+      }
+
+      ///<summary><inheritdoc/></summary>
+      public IBuilder<TComponentBase> Append(KeyValuePair<string, object> parameter)
+        => (IBuilder<TComponentBase>)(this as IBuilder).Append(parameter);
+
+      ///<summary><inheritdoc/></summary>
+      public IBuilder<TComponentBase> Append(string key, object value) {
+        _parameters.Add(key, value);
+        return this;
+      }
+
+      ///<summary><inheritdoc/></summary>
+      public object Get(string key)
+        => _parameters[key];
+
+      ///<summary><inheritdoc/></summary>
+      public bool TryToGet(string key, out object value)
+        => _parameters.TryGetValue(key, out value);
+
+      ///<summary><inheritdoc/></summary>
+      public bool Has(string key)
+        => _parameters.ContainsKey(key);
+
       /// <summary>
-      /// Do something with each paramter in the builder.
+      /// Check if the builder has this key
       /// </summary>
-      public void ForEachParam(Action<(string key, object value)> @do)
-        => _params.ForEach(entry => @do((entry.Key, entry.Value)));
+      public bool Has(Param param)
+        => _parameters.ContainsKey(param.Key);
 
-      TComponentBase IBuilder<TComponentBase>.Build() 
-        => Build();
+      ///<summary><inheritdoc/></summary>
+      public TComponentBase Make() {
+        TComponentBase component = (TComponentBase)((Data.IFactory)Archetype)._modelConstructor(this);
+        component.Universe = Universe;
+        (component as IComponent).Factory = (IFactory)Archetype;
 
-      void IBuilder.ForEachParam(Action<(string key, object value)> @do)
-        => ForEachParam(@do);
+        component = (TComponentBase)(component as IModel).OnInitialized(this);
+        component = (TComponentBase)Archetype.ConfigureModel(this, component);
 
-      /// <summary>
-      /// append and return.
-      /// </summary>
-      public IBuilder Append(string key, object value) {
-        var copy = this;
-        copy._params = copy._params.Append(new(key, value));
-        return copy;
+        component = (TComponentBase)(component as IModel).OnFinalized(this);
+        component = (TComponentBase)Archetype.FinalizeModel(this, component);
+
+        return component;
       }
     }
   }

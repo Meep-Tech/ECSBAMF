@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 
 namespace Meep.Tech.Data {
 
@@ -11,8 +10,8 @@ namespace Meep.Tech.Data {
     /// One of these is instantiated for each Model[] class and IComponent[] class by default.
     /// This is the base interface.
     /// </summary>
-    public new interface IBuilderFactory
-      : IModel.IBuilderFactory {
+    public new interface IFactory
+      : IModel.IFactory {
 
       /// <summary>
       /// The key for the component type.
@@ -32,8 +31,8 @@ namespace Meep.Tech.Data {
       /// Make a default component for an archetype.
       /// </summary>
       /// <returns></returns>
-      public IComponent Make()
-        => (IComponent)(this as Archetype).MakeDefault();
+      public new IComponent Make()
+        => (this as Archetype).Make<IComponent>();
 
       /// <summary>
       /// Make a default component for an archetype.
@@ -54,9 +53,9 @@ namespace Meep.Tech.Data {
     /// General Base Builder Factory for Components.
     /// </summary>
     [Configuration.Loader.Settings.DoNotBuildInInitialLoad]
-    public new class BuilderFactory
-      : BuilderFactory<BuilderFactory>,
-      IComponent.IBuilderFactory {
+    public new class Factory
+      : Factory<Factory>,
+      IComponent.IFactory {
 
       /// <summary>
       /// Default test params for this builder factory.
@@ -77,21 +76,21 @@ namespace Meep.Tech.Data {
       /// The default way a new builder is created.
       /// This can be used to set this for a Model<> without archetypes.
       /// </summary>
-      public override Func<Archetype, Dictionary<string, object>, Universe, IBuilder<TComponentBase>> BuilderConstructor {
+      public override Func<Data.Archetype, Dictionary<string, object>, Universe, IBuilder<TComponentBase>> BuilderConstructor {
         get => _defaultBuilderCtor ??= (archetype, @params, universe) => new IModel<TComponentBase>.Builder(archetype, @params, universe);
         init => _defaultBuilderCtor = value;
       }
 
-      public BuilderFactory(
+      public Factory(
         Identity id,
         Universe universe = null
       )  : base(id, universe) {}
 
-      public BuilderFactory(
+      public Factory(
         Identity id,
         Universe universe,
         HashSet<IComponent> archetypeComponents,
-        IEnumerable<Func<IBuilder, IModel.IComponent>> modelComponentCtors
+        IEnumerable<Func<Data.IBuilder, IModel.IComponent>> modelComponentCtors
       )  : base(id, universe, archetypeComponents, modelComponentCtors) {}
     }
   }

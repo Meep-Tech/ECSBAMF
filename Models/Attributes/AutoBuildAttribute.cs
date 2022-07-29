@@ -255,7 +255,7 @@ namespace Meep.Tech.Data {
     }
 
     static IBuilder _validateInternalNotPassedIn(IBuilder builder, string parameterName, IModel model) 
-      => builder.HasParam(parameterName)
+      => builder.Has(parameterName)
         ? throw new AccessViolationException($"Cannot pass a value in for Internal Autobuild Parameter: {parameterName}, on model: {model.GetType().FullName}.")
         : builder;
 
@@ -373,7 +373,7 @@ namespace Meep.Tech.Data {
           && builder.Archetype.Id.Universe.Components._archetypeComponentsLinkedToModelComponents
             .Reverse
             .TryGetValue(
-              Components.GetComponentBaseType(component.GetType()),
+              Components.GetBaseType(component.GetType()),
               out linkedArchetypeComponentType
             )
         ) {
@@ -391,7 +391,7 @@ namespace Meep.Tech.Data {
               ));
 
           if (archetypeDefaultProvider is not null) {
-            valueSource = b => b.Parent?.Factory is Archetype a 
+            valueSource = b => (b as IComponent.IBuilder).Parent?.Factory is Archetype a 
               && a.TryToGetComponent(Components.GetKey(linkedArchetypeComponentType), out var component) 
                 ? component 
                 : null;
@@ -463,7 +463,7 @@ namespace Meep.Tech.Data {
     /// Used to build the default ValueGetter for non required items.
     /// </summary>
     public static ValueGetter BuildDefaultGetterFromBuilderOrDefault(IModel model, IBuilder builder, PropertyInfo property, AutoBuildAttribute attributeData, ValueGetter onFailureDefaultOveride = null) {
-      var getter = typeof(BuilderExtensions).GetMethod(nameof(BuilderExtensions.TryToGetParam));
+      var getter = typeof(BuilderExtensions).GetMethod(nameof(BuilderExtensions.TryToGet));
       getter = getter.MakeGenericMethod(property.PropertyType);
 
       // TODO: cache this
@@ -484,7 +484,7 @@ namespace Meep.Tech.Data {
     /// Used to build the default ValueGetter for required items.
     /// </summary>
     public static ValueGetter BuildDefaultGetterForRequiredValueFromBuilder(IModel model, IBuilder builder, PropertyInfo property, AutoBuildAttribute attributeData) {
-      var getter = typeof(BuilderExtensions).GetMethod(nameof(BuilderExtensions.GetAndValidateParamAs));
+      var getter = typeof(BuilderExtensions).GetMethod(nameof(BuilderExtensions.GetRequired));
       getter = getter.MakeGenericMethod(property.PropertyType);
 
       // TODO: cache this

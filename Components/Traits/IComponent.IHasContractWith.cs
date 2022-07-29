@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using Meep.Tech.Collections.Generic;
 
 namespace Meep.Tech.Data {
 
@@ -52,7 +51,7 @@ namespace Meep.Tech.Data {
 
       ///<summary><inheritdoc/></summary>
       public new interface IHaveContractWith<TOtherComponent> : Data.IComponent<TComponentBase>.IHaveContractWith<TOtherComponent>
-        where TOtherComponent : Archetype.IComponent<TOtherComponent> { }
+        where TOtherComponent : Data.Archetype.IComponent<TOtherComponent> { }
     }
   }
 }

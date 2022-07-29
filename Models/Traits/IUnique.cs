@@ -8,19 +8,6 @@ namespace Meep.Tech.Data {
   public interface IUnique : IModel {
 
     /// <summary>
-    /// Params for Unique models
-    /// </summary>
-    public static class Params {
-
-      /// <summary>
-      /// Unique id for any type of model
-      /// </summary>
-      public static IModel.Builder.Param UniqueId {
-        get;
-      } = new IModel.Builder.Param("Id");
-    }
-
-    /// <summary>
     /// The Unique Id of this Item
     /// </summary>
     public string Id {

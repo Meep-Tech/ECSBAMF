@@ -39,6 +39,11 @@
         get => Components.DefaultUniverse;
         set => _ = value;
       }
+
+      IFactory Data.IComponent.Factory {
+        get => (Universe ?? Components.DefaultUniverse).Components.GetFactory(GetType());
+        set { }
+      }
     }
   }
 }

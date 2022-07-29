@@ -20,20 +20,20 @@ namespace Meep.Tech.Data {
     /// <summary>
     /// Get the builder for a given component by type.d
     /// </summary>
-    public static IModel.IBuilderFactory GetBuilderFactoryFor(Type type)
+    public static IModel.IFactory GetFactory(Type type)
       => DefaultUniverse.Models._factoriesByModelType[type];
 
     /// <summary>
     /// Get the base model type of this model type.
     /// </summary>
-    public static System.Type GetModelBaseType(this System.Type type)
-      => DefaultUniverse.Models.GetModelBaseType(type);
+    public static System.Type GetBaseType(this System.Type type)
+      => DefaultUniverse.Models.GetBaseType(type);
 
     /// <summary>
     /// Get logic used to compare models of the given type
     /// </summary>
-    public static CompareLogic GetCompareLogicFor(System.Type type)
-      => Models.DefaultUniverse.Models.GetCompareLogicFor(type);
+    public static CompareLogic GetCompareLogic(System.Type type)
+      => Models.DefaultUniverse.Models.GetCompareLogic(type);
   }
 
   /// <summary>
@@ -47,7 +47,7 @@ namespace Meep.Tech.Data {
     /// This is inherited once set
     /// </summary>
     public static CompareLogic CompareLogic {
-      get => Models.GetCompareLogicFor(typeof(TModel));
+      get => Models.GetCompareLogic(typeof(TModel));
       set => Models.DefaultUniverse.Models._compareLogicByModelType[typeof(TModel)] = value;
     }
 
@@ -55,13 +55,13 @@ namespace Meep.Tech.Data {
     /// Builder instance for this type of component.
     /// You can use this to set a custom builder for this type of model and it's children.
     /// </summary>
-    public static IModel<TModel>.BuilderFactory Factory {
-      get => (IModel<TModel>.BuilderFactory)
+    public static IModel<TModel>.Factory Factory {
+      get => (IModel<TModel>.Factory)
         Models.DefaultUniverse.Models
-          .GetBuilderFactoryFor<TModel>();
+          .GetFactory<TModel>();
       set {
         Models.DefaultUniverse.Models
-          .SetInitialBuilderFactoryFor<TModel>(value);
+          .SetFactory<TModel>(value);
       }
     }
 

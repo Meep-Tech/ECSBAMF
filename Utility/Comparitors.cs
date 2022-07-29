@@ -1,6 +1,4 @@
-﻿using System;
-
-namespace Meep.Tech.Data.Utility {
+﻿namespace Meep.Tech.Data.Utility {
 
   /// <summary>
   /// Verbose(in-code) Comparitors

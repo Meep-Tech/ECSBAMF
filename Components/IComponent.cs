@@ -18,7 +18,7 @@ namespace Meep.Tech.Data {
     /// </summary>
     public new Universe Universe {
       get;
-      protected set;
+      internal protected set;
     } Universe IModel.Universe {
       get => Universe;
       set => Universe = value;
@@ -27,9 +27,12 @@ namespace Meep.Tech.Data {
     /// <summary>
     /// Access to the builder factory for this type of component
     /// </summary>
-    public Data.IComponent.IBuilderFactory Factory
-      => (Universe ?? Components.DefaultUniverse).Components.GetBuilderFactoryFor(GetType());
-    IFactory IModel.Factory
+    new Data.IComponent.IFactory Factory {
+      get;
+      protected internal set;
+    }
+
+    Data.IFactory IModel.Factory
       => Factory;
 
     /// <summary>
@@ -38,12 +41,6 @@ namespace Meep.Tech.Data {
     /// </summary>
     string Key
       => Factory.Key;
-
-    /// <summary>
-    /// Default configuration
-    /// </summary>
-    IModel IModel.Configure(IBuilder builder)
-      => this;
 
     /// <summary>
     /// optional finalization logic for components pre-attached to models after the model has been finalized
@@ -105,12 +102,14 @@ namespace Meep.Tech.Data {
       var component = FromJson(jObject, deserializeToTypeOverride, universeOverride);
 
       if (withConfigurationParameters?.Any() ?? false) {
-        IBuilder builder = (component.Factory as Archetype)
+        Data.IBuilder builder = (component.Factory as Archetype)
           .GetGenericBuilderConstructor()((component.Factory as Archetype), withConfigurationParameters.ToDictionary(p => p.key, p => p.value));
-        builder.Parent = ontoParent;
-        component = (IComponent)component.Initialize(builder);
-        component = (IComponent)component.Configure(builder);
+        (builder as IComponent.IBuilder).Parent = ontoParent;
+        component = (IComponent)component.OnInitialized(builder);
+        component = (IComponent)component.OnFinalized(builder);
       }
+
+      (ontoParent as IWriteableComponentStorage)?.AddComponent(component);
 
       return component;
     }
@@ -164,10 +163,10 @@ namespace Meep.Tech.Data {
       component.Universe = universe ?? Components.DefaultUniverse ?? universeOverride;
       // default init and configure.
       if (withConfigurationParameters?.Any() ?? false) {
-        IBuilder builder = (component.Factory as Archetype)
+        Data.IBuilder builder = (component.Factory as Archetype)
           .GetGenericBuilderConstructor()((component.Factory as Archetype), withConfigurationParameters.ToDictionary(p => p.key, p => p.value));
-        component = (IComponent)component.Initialize(builder);
-        component = (IComponent)component.Configure(builder);
+        component = (IComponent)component.OnInitialized(builder);
+        component = (IComponent)component.OnFinalized(builder);
       }
 
       return component;

@@ -1,21 +1,16 @@
 ﻿using System.Collections.Generic;
 
 namespace Meep.Tech.Data {
+  
   /// <summary>
-  /// This can produce model builders
+  /// This can produce model builders.
+  /// Used internally.
   /// </summary>
   public interface IBuilderSource {
 
     /// <summary>
-    /// The builder for the base model type of this archetype.
-    /// You can override this and add more default props to the return for utility.
+    /// Can be used to make a new builder.
     /// </summary>
-    IBuilder MakeDefaultBuilder();
-
-    /// <summary>
-    /// The builder for the base model type of this archetype.
-    /// You can override this and add more default props to the return for utility.
-    /// </summary>
-    IBuilder MakeBuilder(Dictionary<string, object> @params);
+    internal IBuilder Build(IEnumerable<KeyValuePair<string, object>> initialParams = null);
   }
 }

@@ -20,14 +20,14 @@ namespace Meep.Tech.Data {
     /// <summary>
     /// Append a new component
     /// </summary>
-    public static IReadOnlyDictionary<string, Func<IBuilder, IModel.IComponent>> Append<TComponent>(this IReadOnlyDictionary<string, Func<IBuilder, IModel.IComponent>> current, Func<IBuilder, TComponent> newComponentConstructor) where TComponent : IModel.IComponent
-      => DictionaryExtensions.Append(current, Components.GetKey(typeof(TComponent)), new Func<IBuilder, IModel.IComponent>(b => newComponentConstructor(b)));
+    public static IReadOnlyDictionary<string, Func<IComponent.IBuilder, IModel.IComponent>> Append<TComponent>(this IReadOnlyDictionary<string, Func<IComponent.IBuilder, IModel.IComponent>> current, Func<IComponent.IBuilder, TComponent> newComponentConstructor) where TComponent : IModel.IComponent
+      => DictionaryExtensions.Append(current, Components.GetKey(typeof(TComponent)), new Func<IComponent.IBuilder, IModel.IComponent>(b => newComponentConstructor(b)));
 
     /// <summary>
     /// Append a new component with a default builder
     /// </summary>
-    public static IReadOnlyDictionary<string, Func<IBuilder, IModel.IComponent>> Append<TComponent>(this IReadOnlyDictionary<string, Func<IBuilder, IModel.IComponent>> current) where TComponent : IModel.IComponent
-      => current.Append(builder => (TComponent)Components.GetBuilderFactory(typeof(TComponent)).Make(builder));
+    public static IReadOnlyDictionary<string, Func<IComponent.IBuilder, IModel.IComponent>> Append<TComponent>(this IReadOnlyDictionary<string, Func<IComponent.IBuilder, IModel.IComponent>> current) where TComponent : IModel.IComponent
+      => current.Append(builder => (TComponent)Components.GetFactory(typeof(TComponent)).Make(builder));
 
     /// <summary>
     /// update an existing component
@@ -76,7 +76,7 @@ namespace Meep.Tech.Data {
     /// </summary>
     public static IReadOnlyDictionary<string, Archetype.IComponent> Append<TComponent>(this IReadOnlyDictionary<string, Archetype.IComponent> current)
       where TComponent : Archetype.IComponent
-        => current.Append((Archetype.IComponent)Components.GetBuilderFactory(typeof(TComponent)).Make());
+        => current.Append((Archetype.IComponent)Components.GetFactory(typeof(TComponent)).Make());
 
     /// <summary>
     /// Append a new component

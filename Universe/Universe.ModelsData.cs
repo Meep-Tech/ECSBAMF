@@ -71,7 +71,7 @@ namespace Meep.Tech.Data {
       /// <summary>
       /// The collection of all base model BuilderFactories.
       /// </summary>
-      internal Dictionary<Type, IModel.IBuilderFactory> _factoriesByModelType
+      internal Dictionary<Type, IModel.IFactory> _factoriesByModelType
         = new();
 
       /// <summary>
@@ -84,14 +84,14 @@ namespace Meep.Tech.Data {
         _factories
           = new Archetype.Collection(universe);
         universe.Archetypes._collectionsByRootArchetype
-          .Add(typeof(IModel.IBuilderFactory).FullName, _factories);
+          .Add(typeof(IModel.IFactory).FullName, _factories);
         _universe = universe;
       }
 
       /// <summary>
       /// Get the builder factory for a given type
       /// </summary>
-      public IModel.IBuilderFactory GetBuilderFactoryFor(System.Type systemType)
+      public IModel.IFactory GetFactory(System.Type systemType)
         => typeof(Model<,>).IsAssignableFrom(systemType)
           ? throw new NotImplementedException()
           : _factoriesByModelType.TryGetValue(systemType, out var foundFactory)
@@ -101,7 +101,7 @@ namespace Meep.Tech.Data {
       /// <summary>
       /// Get the builder factory for a given type
       /// </summary>
-      public CompareLogic GetCompareLogicFor(System.Type systemType)
+      public CompareLogic GetCompareLogic(System.Type systemType)
         => _compareLogicByModelType.TryGetValue(systemType, out var found)
             ? found
             : _findFirstInheritedCompareLogic(systemType);
@@ -109,15 +109,15 @@ namespace Meep.Tech.Data {
       /// <summary>
       /// Get the builder factory for a given type
       /// </summary>
-      public IModel.IBuilderFactory GetBuilderFactoryFor<TModel>()
+      public IModel.IFactory GetFactory<TModel>()
         where TModel : IModel<TModel>
-          => GetBuilderFactoryFor(typeof(TModel));
+          => GetFactory(typeof(TModel));
 
       /// <summary>
       /// Set the builder factory for a type of component.
       /// TODO: Must be doen during init
       /// </summary>
-      public void SetInitialBuilderFactoryFor<TModel>(IModel.IBuilderFactory factory)
+      public void SetFactory<TModel>(IModel.IFactory factory)
         where TModel : IModel<TModel> 
       {
         if (!Universe.Loader.IsFinished) {
@@ -136,10 +136,19 @@ namespace Meep.Tech.Data {
       /// <summary>
       /// Get the base model type of this model type.
       /// </summary>
-      public System.Type GetModelBaseType(System.Type type)
+      public System.Type GetBaseType(System.Type type)
         => _baseTypes.TryGetValue(type.FullName, out System.Type foundType)
           ? foundType
           : _baseTypes[type.FullName] = _findModelBaseType(type);
+
+      /// <summary>
+      /// Set a new constructor for this model's builder class.
+      /// </summary>
+      public void SetBuilderConstructor<TModel>(Func<IModel<TModel>.Builder, TModel> newConstructor)
+        where TModel : IModel<TModel> {
+        _factoriesByModelType[typeof(TModel)]._modelConstructor
+          = builder => newConstructor((IModel<TModel>.Builder)builder);
+      }
 
       /// <summary>
       /// Calculate this model's base model type.
@@ -192,18 +201,9 @@ namespace Meep.Tech.Data {
       }
 
       /// <summary>
-      /// Set a new constructor for this model's builder class.
-      /// </summary>
-      public void SetBuilderConstructor<TModel>(Func<IModel<TModel>.Builder, TModel> newConstructor)
-        where TModel : IModel<TModel> {
-        _factoriesByModelType[typeof(TModel)].ModelConstructor
-          = builder => newConstructor((IModel<TModel>.Builder)builder);
-      }
-
-      /// <summary>
       /// Get the first factory inherited by a given model:
       /// </summary>
-      IModel.IBuilderFactory _findFirstInheritedFactory(Type modelType)
+      IModel.IFactory _findFirstInheritedFactory(Type modelType)
         => _findFirstInheritedDataItemFor(
           modelType,
           type => _factoriesByModelType.TryGetValue(type, out var factory)
@@ -394,7 +394,7 @@ namespace Meep.Tech.Data {
       /// <summary>
       /// Make the default factory for a model type using reflection:
       /// </summary>
-      IModel.IBuilderFactory _makeDefaultFactoryFor(Type modelType) {
+      IModel.IFactory _makeDefaultFactoryFor(Type modelType) {
         Type builderType = null;
         System.Reflection.ConstructorInfo ctor;
 
@@ -402,8 +402,8 @@ namespace Meep.Tech.Data {
         // component
         if (modelType.IsAssignableToGeneric(typeof(IComponent<>))) {
           try {
-            builderType = typeof(IComponent<>.BuilderFactory).MakeGenericType(modelType);
-            builderIdType = typeof(IComponent<>.BuilderFactory.Identity)
+            builderType = typeof(IComponent<>.Factory).MakeGenericType(modelType);
+            builderIdType = typeof(IComponent<>.Factory.Identity)
               .MakeGenericType(modelType, builderType);
 
             if (builderIdType.ContainsGenericParameters || builderIdType.ContainsGenericParameters) {
@@ -435,13 +435,13 @@ namespace Meep.Tech.Data {
               null
             ),
             _universe
-          }) as IComponent.IBuilderFactory;
+          }) as IComponent.IFactory;
         }
 
         // model
         try {
-          builderType = typeof(IModel<>.BuilderFactory).MakeGenericType(modelType);
-          builderIdType = typeof(IModel<>.BuilderFactory.Identity)
+          builderType = typeof(IModel<>.Factory).MakeGenericType(modelType);
+          builderIdType = typeof(IModel<>.Factory.Identity)
             .MakeGenericType(modelType, builderType);
           if (builderIdType.ContainsGenericParameters || builderIdType.ContainsGenericParameters) {
             throw new Meep.Tech.Data.Configuration.Loader.CannotInitializeArchetypeException(
@@ -474,7 +474,7 @@ namespace Meep.Tech.Data {
               null
             ),
             _universe
-          }) as IModel.IBuilderFactory;
+          }) as IModel.IFactory;
       }
 
 

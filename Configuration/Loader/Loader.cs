@@ -984,7 +984,7 @@ namespace Meep.Tech.Data.Configuration {
           if (archetype.Id.Key.Contains("Character")) {
             System.Diagnostics.Debugger.Break();
           }
-          (archetype as IFactory).ModelConstructor
+          (archetype as IFactory)._modelConstructor
             = defaultModelConstructor;
         }
 
@@ -1164,7 +1164,7 @@ namespace Meep.Tech.Data.Configuration {
           }
 
           _initializedArchetypes.Add(
-            (Archetype)Universe.Models.GetBuilderFactoryFor(typeToTest)
+            (Archetype)Universe.Models.GetFactory(typeToTest)
           );
         }
       }
@@ -1418,7 +1418,7 @@ namespace Meep.Tech.Data.Configuration {
 
       IModel testModel;
       try {
-        testModel = potentiallyBuiltModel?.model ?? factory.MakeDefaultWith(testBuilder);
+        testModel = potentiallyBuiltModel?.model ?? factory.Make(testBuilder);
       }
       catch (Exception e) {
         Type accurateTargetType = _tryToCalculateAcurateBuilderType(modelBase, e);
@@ -1448,7 +1448,7 @@ namespace Meep.Tech.Data.Configuration {
       if (e is AutoBuildAttribute.Exception autoBuilderFailure && autoBuilderFailure.ModelTypeBeingBuilt != modelBase) {
         accurateTargetType = autoBuilderFailure.ModelTypeBeingBuilt;
       } // try to re-target via the called constructor.
-      else if (e is IModel.Builder.Param.IException) {
+      else if (e is IModel.IBuilder.Param.IException) {
         StackTrace stackTrace = new(e);
         StackFrame lastFrame = stackTrace.GetFrame(1);
         Console.WriteLine(lastFrame);
@@ -1505,13 +1505,13 @@ namespace Meep.Tech.Data.Configuration {
     Archetype _getDefaultFactoryBuilderForModel(Type systemType)
       => systemType.IsAssignableToGeneric(typeof(IModel<,>))
         ? Universe.Archetypes.GetDefaultForModelOfType(systemType)
-        : Universe.Models.GetBuilderFactoryFor(systemType) as Archetype;
+        : Universe.Models.GetFactory(systemType) as Archetype;
 
     /// <summary>
     /// Test build a model of the given type using it's default archetype or builder.
     /// </summary>
     Data.IComponent _testBuildDefaultComponent(Type systemType) {
-      if (!(Universe.Components.GetBuilderFactoryFor(systemType) is Archetype defaultFactory)) {
+      if (!(Universe.Components.GetFactory(systemType) is Archetype defaultFactory)) {
         throw new Exception($"Could not make a default component model of type: {systemType.FullName}. Could not fine a default BuilderFactory to build it with.");
       }
       IModel defaultComponent;
@@ -1524,7 +1524,7 @@ namespace Meep.Tech.Data.Configuration {
 
         /// Register component key
         Universe.Components.
-          _byKey[(defaultFactory as IComponent.IBuilderFactory).Key]
+          _byKey[(defaultFactory as IComponent.IFactory).Key]
             = systemType;
       }
       catch (Exception e) {
@@ -1536,11 +1536,11 @@ namespace Meep.Tech.Data.Configuration {
 
     static IBuilder _loadOrGetTestBuilder(Archetype factory, Dictionary<string, object> @params, out (IModel model, bool hasValue)? potentiallyBuiltModel) {
       IFactory iFactory = factory;
-      if (iFactory.ModelConstructor is null) {
+      if (iFactory._modelConstructor is null) {
         Func<IBuilder, IModel> defaultCtor = factory.Id.Universe.Models
           ._getDefaultCtorFor(factory.ModelTypeProduced);
 
-        iFactory.ModelConstructor
+        iFactory._modelConstructor
           = builder => defaultCtor.Invoke(builder);
       }
 
@@ -1563,7 +1563,7 @@ namespace Meep.Tech.Data.Configuration {
         TestParentFactoryAttribute testParentData;
         if (typeof(IComponent).IsAssignableFrom(factory.ModelTypeProduced)) {
           if ((testParentData = factory.ModelTypeProduced.GetCustomAttribute<TestParentFactoryAttribute>()) != null) {
-            builder.Parent = new DummyParent() { 
+            (builder as IComponent.IBuilder).Parent = new DummyParent() { 
               Factory = testParentData.TestArchetypeType.AsArchetype()
             };
           }

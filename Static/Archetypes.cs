@@ -45,7 +45,7 @@ namespace Meep.Tech.Data {
     /// Get a collection registered to an archetype root:
     /// </summary>
     public static Archetype.Collection GetCollectionFor(Archetype root)
-      => DefaultUniverse.Archetypes.GetCollectionFor(root);
+      => DefaultUniverse.Archetypes.GetCollection(root);
 
     #endregion
 

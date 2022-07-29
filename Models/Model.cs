@@ -66,7 +66,7 @@ namespace Meep.Tech.Data {
       if(obj is IUnique other && this is IUnique current)
         return other.Id == current.Id;
       else {
-        CompareLogic compareLogic = Universe.Models.GetCompareLogicFor(GetType());
+        CompareLogic compareLogic = Universe.Models.GetCompareLogic(GetType());
         ComparisonResult result = compareLogic.Compare(this, obj as IModel);
 
         return result.AreEqual;
@@ -87,7 +87,7 @@ namespace Meep.Tech.Data {
     /// The factory that was used to make this object
     /// </summary>
     [ArchetypeProperty]
-    public IModel.IBuilderFactory Factory {
+    public IModel.IFactory Factory {
       get;
       private set;
     } IFactory IModel.Factory 
@@ -120,20 +120,27 @@ namespace Meep.Tech.Data {
       => (TModel)IModel.FromJson(jObject, deserializeToTypeOverride, universeOverride, withConfigurationParameters);
 
     /// <summary>
-    /// For the base configure calls
+    /// Can be used to initialize a model after the ctor call in xbam
     /// </summary>
-    IModel IModel.Initialize(IBuilder builder) {
-      Factory = (IModel.IBuilderFactory)builder.Archetype;
+    protected virtual Model<TModelBase> OnInitialized(IBuilder<TModelBase> builder)
+      => this;
+
+    IModel IModel.OnInitialized(IBuilder builder) {
+      Factory = (IModel.IFactory)builder.Archetype;
       Universe
         = builder.Archetype.Id.Universe;
       return OnInitialized((IBuilder<TModelBase>)builder);
     }
 
     /// <summary>
-    /// Can be used to initialize a model after the ctor call in xbam
+    /// Can be used to finalize a model after the components and everything else is set up.
     /// </summary>
-    protected virtual Model<TModelBase> OnInitialized(IBuilder<TModelBase> builder)
+    protected virtual Model<TModelBase> OnFinalized(IBuilder<TModelBase> builder)
       => this;
+
+    IModel IModel.OnFinalized(IBuilder builder) {
+      return OnFinalized((IBuilder<TModelBase>)builder);
+    }
   }
 
   /// <summary>
@@ -141,7 +148,7 @@ namespace Meep.Tech.Data {
   /// This includes a components system.
   /// </summary>
   public abstract partial class Model<TModelBase, TArchetypeBase>
-    : Model, IModel<TModelBase, TArchetypeBase>
+    : Model, IModel<TModelBase, TArchetypeBase>, IResource
     where TModelBase : IModel<TModelBase, TArchetypeBase> 
     where TArchetypeBase : Archetype<TModelBase, TArchetypeBase>
   {
@@ -177,7 +184,7 @@ namespace Meep.Tech.Data {
     /// </summary>
     public static Archetype<TModelBase, TArchetypeBase>.Collection Types
       => (Archetype<TModelBase, TArchetypeBase>.Collection)
-        Archetypes.DefaultUniverse.Archetypes.GetCollectionFor(typeof(TArchetypeBase));
+        Archetypes.DefaultUniverse.Archetypes.GetCollection(typeof(TArchetypeBase));
 
     /// <summary>
     /// The model's archetype:
@@ -194,7 +201,7 @@ namespace Meep.Tech.Data {
     /// <summary>
     /// Make shortcut.
     /// </summary>
-    public static TDesiredModel Make<TDesiredModel>(TArchetypeBase type, Action<IModel.Builder> builderConfiguration = null)
+    public static TDesiredModel Make<TDesiredModel>(TArchetypeBase type, Action<IModel.IBuilder> builderConfiguration = null)
       where TDesiredModel : TModelBase
         => type.Make<TDesiredModel>(builder => { 
           builderConfiguration(builder); 
@@ -204,7 +211,7 @@ namespace Meep.Tech.Data {
     /// <summary>
     /// Make shortcut.
     /// </summary>
-    public static TModelBase Make(TArchetypeBase type, Action<IModel.Builder> builderConfiguration = null)
+    public static TModelBase Make(TArchetypeBase type, Action<IModel.IBuilder> builderConfiguration = null)
         => type.Make<TModelBase>(builder => { 
           builderConfiguration(builder); 
           return builder;

@@ -24,12 +24,25 @@
       /// <summary>
       /// For the base configure calls
       /// </summary>
-      IModel IModel.Initialize(IBuilder builder) {
+      new IModel OnInitialized(Data.IBuilder builder)
+        => this;
+
+      IModel IModel.OnInitialized(Data.IBuilder builder) {
         Archetype = builder?.Archetype as TArchetypeBase;
         Universe
           = builder.Archetype.Id.Universe;
 
-        return this;
+        return OnInitialized(builder);
+      }
+
+      /// <summary>
+      /// For the base configure calls
+      /// </summary>
+      new IModel OnFinalized(Data.IBuilder builder)
+        => this;
+
+      IModel IModel.OnFinalized(Data.IBuilder builder) {
+        return OnFinalized(builder);
       }
     }
   }

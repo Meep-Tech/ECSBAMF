@@ -16,16 +16,16 @@
         /// Build and get a default model component that is linked to this archetype component.
         /// This behavior can be overriden by default if you choose. It could even just be a ctor call.
         /// </summary>
-        public new TLinkedModelComponent BuildDefaultModelComponent(IModel.Builder parentModelBuilder, Universe universe = null)
-          => ((universe.Components.GetBuilderFactoryFor<TLinkedModelComponent>() ?? Components<TLinkedModelComponent>.BuilderFactory)
-            as Data.IComponent<TLinkedModelComponent>.BuilderFactory)
-             .Make((IBuilder<TLinkedModelComponent>)parentModelBuilder);
+        public new TLinkedModelComponent BuildDefaultModelComponent(IComponent.IBuilder builder, Universe universe = null)
+          => ((universe.Components.GetFactory<TLinkedModelComponent>() ?? Components<TLinkedModelComponent>.Factory)
+            as Data.IComponent<TLinkedModelComponent>.Factory)
+             .Make((IBuilder<TLinkedModelComponent>)builder);
 
         /// <summary>
         /// Build and get a default model component that is linked to this archetype component.
         /// </summary>
-        IModel.IComponent ILinkedComponent.BuildDefaultModelComponent(IModel.Builder parentModelBuilder, Universe universe)
-          => BuildDefaultModelComponent(parentModelBuilder, universe);
+        IModel.IComponent ILinkedComponent.BuildDefaultModelComponent(IComponent.IBuilder builder, Universe universe)
+          => BuildDefaultModelComponent(builder, universe);
       }
 
       /// <summary>
@@ -37,7 +37,7 @@
         /// <summary>
         /// Build and get a default model component that is linked to this archetype component.
         /// </summary>
-        public IModel.IComponent BuildDefaultModelComponent(IModel.Builder parentModelBuilder, Universe universe = null)
+        public IModel.IComponent BuildDefaultModelComponent(IComponent.IBuilder builder, Universe universe = null)
           => null;
       }
     }

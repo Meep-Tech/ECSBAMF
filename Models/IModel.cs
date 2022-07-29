@@ -14,17 +14,18 @@ namespace Meep.Tech.Data {
   /// <see cref="Model{TModelBase}"/>
   /// <see cref="Model{TModelBase, TArchetypeBase}"/>
   /// <see cref="Model{TModelBase, TArchetypeBase}.IFromInterface"/>
-  public partial interface IModel {
+  public partial interface IModel: IResource {
+    Universe IResource.Universe => Universe;
 
     /// <summary>
     /// The factory or archetype used to build this model
     /// </summary>
-    public IFactory Factory { get; }
+    public Data.IFactory Factory { get; }
 
     /// <summary>
     /// The universe this model was made in
     /// </summary>
-    public Universe Universe {
+    public new Universe Universe {
       get;
       internal set;
     }
@@ -39,20 +40,20 @@ namespace Meep.Tech.Data {
     /// <summary>
     /// Initializes the universe, archetype, factory and other built in model links
     /// </summary>
-    protected internal IModel Initialize(IBuilder builder)
+    protected internal IModel OnInitialized(Data.IBuilder builder)
       => this;
 
     /// <summary>
-    /// Can be used to initially configure a model in the base ctor.
-    /// Account for a null builder
+    /// Initializes the universe, archetype, factory and other built in model links
     /// </summary>
-    protected internal IModel Configure(IBuilder builder)
+    protected internal IModel OnFinalized(Data.IBuilder builder)
       => this;
 
     /// <summary>
-    /// (optional)Finish deserializing the model
+    /// Finish deserializing the model
     /// </summary>
-    internal protected virtual void FinishDeserialization() { }
+    internal protected IModel OnDeserialized()
+      => this;
 
     /// <summary>
     /// Copy the model by serializing and deserializing it.
@@ -155,13 +156,14 @@ namespace Meep.Tech.Data {
     public TArchetypeBase Archetype {
       get;
       internal set;
-    } IFactory IModel.Factory
+    }
+    Data.IFactory IModel.Factory
       => Archetype;
 
     /// <summary>
     /// For the base configure calls
     /// </summary>
-    IModel IModel.Initialize(IBuilder builder) {
+    IModel IModel.OnInitialized(Data.IBuilder builder) {
       Archetype = builder?.Archetype as TArchetypeBase;
       Universe
         = builder.Archetype.Id.Universe;

@@ -1,8 +1,6 @@
-﻿using Newtonsoft.Json.Linq;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 
 namespace Meep.Tech.Data {
 
@@ -31,6 +29,12 @@ namespace Meep.Tech.Data {
       /// <summary>
       /// <inheritdoc/>
       /// </summary>
+      public new TModelBase Make()
+          => base.Make();
+
+      /// <summary>
+      /// <inheritdoc/>
+      /// </summary>
       public new TDesiredModel Make<TDesiredModel>()
         where TDesiredModel : TModelBase
           => base.Make<TDesiredModel>();
@@ -38,90 +42,11 @@ namespace Meep.Tech.Data {
       #region Copied from WithDefaultParamBasedModelBuilders
 
       /// <summary>
-      /// <inheritdoc/>
-      /// </summary>
-      public new TModelBase Make()
-          => base.Make();
-
-      /// <summary>
-      /// Make a model from this archetype using a set of params to populate the default builder.
-      /// </summary>
-      /*new public TDesiredModel Make<TDesiredModel>(params KeyValuePair<string, object>[] @params)
-        where TDesiredModel : TModelBase
-          => base.Make<TDesiredModel>(@params.AsEnumerable());*/
-
-      /// <summary>
-      /// Make a model from this archetype using a set of params to populate the default builder.
-      /// </summary>
-      new public TDesiredModel Make<TDesiredModel>(params (string key, object value)[] @params)
-        where TDesiredModel : TModelBase
-          => base.Make<TDesiredModel>(@params.AsEnumerable());
-
-      /// <summary>
-      /// Make a model from this archetype using a set of params to populate the default builder.
-      /// </summary>
-      /*public TDesiredModel Make<TDesiredModel>(params KeyValuePair<IModel.Builder.Param, object>[] @params)
-        where TDesiredModel : TModelBase
-          => base.Make<TDesiredModel>(@params.AsEnumerable());
-
-      /// <summary>
-      /// Make a model from this archetype using a set of params to populate the default builder.
-      /// </summary>
-      public TDesiredModel Make<TDesiredModel>(params (IModel.Builder.Param key, object value)[] @params)
-        where TDesiredModel : TModelBase
-          => base.Make<TDesiredModel>(@params.AsEnumerable());*/
-
-      /// <summary>
       /// Make a model from this archetype using a set of params to populate the default builder.
       /// </summary>
       new public TDesiredModel Make<TDesiredModel>(IEnumerable<KeyValuePair<string, object>> @params)
         where TDesiredModel : TModelBase
-            => base.Make<TDesiredModel>(@params);
-
-      /// <summary>
-      /// Make a model from this archetype using a set of params to populate the default builder.
-      /// </summary>
-      new public TDesiredModel Make<TDesiredModel>(IEnumerable<(string key, object value)> @params)
-        where TDesiredModel : TModelBase
-            => base.Make<TDesiredModel>(@params);
-
-      /// <summary>
-      /// Make a model from this archetype using a set of params to populate the default builder.
-      /// </summary>
-      new public TDesiredModel Make<TDesiredModel>(IEnumerable<(IModel.Builder.Param key, object value)> @params)
-        where TDesiredModel : TModelBase
-            => base.Make<TDesiredModel>(@params);
-
-      /// <summary>
-      /// Make a model from this archetype using a set of params to populate the default builder.
-      /// </summary>
-      new public TDesiredModel Make<TDesiredModel>(IEnumerable<KeyValuePair<IModel.Builder.Param, object>> @params)
-        where TDesiredModel : TModelBase
-            => base.Make<TDesiredModel>(@params);
-
-      /*/// <summary>
-      /// Make a model from this archetype using a set of params to populate the default builder.
-      /// </summary>
-      new public TModelBase Make(params KeyValuePair<string, object>[] @params)
-        => base.Make(@params.AsEnumerable());
-
-      /// <summary>
-      /// Make a model from this archetype using a set of params to populate the default builder.
-      /// </summary>
-      public new TModelBase Make(params KeyValuePair<IModel.Builder.Param, object>[] @params)
-        => base.Make(@params.AsEnumerable());*/
-
-      /// <summary>
-      /// Make a model from this archetype using a set of params to populate the default builder.
-      /// </summary>
-      new public TModelBase Make(params (string key, object value)[] @params)
-        => base.Make(@params.AsEnumerable());
-
-      /*/// <summary>
-      /// Make a model from this archetype using a set of params to populate the default builder.
-      /// </summary>
-      public new TModelBase Make(params (IModel.Builder.Param key, object value)[] @params)
-        => base.Make(@params.AsEnumerable());*/
+          => base.Make<TDesiredModel>(@params);
 
       /// <summary>
       /// Make a model from this archetype using a set of params to populate the default builder.
@@ -132,38 +57,28 @@ namespace Meep.Tech.Data {
       /// <summary>
       /// Make a model from this archetype using a set of params to populate the default builder.
       /// </summary>
+      public TDesiredModel Make<TDesiredModel>(params KeyValuePair<string, object>[] @params)
+        where TDesiredModel : TModelBase
+          => base.Make<TDesiredModel>(@params.AsEnumerable());
+
+      /// <summary>
+      /// Make a model from this archetype using a set of params to populate the default builder.
+      /// </summary>
+      public TModelBase Make(params KeyValuePair<string, object>[] @params)
+          => base.Make(@params.AsEnumerable());
+
+      /// <summary>
+      /// Make a model from this archetype using a set of params to populate the default builder.
+      /// </summary>
+      new public TDesiredModel Make<TDesiredModel>(IEnumerable<(string key, object value)> @params)
+        where TDesiredModel : TModelBase
+          => base.Make<TDesiredModel>(@params);
+
+      /// <summary>
+      /// Make a model from this archetype using a set of params to populate the default builder.
+      /// </summary>
       new public TModelBase Make(IEnumerable<(string key, object value)> @params)
         => base.Make(@params);
-
-      /// <summary>
-      /// Make a model from this archetype using a set of params to populate the default builder.
-      /// </summary>
-      new public TModelBase Make(IEnumerable<(IModel.Builder.Param key, object value)> @params)
-        => base.Make(@params);
-
-      /// <summary>
-      /// Make a model from this archetype using a set of params to populate the default builder.
-      /// </summary>
-      new public TModelBase Make(IEnumerable<KeyValuePair<IModel.Builder.Param, object>> @params)
-        => base.Make(@params);
-
-      #endregion
-    }
-
-    /// <summary>
-    /// A root archetype with IExposeDefaultModelBuilderMakeMethods.WithBuilderParameters implemented from the start.
-    /// </summary>
-    public abstract partial class WithDefaultParamBasedModelBuilders
-      : Archetype<TModelBase, TArchetypeBase>,
-        IExposeDefaultModelBuilderMakeMethods.WithBuilderParameters
-    {
-      /*///<summary><inheritdoc/></summary>
-      protected WithDefaultParamBasedModelBuilders(Archetype.Identity id, Collection collection = null) 
-        : base(id, collection) {}*/
-
-      ///<summary><inheritdoc/></summary>
-      protected WithDefaultParamBasedModelBuilders(Archetype.Identity id, Universe universe = null, Collection collection = null) 
-        : base(id, collection, universe) {}
 
       /// <summary>
       /// Make a model from this archetype using a set of params to populate the default builder.
@@ -181,28 +96,61 @@ namespace Meep.Tech.Data {
       /// <summary>
       /// Make a model from this archetype using a set of params to populate the default builder.
       /// </summary>
+      public TDesiredModel Make<TDesiredModel>(IEnumerable<(IModel.IBuilder.Param key, object value)> @params)
+        where TDesiredModel : TModelBase
+          => base.Make<TDesiredModel>(@params.Select(e => new KeyValuePair<string, object>(e.key.Key, e.value)));
+
+      /// <summary>
+      /// Make a model from this archetype using a set of params to populate the default builder.
+      /// </summary>
+      public TModelBase Make(IEnumerable<KeyValuePair<IModel.IBuilder.Param, object>> @params)
+        => base.Make(@params.Select(e => new KeyValuePair<string, object>(e.Key.Key, e.Value)));
+
+      /// <summary>
+      /// Make a model from this archetype using a set of params to populate the default builder.
+      /// </summary>
+      public TDesiredModel Make<TDesiredModel>(IEnumerable<KeyValuePair<IModel.IBuilder.Param, object>> @params)
+        where TDesiredModel : TModelBase
+          => base.Make<TDesiredModel>(@params.Select(e => new KeyValuePair<string, object>(e.Key.Key, e.Value)));
+
+      /// <summary>
+      /// Make a model from this archetype using a set of params to populate the default builder.
+      /// </summary>
+      public TModelBase Make(IEnumerable<(IModel.IBuilder.Param key, object value)> @params)
+        => base.Make(@params.Select(e => new KeyValuePair<string, object>(e.key.Key, e.value)));
+
+      #endregion
+    }
+
+    /// <summary>
+    /// A root archetype with IExposeDefaultModelBuilderMakeMethods.WithBuilderParameters implemented from the start.
+    /// </summary>
+    public abstract partial class WithDefaultParamBasedModelBuilders
+      : Archetype<TModelBase, TArchetypeBase>,
+        IExposeDefaultModelBuilderMakeMethods.WithBuilder
+    {
+
+      ///<summary><inheritdoc/></summary>
+      protected WithDefaultParamBasedModelBuilders(Archetype.Identity id, Universe universe = null, Collection collection = null) 
+        : base(id, collection, universe) { }
+
+      /// <summary>
+      /// <inheritdoc/>
+      /// </summary>
+      public new TModelBase Make()
+          => base.Make();
+
+      /// <summary>
+      /// <inheritdoc/>
+      /// </summary>
+      public new TDesiredModel Make<TDesiredModel>()
+        where TDesiredModel : TModelBase
+          => base.Make<TDesiredModel>();
+
+      /// <summary>
+      /// Make a model from this archetype using a set of params to populate the default builder.
+      /// </summary>
       new public TDesiredModel Make<TDesiredModel>(IEnumerable<KeyValuePair<string, object>> @params)
-        where TDesiredModel : TModelBase
-          => base.Make<TDesiredModel>(@params);
-
-      /// <summary>
-      /// Make a model from this archetype using a set of params to populate the default builder.
-      /// </summary>
-      new public TDesiredModel Make<TDesiredModel>(IEnumerable<(string key, object value)> @params)
-        where TDesiredModel : TModelBase
-          => base.Make<TDesiredModel>(@params);
-
-      /// <summary>
-      /// Make a model from this archetype using a set of params to populate the default builder.
-      /// </summary>
-      new public TDesiredModel Make<TDesiredModel>(IEnumerable<(IModel.Builder.Param key, object value)> @params)
-        where TDesiredModel : TModelBase
-          => base.Make<TDesiredModel>(@params);
-
-      /// <summary>
-      /// Make a model from this archetype using a set of params to populate the default builder.
-      /// </summary>
-      new public TDesiredModel Make<TDesiredModel>(IEnumerable<KeyValuePair<IModel.Builder.Param, object>> @params)
         where TDesiredModel : TModelBase
           => base.Make<TDesiredModel>(@params);
 
@@ -215,20 +163,67 @@ namespace Meep.Tech.Data {
       /// <summary>
       /// Make a model from this archetype using a set of params to populate the default builder.
       /// </summary>
+      public TDesiredModel Make<TDesiredModel>(params KeyValuePair<string, object>[] @params)
+        where TDesiredModel : TModelBase
+          => base.Make<TDesiredModel>(@params.AsEnumerable());
+
+      /// <summary>
+      /// Make a model from this archetype using a set of params to populate the default builder.
+      /// </summary>
+      public TModelBase Make(params KeyValuePair<string, object>[] @params)
+          => base.Make(@params.AsEnumerable());
+
+      /// <summary>
+      /// Make a model from this archetype using a set of params to populate the default builder.
+      /// </summary>
+      new public TDesiredModel Make<TDesiredModel>(IEnumerable<(string key, object value)> @params)
+        where TDesiredModel : TModelBase
+          => base.Make<TDesiredModel>(@params);
+
+      /// <summary>
+      /// Make a model from this archetype using a set of params to populate the default builder.
+      /// </summary>
       new public TModelBase Make(IEnumerable<(string key, object value)> @params)
         => base.Make(@params);
 
       /// <summary>
       /// Make a model from this archetype using a set of params to populate the default builder.
       /// </summary>
-      new public TModelBase Make(IEnumerable<(IModel.Builder.Param key, object value)> @params)
-        => base.Make(@params);
+      new public TDesiredModel Make<TDesiredModel>(params (string key, object value)[] @params)
+        where TDesiredModel : TModelBase
+          => base.Make<TDesiredModel>(@params.AsEnumerable());
 
       /// <summary>
       /// Make a model from this archetype using a set of params to populate the default builder.
       /// </summary>
-      new public TModelBase Make(IEnumerable<KeyValuePair<IModel.Builder.Param, object>> @params)
-        => base.Make(@params);
+      new public TModelBase Make(params (string key, object value)[] @params)
+          => base.Make(@params.AsEnumerable());
+
+      /// <summary>
+      /// Make a model from this archetype using a set of params to populate the default builder.
+      /// </summary>
+      public TDesiredModel Make<TDesiredModel>(IEnumerable<(IModel.IBuilder.Param key, object value)> @params)
+        where TDesiredModel : TModelBase
+          => base.Make<TDesiredModel>(@params.Select(e => new KeyValuePair<string, object>(e.key.Key, e.value)));
+
+      /// <summary>
+      /// Make a model from this archetype using a set of params to populate the default builder.
+      /// </summary>
+      public TModelBase Make(IEnumerable<KeyValuePair<IModel.IBuilder.Param, object>> @params)
+        => base.Make(@params.Select(e => new KeyValuePair<string, object>(e.Key.Key, e.Value)));
+
+      /// <summary>
+      /// Make a model from this archetype using a set of params to populate the default builder.
+      /// </summary>
+      public TDesiredModel Make<TDesiredModel>(IEnumerable<KeyValuePair<IModel.IBuilder.Param, object>> @params)
+        where TDesiredModel : TModelBase
+          => base.Make<TDesiredModel>(@params.Select(e => new KeyValuePair<string, object>(e.Key.Key, e.Value)));
+
+      /// <summary>
+      /// Make a model from this archetype using a set of params to populate the default builder.
+      /// </summary>
+      public TModelBase Make(IEnumerable<(IModel.IBuilder.Param key, object value)> @params)
+        => base.Make(@params.Select(e => new KeyValuePair<string, object>(e.key.Key, e.value)));
     }
 
     /// <summary>
@@ -236,7 +231,7 @@ namespace Meep.Tech.Data {
     /// </summary>
     public abstract partial class WithDefaultBuilderBasedModelBuilders
       : Archetype<TModelBase, TArchetypeBase>,
-        IExposeDefaultModelBuilderMakeMethods.WithParamListParameters
+        IExposeDefaultModelBuilderMakeMethods.ViaParamList
     {
 
       /*///<summary><inheritdoc/></summary>
@@ -260,20 +255,6 @@ namespace Meep.Tech.Data {
       /// Make a model by and configuring the default builder.
       /// </summary>
       new public TDesiredModel Make<TDesiredModel>(Func<IBuilder<TModelBase>, IBuilder<TModelBase>> configureBuilder)
-        where TDesiredModel : TModelBase
-          => base.Make<TDesiredModel>(configureBuilder);
-
-      /// <summary>
-      /// Make a model by and configuring the default builder.
-      /// </summary>
-      new public TDesiredModel Make<TDesiredModel>(Action<IModel.Builder> configureBuilder)
-        where TDesiredModel : TModelBase
-          => base.Make<TDesiredModel>(configureBuilder);
-
-      /// <summary>
-      /// Make a model by and configuring the default builder.
-      /// </summary>
-      new public TDesiredModel Make<TDesiredModel>(Action<IModel<TModelBase>.Builder> configureBuilder)
         where TDesiredModel : TModelBase
           => base.Make<TDesiredModel>(configureBuilder);
 
@@ -317,17 +298,6 @@ namespace Meep.Tech.Data {
       new public TModelBase Make(Func<IBuilder<TModelBase>, IBuilder<TModelBase>> configureBuilder)
         => base.Make(configureBuilder);
 
-      /// <summary>
-      /// Make a model by and configuring the default builder.
-      /// </summary>
-      new public TModelBase Make(Action<IModel.Builder> configureBuilder)
-        => base.Make(configureBuilder);
-
-      /// <summary>
-      /// Make a model by and configuring the default builder.
-      /// </summary>
-      new public TModelBase Make(Action<IModel<TModelBase>.Builder> configureBuilder)
-        => base.Make(configureBuilder);
 
       /// <summary>
       /// Make a model by and configuring the default builder.

@@ -34,7 +34,7 @@ namespace Meep.Tech.Data {
     public static bool Equals(IReadableComponentStorage model, IReadableComponentStorage other) {
       foreach((_, IComponent dataComponent) in model.ComponentsByBuilderKey) {
         // check each child component that we need to:
-        if(Meep.Tech.Data.Components.GetBuilderFactory(dataComponent.GetType()).IncludeInParentModelEqualityChecks) {
+        if(Meep.Tech.Data.Components.GetFactory(dataComponent.GetType()).IncludeInParentModelEqualityChecks) {
           // if the other item doesn't have any components, is missing this component, or the other component doesn't equal the one from this model, it's not ==
           if(!other.TryToGetComponent(dataComponent, out IComponent otherComponent)
             || !dataComponent.Equals(otherComponent)
@@ -171,7 +171,7 @@ namespace Meep.Tech.Data {
     /// Get a component if this has a component of that given type
     /// </summary>
     public static bool TryToGetComponent(this IReadableComponentStorage storage, System.Type componentType, out IComponent component)
-      => storage.TryToGetComponent(Components.GetBuilderFactory(componentType).Key, out component);
+      => storage.TryToGetComponent(Components.GetFactory(componentType).Key, out component);
 
     /// <summary>
     /// Get a component if this has a component of that given type
@@ -320,13 +320,13 @@ namespace Meep.Tech.Data {
     /// Remove an existing component
     /// </summary>
     internal static bool RemoveComponent(this IReadableComponentStorage storage, System.Type toRemove)
-      => storage.RemoveComponent(Components.GetBuilderFactory(toRemove).Key);
+      => storage.RemoveComponent(Components.GetFactory(toRemove).Key);
 
     /// <summary>
     /// Remove an existing component
     /// </summary>
     internal static bool RemoveComponent(this IReadableComponentStorage storage, System.Type toRemove, out IComponent removedComponent)
-      => storage.RemoveComponent(Components.GetBuilderFactory(toRemove).Key, out removedComponent);
+      => storage.RemoveComponent(Components.GetFactory(toRemove).Key, out removedComponent);
 
     /// <summary>
     /// Remove an existing component
@@ -432,7 +432,7 @@ namespace Meep.Tech.Data {
     /// </summary>
     public static TComponent AddNewComponent<TComponent>(this IWriteableComponentStorage storage, IEnumerable<(string, object)> @params)
       where TComponent : Data.IComponent<TComponent> {
-      TComponent toAdd = Components<TComponent>.BuilderFactory.Make(@params);
+      TComponent toAdd = Components<TComponent>.Factory.Make(@params);
       if(toAdd is IModel.IComponent.IIsRestrictedToCertainTypes restrictedComponent && storage is IModel storageModel && !restrictedComponent.IsCompatableWith(storageModel)) {
         throw new System.ArgumentException($"Component of type {toAdd.Key} is not compatable with model of type {storage.GetType()}. The model must inherit from {restrictedComponent.RestrictedTo.FullName}.");
       }

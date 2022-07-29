@@ -17,9 +17,27 @@ namespace Meep.Tech.Data {
     /// <summary>
     /// Overrideable Model Constructor
     /// </summary>
-    Func<IBuilder, IModel> ModelConstructor {
+    internal Func<IBuilder, IModel> _modelConstructor {
       get;
-      internal set;
+      set;
     }
+
+    /// <summary>
+    /// Base make helper
+    /// </summary>
+    /// <returns></returns>
+    protected internal abstract IModel Make();
+
+    /// <summary>
+    /// Base make helper
+    /// </summary>
+    /// <returns></returns>
+    protected internal abstract IModel Make(IBuilder builder);
+
+    /// <summary>
+    /// Base make helper
+    /// </summary>
+    /// <returns></returns>
+    protected internal abstract IModel Make(Func<IBuilder, IBuilder> builderConfiguration);
   }
 }

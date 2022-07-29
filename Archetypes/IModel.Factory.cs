@@ -11,10 +11,7 @@ namespace Meep.Tech.Data {
     /// One of these is instantiated for each Model<> class and IComponent<> class by default.
     /// This is the base non-generic utility class
     /// </summary>
-    public interface IBuilderFactory : IFactory {}
-  }
-
-  public partial class Model<TModelBase> where TModelBase : Model<TModelBase> {
+    public interface IFactory : Data.IFactory {}
   }
 
   public partial interface IModel<TModelBase> where TModelBase : IModel<TModelBase> {
@@ -25,16 +22,17 @@ namespace Meep.Tech.Data {
     /// They can be overriden.
     /// </summary>
     [Configuration.Loader.Settings.DoNotBuildInInitialLoad]
-    public class BuilderFactory
-      : BuilderFactory<BuilderFactory> {
+    public new class Factory
+      : Factory<Factory> {
 
-      public BuilderFactory(
+      public Factory(
         Identity id,
         Universe universe,
-        HashSet<Archetype.IComponent> archetypeComponents,
+        HashSet<Data.Archetype.IComponent> archetypeComponents,
         IEnumerable<Func<IBuilder, IModel.IComponent>> modelComponentCtors 
       )  : base(id, universe, archetypeComponents, modelComponentCtors) { }
-      public BuilderFactory(
+
+      public Factory(
         Identity id,
         Universe universe = null
       )  : base(id, universe) { }
@@ -46,11 +44,11 @@ namespace Meep.Tech.Data {
     /// in the static constructor, or the Setup(Universe) override
     /// </summary>
     [DoNotBuildThisOrChildrenInInitialLoad]
-    public abstract class BuilderFactory<TBuilderFactoryBase>
+    public abstract class Factory<TBuilderFactoryBase>
       : Archetype<TModelBase, TBuilderFactoryBase>,
         Archetype<TModelBase, TBuilderFactoryBase>.IExposeDefaultModelBuilderMakeMethods.Fully,
-        IBuilderFactory 
-      where TBuilderFactoryBase : BuilderFactory<TBuilderFactoryBase>
+        IModel.IFactory 
+      where TBuilderFactoryBase : Factory<TBuilderFactoryBase>
     {
 
       /// <summary>
@@ -64,7 +62,7 @@ namespace Meep.Tech.Data {
       /// <summary>
       /// <inheritdoc/>
       /// </summary>
-      Func<IBuilder, IModel> IFactory.ModelConstructor {
+      Func<Data.IBuilder, IModel> Data.IFactory._modelConstructor {
         get => base.ModelConstructor is null 
           ? null 
           : builder => base.ModelConstructor((IBuilder<TModelBase>)builder);
@@ -75,28 +73,29 @@ namespace Meep.Tech.Data {
       /// <summary>
       /// The static instance of this type of builder factory.
       /// </summary>
-      public static BuilderFactory DefaultInstance
-        => Archetypes.All.Get<BuilderFactory>();
+      public static Factory DefaultInstance
+        => Archetypes.All.Get<Factory>();
 
       /// <summary>
       /// The static instance of this type of builder factory.
       /// </summary>
-      public static BuilderFactory InstanceFor(Universe universe)
-        => universe.Archetypes.All.Get<BuilderFactory>();
+      public static Factory InstanceFor(Universe universe)
+        => universe.Archetypes.All.Get<Factory>();
 
       /// <summary>
       /// The default way a new builder is created.
       /// This can be used to set this for a Model<> without archetypes.
       /// </summary>
-      public new virtual Func<Archetype, Dictionary<string, object>, Universe, IBuilder<TModelBase>> BuilderConstructor {
-        get => _defaultBuilderCtor ??= (archetype, @params, universe) => base.BuilderConstructor(archetype, @params, universe) as Builder;
+      public new virtual Func<Data.Archetype, Dictionary<string, object>, Universe, IBuilder<TModelBase>> BuilderConstructor {
+        get => _defaultBuilderCtor ??= (archetype, @params, universe) 
+          => base.BuilderConstructor(archetype, @params, universe);
         init => _defaultBuilderCtor = value;
       }
 
-      internal protected BuilderFactory(
-        Archetype.Identity id,
+      internal protected Factory(
+        Data.Archetype.Identity id,
         Universe universe = null,
-        HashSet<Archetype.IComponent> archetypeComponents = null,
+        HashSet<Data.Archetype.IComponent> archetypeComponents = null,
         IEnumerable<Func<IBuilder, IModel.IComponent>> modelComponentCtors = null
       ) : base(
             id,

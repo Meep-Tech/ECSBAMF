@@ -151,7 +151,7 @@ namespace Meep.Tech.Data {
       /// </summary>
       protected virtual void AddNewComponent<TComponent>(IEnumerable<(string, object)> @params)
         where TComponent : IModel.IComponent<TComponent> {
-        IComponent toAdd = Components<TComponent>.BuilderFactory.Make(@params);
+        IComponent toAdd = Components<TComponent>.Factory.Make(@params);
         if(toAdd is IModel.IComponent.IIsRestrictedToCertainTypes restrictedComponent && !restrictedComponent.IsCompatableWith(this)) {
           throw new System.ArgumentException($"Component of type {toAdd.Key} is not compatable with model of type {GetType()}. The model must inherit from {restrictedComponent.RestrictedTo.FullName}.");
         }
@@ -418,7 +418,7 @@ namespace Meep.Tech.Data {
       protected virtual void AddNewComponent<TComponent>(IEnumerable<(string, object)> @params)
         where TComponent : IModel.IComponent<TComponent> 
       {
-        IComponent toAdd = Components<TComponent>.BuilderFactory.Make(@params);
+        IComponent toAdd = Components<TComponent>.Factory.Make(@params);
         if(toAdd is IModel.IComponent.IIsRestrictedToCertainTypes restrictedComponent && !restrictedComponent.IsCompatableWith(this)) {
           throw new System.ArgumentException($"Component of type {toAdd.Key} is not compatable with model of type {GetType()}. The model must inherit from {restrictedComponent.RestrictedTo.FullName}.");
         }

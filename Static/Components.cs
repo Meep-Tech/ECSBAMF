@@ -19,26 +19,26 @@ namespace Meep.Tech.Data {
     /// Get the builder for a given component by type.d
     /// </summary>
     public static string GetKey(Type type)
-      => DefaultUniverse.Components.GetBuilderFactoryFor(type).Key;
+      => DefaultUniverse.Components.GetFactory(type).Key;
 
     /// <summary>
     /// Get the builder for a given component by type.d
     /// </summary>
-    public static IComponent.IBuilderFactory GetBuilderFactory(Type type)
-      => DefaultUniverse.Components.GetBuilderFactoryFor(type);
+    public static IComponent.IFactory GetFactory(Type type)
+      => DefaultUniverse.Components.GetFactory(type);
 
     /// <summary>
     /// Get the builder for a given component by type.d
     /// </summary>
-    public static IComponent.IBuilderFactory GetBuilderFactory<TComponent>()
+    public static IComponent.IFactory GetFactory<TComponent>()
       where TComponent : Data.IComponent
-        => DefaultUniverse.Components.GetBuilderFactoryFor(typeof(TComponent));
+        => DefaultUniverse.Components.GetFactory(typeof(TComponent));
 
     /// <summary>
     /// Get the base model type of this model type.
     /// </summary>
-    public static System.Type GetComponentBaseType(this System.Type type)
-      => DefaultUniverse.Components.GetComponentBaseType(type);
+    public static System.Type GetBaseType(this System.Type type)
+      => DefaultUniverse.Components.GetBaseType(type);
   }
 
   /// <summary>
@@ -54,19 +54,19 @@ namespace Meep.Tech.Data {
     /// There should only be one component per key on a model.
     /// </summary>
     public static string Key
-      => BuilderFactory.Key;
+      => Factory.Key;
 
     /// <summary>
     /// Builder instance for this type of component.
     /// You can use this to set a custom builder for this type of component and it's children.
     /// </summary>
-    public static IComponent<TComponent>.BuilderFactory BuilderFactory {
-      get => (IComponent<TComponent>.BuilderFactory)
+    public static IComponent<TComponent>.Factory Factory {
+      get => (IComponent<TComponent>.Factory)
         Components.DefaultUniverse.Components
-          .GetBuilderFactoryFor<TComponent>();
+          .GetFactory<TComponent>();
       set {
         Components.DefaultUniverse.Components
-          .SetBuilderFactoryFor<TComponent>(value);
+          .SetFactory<TComponent>(value);
       }
     }
   }

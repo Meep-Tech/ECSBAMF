@@ -79,7 +79,7 @@ namespace Meep.Tech.Data {
     /// <summary>
     /// Cache an item of the given type.
     /// </summary>
-    public static void Cache(T thingToCache) 
+    public static void Set(T thingToCache) 
       => _cache[thingToCache.Id] = thingToCache;
 
     /// <summary>
@@ -101,7 +101,15 @@ namespace Meep.Tech.Data {
       => _cache.Values.Where(m => m is T)
         .ForEach(m => _cache.Remove(m.Id));
 
-    void IModel.FinishDeserialization() 
-      => Cache((T)this);
+    /// <summary>
+    /// Can be used to override IModel.Onfinalized.
+    /// </summary>
+    internal protected new IModel OnFinalized(Data.IBuilder builder)
+      => this;
+
+    IModel IModel.OnFinalized(Data.IBuilder builder) {
+      Set((T)this);
+      return OnFinalized(builder);  
+    }
   }
 }

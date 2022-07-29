@@ -80,16 +80,16 @@ namespace Meep.Tech.Data {
       /// <summary>
       /// Get a collection registered to an archetype root:
       /// </summary>
-      public Archetype.Collection GetCollectionFor(Archetype root)
+      public Archetype.Collection GetCollection(Archetype root)
         => _collectionsByRootArchetype.TryGetValue(root.Id.Key, out Archetype.Collection collection)
           ? collection
           // recurse until it's found. This should throw a null exception eventually if one isn't found.
-          : GetCollectionFor(root.Type.BaseType);
+          : GetCollection(root.Type.BaseType);
 
       /// <summary>
       /// Get a collection registered to an archetype root:
       /// </summary>
-      public bool _tryToGetCollectionFor(System.Type root, out Archetype.Collection found) {
+      public bool TryToGetCollection(System.Type root, out Archetype.Collection found) {
         if (_collectionsByRootArchetype.TryGetValue(root?.FullName, out Archetype.Collection collection)) {
           found = collection;
           return true;
@@ -100,37 +100,37 @@ namespace Meep.Tech.Data {
         }
         // recurse until it's found.
         else {
-          return _tryToGetCollectionFor(root.BaseType, out found);
+          return TryToGetCollection(root.BaseType, out found);
         }
       }
 
       /// <summary>
       /// Get a collection registered to an archetype type:
       /// </summary>
-      public Archetype.Collection GetCollectionFor(System.Type root)
+      public Archetype.Collection GetCollection(System.Type root)
         => root is not null
           ? _collectionsByRootArchetype.TryGetValue(root?.FullName ?? "", out Archetype.Collection collection)
             ? collection
             // recurse until it's found. This should throw a null exception eventually if one isn't found.
-            : GetCollectionFor(root.BaseType)
+            : GetCollection(root.BaseType)
           : throw new Exception($"Invalid Archetype Base Type Provided.");
 
       /// <summary>
       /// Get a collection registered to an archetype type.
       /// returns null if not found
       /// </summary>
-      public Archetype.Collection TryToGetCollectionFor(System.Type root)
+      public Archetype.Collection TryToGetCollection(System.Type root)
         => root is not null
           ? _collectionsByRootArchetype.TryGetValue(root?.FullName ?? "", out Archetype.Collection collection)
             ? collection
             // recurse until it's found. This should throw a null exception eventually if one isn't found.
-            : TryToGetCollectionFor(root.BaseType)
+            : TryToGetCollection(root.BaseType)
           : null;
 
       /// <summary>
       /// Get the "default" archetype or factory for a given model type.
       /// </summary>
-      public Archetype GetDefaultForModelOfType<TModelBase>()
+      public Archetype GetDefaultForModel<TModelBase>()
         where TModelBase : IModel
           => GetDefaultForModelOfType(typeof(TModelBase));
 
@@ -150,7 +150,7 @@ namespace Meep.Tech.Data {
             }
 
             // if we couldn;t make the type into an archetype (it may be a base type), we need to get any default archetype from it's collection:
-            Archetype.Collection collection = GetCollectionFor(rootArchetypeType);
+            Archetype.Collection collection = GetCollection(rootArchetypeType);
             if (collection is null) {
               throw new KeyNotFoundException($"Could not find an archetype collection the model Type: {modelBaseType}");
             }
@@ -158,13 +158,13 @@ namespace Meep.Tech.Data {
               return archetype;
             }
             else {
-              throw new KeyNotFoundException($"Could not find a default archetype for the model Type: {modelBaseType}, in collection: {GetCollectionFor(_rootArchetypeTypesByBaseModelType[modelBaseType.FullName]).GetType().ToFullHumanReadableNameString()}");
+              throw new KeyNotFoundException($"Could not find a default archetype for the model Type: {modelBaseType}, in collection: {GetCollection(_rootArchetypeTypesByBaseModelType[modelBaseType.FullName]).GetType().ToFullHumanReadableNameString()}");
             }
           }
           else throw new KeyNotFoundException($"Could not find a Root Archetype for the Base Model Type: {modelBaseType}");
         }
         else {
-          return _universe.Models.GetBuilderFactoryFor(modelBaseType) as Archetype;
+          return _universe.Models.GetFactory(modelBaseType) as Archetype;
         }
       }
 

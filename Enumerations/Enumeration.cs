@@ -11,7 +11,7 @@ namespace Meep.Tech.Data {
   /// Base for a simple Enumerable value
   /// </summary>
   public abstract partial class Enumeration 
-    : IEquatable<Enumeration> 
+    : IEquatable<Enumeration>, IResource
   {
 
     /// <summary>
