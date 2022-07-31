@@ -157,7 +157,7 @@ namespace Meep.Tech.Data {
     /// helper for getting the builder constructor from the non-generic base class
     /// </summary>
     /// <returns></returns>
-    internal protected abstract Func<Archetype, Dictionary<string, object>, IBuilder> GetGenericBuilderConstructor();
+    internal protected abstract Func<Archetype, IEnumerable<KeyValuePair<string, object>>, IBuilder> GetGenericBuilderConstructor();
 
     #endregion
 
@@ -712,7 +712,7 @@ namespace Meep.Tech.Data {
     /// Start a model builder
     /// </summary>
     internal protected virtual IBuilder<TModelBase> Build(IEnumerable<KeyValuePair<string, object>> initialParams = null)
-      => (IBuilder<TModelBase>)GetGenericBuilderConstructor()(this, null);
+      => (IBuilder<TModelBase>)GetGenericBuilderConstructor()(this, initialParams);
 
     IBuilder IBuilderSource.Build(IEnumerable<KeyValuePair<string, object>> initialParams)
       => Build();
@@ -721,19 +721,19 @@ namespace Meep.Tech.Data {
     /// The default way a new builder is created.
     /// The dictionary passed in has the potential to be null
     /// </summary>
-    internal protected virtual Func<Archetype, Dictionary<string, object>, Universe, IBuilder<TModelBase>> BuilderConstructor {
+    internal protected virtual Func<Archetype, IEnumerable<KeyValuePair<string, object>>, Universe, IBuilder<TModelBase>> BuilderConstructor {
       get => _defaultBuilderCtor ??= (archetype, @params, universe) 
         => !(@params is null) 
           ? new IModel<TModelBase>.Builder(archetype, @params, universe)
           : new IModel<TModelBase>.Builder(archetype, universe); 
       set => _defaultBuilderCtor = value;
-    } internal Func<Archetype, Dictionary<string, object>, Universe, IBuilder<TModelBase>> _defaultBuilderCtor;
+    } internal Func<Archetype, IEnumerable<KeyValuePair<string, object>>, Universe, Data.IBuilder<TModelBase>> _defaultBuilderCtor;
 
     /// <summary>
     /// helper for getting the builder constructor from the non-generic base class
     /// TODO: I can probably cache this at least.
     /// </summary>
-    protected internal sealed override Func<Archetype, Dictionary<string, object>, IBuilder> GetGenericBuilderConstructor()
+    protected internal override Func<Archetype, IEnumerable<KeyValuePair<string, object>>, IBuilder> GetGenericBuilderConstructor()
       => (archetype, @params) => BuilderConstructor(archetype, @params, null);
 
     #region Configuration Helper Functions

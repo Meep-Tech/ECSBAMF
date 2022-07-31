@@ -51,12 +51,28 @@ namespace Meep.Tech.Data.Reflection {
       // check if it's cached:
       if (_setterCache.TryGetValue(methodKey, out IClassPropertyWriteAccess propertyAccess) && propertyAccess != null) {
         propertyAccess.SetValue(forObject, value);
+        return;
       }
 
       // Build a property accessor if it's not:
+      var propertyToUse = property;
+
+      // find a setter in the hirearchy if there isn't one
+      if (!propertyToUse.CanWrite) {
+        propertyToUse = propertyToUse?.DeclaringType?.GetProperty(property.Name, BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance)
+          ?? property;
+      }
+      while (!propertyToUse.CanWrite && propertyToUse is not null) {
+        propertyToUse = propertyToUse.ReflectedType?.BaseType?.GetProperty(property.Name, BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
+      }
+      if (propertyToUse is null) {
+        throw new NotImplementedException($"Property: {property.Name}, on type {property.ReflectedType.FullName}, does not have a setter in it's hirearchy.");
+      }
+
+      // create the cached setter
       propertyAccess
         = _setterCache[methodKey]
-        = PropertyAccessFactory.CreateForClass(property);
+        = PropertyAccessFactory.CreateForClass(propertyToUse);
 
       propertyAccess.SetValue(forObject, value);
     }

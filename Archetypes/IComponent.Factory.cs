@@ -47,7 +47,7 @@ namespace Meep.Tech.Data {
   /// The base class for modular data holders for models and archetypes
   /// </summary>
   public partial interface IComponent<TComponentBase> : IModel<TComponentBase>, IComponent
-    where TComponentBase : IComponent<TComponentBase> {
+    where TComponentBase : Data.IComponent<TComponentBase> {
 
     /// <summary>
     /// General Base Builder Factory for Components.
@@ -72,13 +72,24 @@ namespace Meep.Tech.Data {
       public string Key
         => ModelBaseType.FullName;
 
+      ///<summary><inheritdoc/></summary>
+      protected internal override Func<Archetype, IEnumerable<KeyValuePair<string, object>>, Universe, IBuilder<TComponentBase>> BuilderConstructor {
+        get => _defaultBuilderCtor ??= new((archetype, @params, universe) => new Builder(archetype, @params, null, universe));
+        set => _defaultBuilderCtor = value;
+      }
+
       /// <summary>
-      /// The default way a new builder is created.
-      /// This can be used to set this for a Model<> without archetypes.
+      /// Overrideable builder constructor.
       /// </summary>
-      public override Func<Data.Archetype, Dictionary<string, object>, Universe, IBuilder<TComponentBase>> BuilderConstructor {
-        get => _defaultBuilderCtor ??= (archetype, @params, universe) => new IModel<TComponentBase>.Builder(archetype, @params, universe);
-        init => _defaultBuilderCtor = value;
+      public new Func<Archetype, IEnumerable<KeyValuePair<string, object>>, Universe, Builder> BuildrCtor {
+        init => _defaultBuilderCtor = (a, p, u) => value(a, p, u);
+      }
+
+      /// <summary>
+      /// Overrideable model constructor
+      /// </summary>
+      public Func<Builder, TComponentBase> ComponentCtor {
+        init => ModelConstructor = builder => value((Builder)builder);
       }
 
       public Factory(

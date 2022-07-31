@@ -14,6 +14,9 @@ namespace Meep.Tech.Data {
   [AttributeUsage(AttributeTargets.Property, Inherited = true)]
   public class AutoBuildAttribute : Attribute {
 
+    static readonly MethodInfo _genericRequiredGetMethod = typeof(BuilderExtensions).GetMethods().First(m => m.Name == nameof(BuilderExtensions.GetRequired) && m.GetParameters()[1].ParameterType == typeof(string));
+    static readonly MethodInfo _genericTryToGetMethod = typeof(BuilderExtensions).GetMethods().First(m => m.Name == nameof(BuilderExtensions.TryToGet) && m.GetParameters()[1].ParameterType == typeof(string));
+
     /// <summary>
     /// Gets a default value for an auto-built field on a model given the model being built and the builder.
     /// </summary>
@@ -178,7 +181,7 @@ namespace Meep.Tech.Data {
     /// </summary>
     static IModel _autoBuildModelProperty(IModel m, IBuilder b, PropertyInfo p, AutoBuildAttribute attributeData, System.Type modelType) {
       try {
-        ValueSetter setter = attributeData.Setter ?? new((m,v) => p.Set(m, v));
+        ValueSetter setter = attributeData.Setter ??= new((m,v) => p.Set(m, v));
         if (setter is null) {
           System.Type baseType = p.DeclaringType;
           while (setter is null && baseType is not null) {
@@ -463,14 +466,13 @@ namespace Meep.Tech.Data {
     /// Used to build the default ValueGetter for non required items.
     /// </summary>
     public static ValueGetter BuildDefaultGetterFromBuilderOrDefault(IModel model, IBuilder builder, PropertyInfo property, AutoBuildAttribute attributeData, ValueGetter onFailureDefaultOveride = null) {
-      var getter = typeof(BuilderExtensions).GetMethod(nameof(BuilderExtensions.TryToGet));
-      getter = getter.MakeGenericMethod(property.PropertyType);
+      var _tryToGetMethod = _genericTryToGetMethod.MakeGenericMethod(property.PropertyType);
 
       // TODO: cache this
       return new((m, b, p, a, _) => {
         object[] parameters = new object[] { b, a.ParameterName ?? p.Name, null, default };
         try {
-          return (bool)getter.Invoke(null, parameters) 
+          return (bool)_tryToGetMethod.Invoke(null, parameters) 
             ? parameters[2] 
             : (onFailureDefaultOveride ?? GetDefaultValue).Invoke(m, b, p, a, false);
         }
@@ -484,8 +486,7 @@ namespace Meep.Tech.Data {
     /// Used to build the default ValueGetter for required items.
     /// </summary>
     public static ValueGetter BuildDefaultGetterForRequiredValueFromBuilder(IModel model, IBuilder builder, PropertyInfo property, AutoBuildAttribute attributeData) {
-      var getter = typeof(BuilderExtensions).GetMethod(nameof(BuilderExtensions.GetRequired));
-      getter = getter.MakeGenericMethod(property.PropertyType);
+      var getter = _genericRequiredGetMethod.MakeGenericMethod(property.PropertyType);
 
       // TODO: cache this
       try {

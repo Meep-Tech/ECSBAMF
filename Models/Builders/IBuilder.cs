@@ -67,25 +67,6 @@ namespace Meep.Tech.Data {
     : IBuilder
     where TModelBase : IModel<TModelBase> 
   {
-/*
-    /// <summary>
-    /// used by a builder to initialize it's model.
-    /// Uses IFactory.ModelConstructor(builder): by default.
-    /// </summary>
-    Func<IModel<TModelBase>.Builder, TModelBase> InitializeModel
-      => builder => (TModelBase)((IFactory)builder.Archetype).ModelConstructor(builder);
-
-    /// <summary>
-    /// Used by a builder to configure it's model
-    /// </summary>
-    Func<IModel<TModelBase>.Builder, TModelBase, TModelBase> ConfigureModel
-      => null;
-
-    /// <summary>
-    /// Used by a builder to finalize it's model
-    /// </summary>
-    Func<IModel<TModelBase>.Builder, TModelBase, TModelBase> FinalizeModel
-      => null;*/
 
     /// <summary>
     /// Return the builder with a new value appended.

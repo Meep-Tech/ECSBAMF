@@ -31,7 +31,7 @@ namespace Meep.Tech.Data {
   /// The base class for modular data holders for models and archetypes
   /// </summary>
   public partial interface IComponent<TComponentBase> : IModel<TComponentBase>, IComponent
-    where TComponentBase : IComponent<TComponentBase> {
+    where TComponentBase : Data.IComponent<TComponentBase> {
 
     /// <summary>
     /// Default builder class for components. Pretty much the same as the model based one.
@@ -173,7 +173,7 @@ namespace Meep.Tech.Data {
       public TComponentBase Make() {
         TComponentBase component = (TComponentBase)((Data.IFactory)Archetype)._modelConstructor(this);
         component.Universe = Universe;
-        (component as IComponent).Factory = (IFactory)Archetype;
+        (component as Data.IComponent).Factory = (IFactory)Archetype;
 
         component = (TComponentBase)(component as IModel).OnInitialized(this);
         component = (TComponentBase)Archetype.ConfigureModel(this, component);

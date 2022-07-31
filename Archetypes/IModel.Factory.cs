@@ -79,17 +79,31 @@ namespace Meep.Tech.Data {
       /// <summary>
       /// The static instance of this type of builder factory.
       /// </summary>
-      public static Factory InstanceFor(Universe universe)
+      public static Factory GetInstance(Universe universe)
         => universe.Archetypes.All.Get<Factory>();
 
       /// <summary>
       /// The default way a new builder is created.
       /// This can be used to set this for a Model<> without archetypes.
-      /// </summary>
-      public new virtual Func<Data.Archetype, Dictionary<string, object>, Universe, IBuilder<TModelBase>> BuilderConstructor {
+      /// </summary>   
+      /*internal protected override Func<Archetype, IEnumerable<KeyValuePair<string, object>>, Universe, IBuilder<TModelBase>> BuilderConstructor {
         get => _defaultBuilderCtor ??= (archetype, @params, universe) 
           => base.BuilderConstructor(archetype, @params, universe);
-        init => _defaultBuilderCtor = value;
+        set => _defaultBuilderCtor = value;
+      }*/
+
+      /// <summary>
+      /// Overrideable builder constructor.
+      /// </summary>
+      public Func<Archetype, IEnumerable<KeyValuePair<string, object>>, Universe, Builder> BuildrCtor {
+        init => _defaultBuilderCtor = (a, p, u) => value(a, p, u);
+      }
+
+      /// <summary>
+      /// Overrideable model constructor
+      /// </summary>
+      public Func<Builder, TModelBase> ModelCtor {
+        init => ModelConstructor = builder => value((Builder)builder);
       }
 
       internal protected Factory(
